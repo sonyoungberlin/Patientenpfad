@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import AppShell from "@/components/AppShell";
 import {
   getActiveNavigationItem,
+  getAppShellContext,
   getNavigationSectionForPath,
   getVisibleNavigationSections,
 } from "@/lib/navigation";
@@ -23,7 +24,7 @@ jest.mock("@/lib/auth", () => ({
 import { getSessionAccountFromCookies } from "@/lib/auth";
 
 function account(
-  role: "OWNER" | "INBOX_ONLY" = "OWNER",
+  role: "OWNER" | "INBOX_ONLY" | "KIOSK" = "OWNER",
   overrides: Partial<ReturnType<typeof ownerAccount>> = {},
 ) {
   return {
@@ -50,6 +51,30 @@ function ownerAccount() {
 }
 
 describe("zentrale Bereichsdefinition", () => {
+  it.each([
+    ["/questionnaires", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/digital-requests/detail", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/office-cases/applications/detail", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/office-cases/questionnaire/detail", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/inquiries/new", "patient", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/new", "patient", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/123", "patient", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/internal-documentation/123", "doctor", "Ärztlich", "/context-icons/context-doctor.png"],
+    ["/office-cases/123", "office", "Office", "/context-icons/context-office.png"],
+    ["/workflow-cases/123", "office", "Office", "/context-icons/context-office.png"],
+    ["/workflow-cases/internal-protocol/draft/m2", "practice", "Praxisverwaltung", null],
+    ["/workflow-cases/internal-protocol/draft/m3", "practice", "Praxisverwaltung", null],
+    ["/workflow-cases/internal-protocol/draft/m4", "practice", "Praxisverwaltung", null],
+    ["/office-cases/questionnaire/new", "inbox", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/dashboard", null, null, null],
+    ["/practice/members", null, null, null],
+    ["/website-forms", null, null, null],
+  ])("löst %s in den AppShell-Kontext auf", (pathname, id, label, iconSrc) => {
+    expect(getAppShellContext(pathname)).toEqual(
+      id ? { id, label, iconSrc } : null,
+    );
+  });
+
   it("liefert für Owner alle Bereiche und direkten Seitenlinks", () => {
     const sections = getVisibleNavigationSections(account());
 
@@ -58,6 +83,7 @@ describe("zentrale Bereichsdefinition", () => {
       "Patientenkommunikation",
       "Patientenpfad",
       "Officepfad",
+      "Arbeitsprozesse",
       "Praxisverwaltung",
     ]);
     expect(sections[0].items.map((item) => item.label)).toEqual([
@@ -80,13 +106,31 @@ describe("zentrale Bereichsdefinition", () => {
       "Officefälle",
       "Neuer Officefall",
       "Bewerbungsfragebögen",
-      "Neuer Bewerber-Fragebogen",
       "Bewerbungsanfragen",
+    ]);
+    expect(sections[4].items.map((item) => item.label)).toEqual([
       "Arbeitsprozesse",
       "Neue Sitzung",
-      "Praxisprozesse",
     ]);
-    expect(sections[4].title).toBe("Praxisverwaltung");
+    expect(sections[5].title).toBe("Praxisverwaltung");
+    expect(sections[5].items.slice(0, 4).map(({ label, href }) => ({ label, href }))).toEqual([
+      {
+        label: "Praxisfälle",
+        href: "/workflow-cases/internal-protocol/new",
+      },
+      {
+        label: "Praxisfall-Ketten",
+        href: "/practice/chains",
+      },
+      {
+        label: "Dokumentationsbibliothek",
+        href: "/practice/documentation-library",
+      },
+      {
+        label: "Dokumentationsvorlagen",
+        href: "/practice/documentation-templates",
+      },
+    ]);
   });
 
   it("beschränkt INBOX_ONLY auf den Fragebogen-Posteingang", () => {
@@ -96,6 +140,10 @@ describe("zentrale Bereichsdefinition", () => {
     expect(sections[0].items.map((item) => item.label)).toEqual([
       "Fragebogen-Posteingang",
     ]);
+  });
+
+  it("gibt KIOSK keine normale Navigation", () => {
+    expect(getVisibleNavigationSections(account("KIOSK"))).toEqual([]);
   });
 
   it("filtert Feature-abhängige Eingänge und Verwaltungsseiten", () => {
@@ -125,9 +173,16 @@ describe("zentrale Bereichsdefinition", () => {
     ["/cases/internal-documentation/abc", "patient-path", "internal-documentation"],
     ["/practice/members", "practice-management", "practice-members"],
     ["/website-forms/abc", "practice-management", "website-forms"],
+    ["/practice/documentation-library", "practice-management", "documentation-library"],
+    ["/practice/documentation-templates", "practice-management", "documentation-templates"],
     ["/office-cases/applications/abc", "inbox", "applicant-inbox"],
     ["/office-cases/questionnaire/abc", "inbox", "applicant-questionnaire-inbox"],
-    ["/office-cases/questionnaire/new", "office-path", "new-office-questionnaire"],
+    ["/office-cases/questionnaire/new", "inbox", "applicant-questionnaire-inbox"],
+    ["/workflow-cases/abc", "workflow-path", "workflow-cases"],
+    ["/workflow-cases/internal-protocol/new", "practice-management", "practice-cases"],
+    ["/workflow-cases/internal-protocol/draft/m2", "practice-management", "practice-cases"],
+    ["/workflow-cases/internal-protocol/draft/m3", "practice-management", "practice-cases"],
+    ["/workflow-cases/internal-protocol/draft/m4", "practice-management", "practice-cases"],
   ])("ordnet Detailroute %s dem richtigen Menüpunkt zu", (pathname, sectionId, itemId) => {
     const sections = getVisibleNavigationSections(account());
     const section = getNavigationSectionForPath(sections, pathname);
@@ -143,15 +198,62 @@ describe("AppShell Bereichsmenüs", () => {
   });
 
   it.each([
+    ["/questionnaires", "Posteingang", "/context-icons/context-inbox.png"],
+    ["/inquiries", "Patient", "/context-icons/context-patient.png"],
+    ["/cases/internal-documentation", "Ärztlich", "/context-icons/context-doctor.png"],
+    ["/office-cases", "Office", "/context-icons/context-office.png"],
+    ["/dashboard", null, null],
+    ["/practice/members", null, null],
+  ])("rendert den Kontext vor den Accountaktionen auf %s", (pathname, label, iconSrc) => {
+    mockedPathname = pathname;
+    const html = renderToStaticMarkup(<AppShell account={account()} />);
+
+    if (label && iconSrc) {
+      expect(html).toContain(`url=${encodeURIComponent(iconSrc)}`);
+      expect(html).toContain('width="32"');
+      expect(html).toContain('height="32"');
+      expect(html).toContain('alt=""');
+      expect(html).toContain(`title="Aktueller Kontext: ${label}"`);
+      expect(html).toContain('role="img"');
+      expect(html).not.toContain(`>${label}</span>`);
+    } else if (label) {
+      expect(html).toContain(`title="Aktueller Kontext: ${label}"`);
+      expect(html).toContain(`>${label}</span>`);
+    } else {
+      expect(html).not.toContain('data-testid="app-shell-context"');
+    }
+
+    expect(html).toContain("owner@example.com");
+    expect(html).toContain("Abmelden");
+    expect(html).toContain('data-testid="app-shell-topline"');
+    expect(html).toContain('data-testid="app-shell-account-group"');
+    if (pathname !== "/dashboard") {
+      expect(html).toContain('data-testid="app-shell-section-nav"');
+    } else {
+      expect(html).not.toContain('data-testid="app-shell-section-nav"');
+    }
+    if (label && iconSrc) {
+      expect(html.indexOf('data-testid="app-shell-context"')).toBeGreaterThan(
+        html.indexOf('data-testid="app-shell-account-group"'),
+      );
+      expect(html.indexOf('data-testid="app-shell-context"')).toBeGreaterThan(
+        html.indexOf('data-testid="app-shell-section-nav"'),
+      );
+    }
+  });
+
+  it.each([
     ["/inquiries", ["Vorlagen", "Neue Nachricht", "Fragebogen zusammenstellen"]],
     ["/inquiries/new", ["Vorlagen", "Neue Nachricht", "Fragebogen zusammenstellen"]],
     ["/questionnaires", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/digital-requests/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/applications/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
     ["/office-cases/questionnaire/abc", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
-    ["/office-cases/questionnaire/new", ["Officefälle", "Neuer Officefall", "Bewerbungsfragebögen", "Neuer Bewerber-Fragebogen", "Bewerbungsanfragen", "Arbeitsprozesse", "Neue Sitzung", "Praxisprozesse"]],
+    ["/office-cases/questionnaire/new", ["Fragebogen-Posteingang", "Digitale Anfragen", "Bewerbungsanfragen", "Bewerber-Fragebögen"]],
+    ["/workflow-cases", ["Arbeitsprozesse", "Neue Sitzung"]],
+    ["/workflow-cases/new", ["Arbeitsprozesse", "Neue Sitzung"]],
     ["/cases/internal-documentation", ["Fallliste", "Neuer Fall", "Interne Dokumentation"]],
-    ["/practice/signature", ["Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
+    ["/practice/signature", ["Dokumentationsbibliothek", "Dokumentationsvorlagen", "Praxiskatalog", "Mitglieder", "Signatur", "Website-Formulare"]],
   ])("zeigt auf %s das vollständige Bereichsmenü", (pathname, labels) => {
     mockedPathname = pathname;
     const html = renderToStaticMarkup(<AppShell account={account()} />);

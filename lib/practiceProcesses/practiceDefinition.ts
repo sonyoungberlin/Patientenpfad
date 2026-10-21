@@ -1,4 +1,5 @@
 import type { PracticeCheckpoint } from "./types";
+import type { PracticeCheckpointAnchor } from "./types";
 
 export const PRACTICE_DEFINITION_SCHEMA_VERSION = 2 as const;
 
@@ -45,6 +46,14 @@ export function isPracticeCheckpointDefinitionDefined(
   definition: Pick<PracticeCheckpointDefinitionRecord, "selectedAnchorIds" | "implementation">,
 ): boolean {
   return definition.selectedAnchorIds.length > 0 || definition.implementation.trim().length > 0;
+}
+
+export function getUnresolvedSelectedAnchorIds(
+  selectedAnchorIds: readonly string[],
+  anchors: readonly PracticeCheckpointAnchor[],
+): string[] {
+  const knownIds = new Set(anchors.map((anchor) => anchor.id));
+  return selectedAnchorIds.filter((id) => !knownIds.has(id));
 }
 
 export function checkpointDefinitionSnapshot(

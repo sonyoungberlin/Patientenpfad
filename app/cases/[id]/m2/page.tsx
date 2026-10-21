@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import type { ActiveCheckpoint } from "@/lib/types";
 import type { M2PrefillData } from "@/lib/logic/m2Questions";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { canAccessCaseSession } from "@/lib/cases/practiceScope";
-import { getOpenRun, getFrozenRuns } from "@/lib/server/prefillRuns";
+import { getCurrentRunAnswers } from "@/lib/server/prefillRuns";
 import { backfillPerspectives, ensureSelectionConditionalCheckpoints } from "@/lib/logic/checkpointCatalog";
 import { M2PrefillClient } from "./M2PrefillClient";
 import { M2LinkGeneratorClient } from "./M2LinkGeneratorClient";
@@ -29,7 +30,7 @@ export default async function M2Page({
 
   const session = await prisma.caseSession.findUnique({
     where: { id },
-    select: { active_checkpoints: true, ctx_prefill: true, patient_reference: true, owner_account_id: true, owner_practice_id: true, doctor_confirmed: true, preparation_mode: true },
+    select: { active_checkpoints: true, ctx_prefill: true, patient_reference: true, owner_account_id: true, owner_practice_id: true, doctor_confirmed: true, clinical_status: true, preparation_mode: true, m1_snapshot_initial: true },
   });
 
   if (!session || !canAccessCaseSession(account, session)) {
@@ -38,40 +39,37 @@ export default async function M2Page({
 
   // Bei bereits ärztlich bestätigtem (eingefrorenem) Fall niemals zurück
   // in M2 routen – immer direkt auf M3 umleiten.
-  if (session.doctor_confirmed) {
+  if (session.doctor_confirmed || session.clinical_status === "confirmed") {
     redirect(`/cases/${id}/m3`);
   }
 
-  // Offenen Run und eingefrorene Runs parallel laden.
-  const [openRun, frozenRuns] = await Promise.all([
-    getOpenRun(id).catch(() => null),
-    getFrozenRuns(id).catch(() => []),
+  // Jeder Praxisweg bekommt ausschließlich seine eigenen, über alle alten
+  // Delta-Runs zusammengeführten Antworten. Der Ein-Quellen-Cache bleibt nur
+  // Rückfall für Altfälle ohne PrefillRun.
+  const [mfaRunAnswers, conversationRunAnswers] = await Promise.all([
+    getCurrentRunAnswers(id, "mfa").catch(() => null),
+    getCurrentRunAnswers(id, "conversation").catch(() => null),
   ]);
-
-  // Per-Source-Filter: Für jede Quelle wird ermittelt, welche Checkpoint-IDs
-  // bereits in einem eingefrorenen Run mit dieser Quelle beantwortet wurden.
-  // M2PrefillClient filtert die sichtbaren Checkpoints anhand dieser Listen:
-  // Ein Checkpoint wird nur angezeigt, wenn er für die aktuelle Quelle noch
-  // nicht in einem eingefrorenen Run vorhanden ist.
-  const answeredCheckpointIdsBySource: {
-    mfa: string[];
-    conversation: string[];
-    patient: string[];
-  } = { mfa: [], conversation: [], patient: [] };
-
-  for (const run of frozenRuns) {
-    const src = run.source as keyof typeof answeredCheckpointIdsBySource;
-    if (!(src in answeredCheckpointIdsBySource)) continue;
-    const answers =
-      run.answers && typeof run.answers === "object" && !Array.isArray(run.answers)
-        ? (run.answers as Record<string, unknown>)
-        : {};
-    for (const cpId of Object.keys(answers)) {
-      if (!answeredCheckpointIdsBySource[src].includes(cpId)) {
-        answeredCheckpointIdsBySource[src].push(cpId);
-      }
-    }
-  }
+  const legacyPrefill =
+    session.ctx_prefill &&
+    typeof session.ctx_prefill === "object" &&
+    !Array.isArray(session.ctx_prefill)
+      ? (session.ctx_prefill as M2PrefillData)
+      : {};
+  const legacySource =
+    session.preparation_mode === "conversation"
+      ? "conversation"
+      : session.preparation_mode === "mfa" || session.preparation_mode === "none"
+        ? "mfa"
+        : null;
+  const initialPrefillBySource = {
+    mfa:
+      (mfaRunAnswers as M2PrefillData | null) ??
+      (legacySource === "mfa" ? legacyPrefill : {}),
+    conversation:
+      (conversationRunAnswers as M2PrefillData | null) ??
+      (legacySource === "conversation" ? legacyPrefill : {}),
+  };
 
   // Alle aktiven Checkpoints des Falls – perspectives für Altfälle aus dem
   // Katalog ergänzen (Rückwärtskompatibilität vor Schritt 4).
@@ -86,32 +84,20 @@ export default async function M2Page({
     ),
   );
 
-  // Vorbelegung: Wenn ein offener PrefillRun existiert (z. B. nach einer
-  // Fallergänzung oder einer angefangenen, aber noch nicht eingefrorenen
-  // M2-Bearbeitung), ist **dieser** Run die einzige aktive
-  // Bearbeitungsgrundlage. Eingefrorene Runs und der `ctx_prefill`-Cache
-  // dürfen dann nicht erneut als editierbarer Prefill übernommen werden.
-  // Nur wenn kein offener Run existiert, fällt die Vorbelegung auf
-  // `ctx_prefill` zurück (rückwärtskompatibel für den Standardfall).
-  let prefill: M2PrefillData = {};
-  if (openRun) {
-    if (
-      openRun.answers &&
-      typeof openRun.answers === "object" &&
-      !Array.isArray(openRun.answers)
-    ) {
-      prefill = openRun.answers as unknown as M2PrefillData;
-    }
-  } else if (
-    session.ctx_prefill &&
-    typeof session.ctx_prefill === "object" &&
-    !Array.isArray(session.ctx_prefill)
-  ) {
-    prefill = session.ctx_prefill as M2PrefillData;
-  }
-
   return (
     <main>
+      <nav
+        data-m2-navigation
+        aria-label="Fallnavigation"
+        style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}
+      >
+        <Link href="/cases" data-m2-case-list-link>
+          Zur Fallliste
+        </Link>
+        <Link href={`/cases/${id}/m3`} data-m2-m3-link>
+          Zur ärztlichen Checkliste
+        </Link>
+      </nav>
       <h1 style={{ marginBottom: "1.5rem" }}>Vorbereitung durch MFA / Praxis</h1>
 
       {/* Aktionsbereich oben: ruhige vertikale Rhythmik, klare Gruppen */}
@@ -152,13 +138,13 @@ export default async function M2Page({
       <M2PrefillClient
         caseId={id}
         checkpoints={checkpoints}
-        initialPrefill={prefill}
+        m1SnapshotInitial={session.m1_snapshot_initial}
+        initialPrefillBySource={initialPrefillBySource}
         initialPreparationMode={
           typeof session.preparation_mode === "string"
             ? session.preparation_mode
             : "none"
         }
-        answeredCheckpointIdsBySource={answeredCheckpointIdsBySource}
       />
     </main>
   );

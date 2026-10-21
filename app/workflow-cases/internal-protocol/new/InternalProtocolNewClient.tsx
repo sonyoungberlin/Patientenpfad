@@ -54,9 +54,9 @@ export default function InternalProtocolNewClient({
   return (
     <div style={{ display: "grid", gap: "1.25rem" }}>
       <div>
-        <h2 style={{ margin: 0 }}>Welchen Praxisfall möchten Sie bearbeiten?</h2>
+        <h2 style={{ margin: 0 }}>Welchen Praxisfall möchten Sie konfigurieren?</h2>
         <p className="text-small text-muted" style={{ margin: "0.35rem 0 0" }}>
-          Wählen Sie den Ablauf, für den Sie eine Prozessdokumentation erstellen möchten.
+          Wählen Sie den Praxisfall, für den Sie Praxisstandards festlegen und veröffentlichen möchten.
         </p>
       </div>
 

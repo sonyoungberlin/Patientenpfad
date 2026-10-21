@@ -57,6 +57,24 @@ describe("Practice workflow v2", () => {
     })).toBe(true);
   });
 
+  it("validiert die eingefrorene Anchor-Struktur im Published-Snapshot", () => {
+    const published = {
+      ...draft,
+      checkpoints: [{ ...draft.checkpoints[0], definition }],
+      completedAt: "2026-09-29T12:00:00.000Z",
+    };
+
+    expect(isPublishedPracticeWorkflowSnapshot(published)).toBe(true);
+    expect(isPublishedPracticeWorkflowSnapshot({
+      ...published,
+      checkpoints: [{ ...published.checkpoints[0], definition: { ...definition, checkpointAnchors: [null] } }],
+    })).toBe(false);
+    expect(isPublishedPracticeWorkflowSnapshot({
+      ...published,
+      checkpoints: [{ ...published.checkpoints[0], definition: { ...definition, checkpointAnchors: [{ id: "anchor-1" }] } }],
+    })).toBe(false);
+  });
+
   it("speichert in M3 nur die Entscheidung", () => {
     const next = setCheckpointDecision(draft, "cp-1", "PFLICHT");
     expect(next.checkpoints[0]).toEqual({ checkpointId: "cp-1", checkpointTitle: "Checkpoint", decision: "PFLICHT" });

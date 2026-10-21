@@ -72,10 +72,14 @@ export async function publishToCatalog(
   const publishedSnapshot: PublishedPracticeWorkflowSnapshot = {
     ...draftSnapshot,
     completedAt: new Date().toISOString(),
-    checkpoints: draftSnapshot.checkpoints.map((checkpoint) => ({
-      ...checkpoint,
-      definition: definitions.find((definition) => definition.checkpointId === checkpoint.checkpointId)!,
-    })),
+    checkpoints: draftSnapshot.checkpoints.map((checkpoint) => {
+      const definition = definitions.find((item) => item.checkpointId === checkpoint.checkpointId)!;
+      return {
+        ...checkpoint,
+        checkpointTitle: definition.checkpointTitle,
+        definition,
+      };
+    }),
   };
 
   // D/E — Versionierung bestimmen

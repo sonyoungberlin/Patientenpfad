@@ -7,6 +7,14 @@ const redirectMock = jest.fn((url: string) => {
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
 }));
+jest.mock("next/headers", () => ({
+  cookies: jest.fn(async () => ({ get: jest.fn().mockReturnValue(undefined) })),
+}));
+jest.mock("@/lib/auth", () => ({
+  KIOSK_ACCOUNT_COOKIE: "pp_kiosk_account_mode",
+  getCurrentKioskMode: jest.fn(),
+  getKioskSessionAccountFromCookies: jest.fn().mockResolvedValue(null),
+}));
 
 jest.mock("@/lib/questionnaireKiosk/auth", () => ({
   getQuestionnaireKioskDeviceFromCookies: jest.fn(),

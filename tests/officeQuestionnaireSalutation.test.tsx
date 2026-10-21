@@ -22,6 +22,11 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
+jest.mock("@/lib/auth", () => ({
+  getCurrentKioskMode: jest.fn(),
+  getKioskSessionAccountFromCookies: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     patientQuestionnaireSession: {

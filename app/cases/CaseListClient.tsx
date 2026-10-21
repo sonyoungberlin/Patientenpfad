@@ -134,7 +134,15 @@ export default function CaseListClient({
               ) : null}
               <div style={{ marginTop: "0.3rem" }}>Status: {c.statusLabel}</div>
             </div>
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
+                gap: "0.5rem",
+                alignItems: "center",
+              }}
+            >
               <Link
                 href={`/cases/${c.id}`}
                 aria-label={`Weiterbearbeiten: ${c.title}`}
@@ -152,6 +160,26 @@ export default function CaseListClient({
               >
                 Weiterbearbeiten
               </Link>
+              {c.statusLabel !== "Ärztlich bestätigt" ? (
+                <Link
+                  href={`/cases/${c.id}/m2`}
+                  aria-label={`M2 bearbeiten: ${c.title}`}
+                  data-case-m2-link={c.id}
+                  style={{
+                    whiteSpace: "nowrap",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius)",
+                    padding: "0.5rem 1rem",
+                    textDecoration: "none",
+                    color: "var(--foreground)",
+                    background: "var(--background)",
+                    fontWeight: 500,
+                    fontSize: "1rem",
+                  }}
+                >
+                  M2 bearbeiten
+                </Link>
+              ) : null}
               <button
                 type="button"
                 aria-label={`Aus Liste entfernen: ${c.title}`}

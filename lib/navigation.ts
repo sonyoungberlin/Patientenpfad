@@ -5,6 +5,7 @@ export type NavigationSectionId =
   | "patient-communication"
   | "patient-path"
   | "office-path"
+  | "workflow-path"
   | "practice-management";
 
 export type NavigationItem = {
@@ -27,6 +28,64 @@ export type NavigationSection = {
   pathPriority?: number;
   sectionMatches?: readonly string[];
 };
+
+export type AppShellContext = {
+  id: "inbox" | "patient" | "doctor" | "office" | "practice";
+  label: "Posteingang" | "Patient" | "Ärztlich" | "Office" | "Praxisverwaltung";
+  iconSrc: string | null;
+};
+
+const APP_SHELL_CONTEXTS: Readonly<Record<AppShellContext["id"], AppShellContext>> = {
+  inbox: {
+    id: "inbox",
+    label: "Posteingang",
+    iconSrc: "/context-icons/context-inbox.png",
+  },
+  patient: {
+    id: "patient",
+    label: "Patient",
+    iconSrc: "/context-icons/context-patient.png",
+  },
+  doctor: {
+    id: "doctor",
+    label: "Ärztlich",
+    iconSrc: "/context-icons/context-doctor.png",
+  },
+  office: {
+    id: "office",
+    label: "Office",
+    iconSrc: "/context-icons/context-office.png",
+  },
+  practice: {
+    id: "practice",
+    label: "Praxisverwaltung",
+    iconSrc: null,
+  },
+};
+
+const APP_SHELL_CONTEXT_ROUTES: readonly {
+  prefix: string;
+  context: AppShellContext["id"];
+}[] = [
+  { prefix: "/office-cases/questionnaire/new", context: "inbox" },
+  { prefix: "/office-cases/questionnaire", context: "inbox" },
+  { prefix: "/office-cases/applications", context: "inbox" },
+  { prefix: "/cases/internal-documentation", context: "doctor" },
+  { prefix: "/questionnaires", context: "inbox" },
+  { prefix: "/digital-requests", context: "inbox" },
+  { prefix: "/inquiries", context: "patient" },
+  { prefix: "/cases", context: "patient" },
+  { prefix: "/office-cases", context: "office" },
+  { prefix: "/workflow-cases/internal-protocol", context: "practice" },
+  { prefix: "/workflow-cases", context: "office" },
+];
+
+export function getAppShellContext(pathname: string): AppShellContext | null {
+  const route = APP_SHELL_CONTEXT_ROUTES.find(
+    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  return route ? APP_SHELL_CONTEXTS[route.context] : null;
+}
 
 const PRACTICE_ROLES = ["OWNER", "ADMIN", "USER"] as const;
 const MANAGEMENT_ROLES = ["OWNER", "ADMIN"] as const;
@@ -169,15 +228,6 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         officeFeature: true,
       },
       {
-        id: "new-office-questionnaire",
-        label: "Neuer Bewerber-Fragebogen",
-        href: "/office-cases/questionnaire/new",
-        matches: ["/office-cases/questionnaire/new"],
-        roles: MANAGEMENT_ROLES,
-        requiresPracticeRole: true,
-        officeFeature: true,
-      },
-      {
         id: "office-applications",
         label: "Bewerbungsanfragen",
         href: "/office-cases/applications",
@@ -186,6 +236,14 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         requiresPracticeRole: true,
         officeFeature: true,
       },
+    ],
+  },
+  {
+    id: "workflow-path",
+    title: "Arbeitsprozesse",
+    description: "Musterprozesse strukturiert dokumentieren.",
+    sectionMatches: ["/workflow-cases"],
+    items: [
       {
         id: "workflow-cases",
         label: "Arbeitsprozesse",
@@ -203,11 +261,21 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
         workflowFeature: true,
       },
       {
-        id: "new-practice-process",
-        label: "Praxisprozesse",
-        href: "/workflow-cases/internal-protocol/new",
-        matches: ["/workflow-cases/internal-protocol/new"],
-        roles: PRACTICE_ROLES,
+        id: "practice-case-chains-runner",
+        label: "Praxisfall-Ketten",
+        href: "/practice/chains",
+        matches: ["/practice/chains"],
+        roles: ["USER"],
+        requiresPracticeRole: true,
+        workflowFeature: true,
+      },
+      {
+        id: "practice-library",
+        label: "Praxisbibliothek",
+        href: "/practice/library",
+        matches: ["/practice/library"],
+        roles: ["USER"],
+        requiresPracticeRole: true,
         workflowFeature: true,
       },
     ],
@@ -218,6 +286,41 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
     description: "Zugang und Einstellungen verwalten",
     items: [
       {
+        id: "practice-cases",
+        label: "Praxisfälle",
+        href: "/workflow-cases/internal-protocol/new",
+        matches: ["/workflow-cases/internal-protocol"],
+        roles: MANAGEMENT_ROLES,
+        requiresPracticeRole: true,
+        workflowFeature: true,
+      },
+      {
+        id: "practice-case-chains-management",
+        label: "Praxisfall-Ketten",
+        href: "/practice/chains",
+        matches: ["/practice/chains"],
+        roles: MANAGEMENT_ROLES,
+        requiresPracticeRole: true,
+        workflowFeature: true,
+      },
+      {
+        id: "documentation-library",
+        label: "Dokumentationsbibliothek",
+        href: "/practice/documentation-library",
+        matches: ["/practice/documentation-library"],
+        roles: MANAGEMENT_ROLES,
+        requiresPracticeRole: true,
+      },
+      {
+        id: "documentation-templates",
+        label: "Dokumentationsvorlagen",
+        href: "/practice/documentation-templates",
+        matches: ["/practice/documentation-templates"],
+        roles: MANAGEMENT_ROLES,
+        requiresPracticeRole: true,
+      },
+      {
+
         id: "practice-catalog",
         label: "Praxiskatalog",
         href: "/practice/catalog",

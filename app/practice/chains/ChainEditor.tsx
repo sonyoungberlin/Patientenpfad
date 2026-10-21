@@ -45,7 +45,7 @@ export default function ChainEditor({ chain, entries, discovery, approvals }: Pr
   const [issues, setIssues] = useState<{ path: string; message: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [approvalError, setApprovalError] = useState<string | null>(null);
-  const readOnly = chain.status === "READY";
+  const readOnly = chain.status !== "DRAFT";
 
   const entryTitle = new Map(entries.map((entry) => [entry.id, `${entry.title} · Version ${entry.version}`]));
   const stepTitle = (stepId: string) => {
@@ -171,6 +171,25 @@ export default function ChainEditor({ chain, entries, discovery, approvals }: Pr
     }
   }
 
+  async function deactivate() {
+    if (!window.confirm("Diese Kette wird für die Nutzung durch Anwender deaktiviert. Ihre Historie und gepinnten Praxisfall-Versionen bleiben erhalten.")) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/practice-chains/${chain.id}/deactivate`, { method: "PATCH" });
+      const data = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Kette konnte nicht deaktiviert werden.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError("Netzwerkfehler.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const visibleIssues = validateChainDefinition(definition, new Set(entries.map((entry) => entry.id)));
 
   async function approve(body: Record<string, string>) {
@@ -201,7 +220,7 @@ export default function ChainEditor({ chain, entries, discovery, approvals }: Pr
         <Link href="/practice/chains" className="text-small text-muted">← Praxisfall-Ketten</Link>
         <input value={name} disabled={readOnly} onChange={(event) => { setName(event.target.value); setStatus("DRAFT"); }} style={{ display: "block", fontSize: "1.7rem", fontWeight: 700, marginTop: "0.6rem", width: "100%" }} />
         <p className="text-small text-muted" style={{ marginBottom: 0 }}>
-          Status: {status === "READY" ? "Einsatzbereit" : "Entwurf"}. Katalogeinträge bleiben auf die ausgewählte Version eingefroren.
+          Status: {status === "READY" ? "Einsatzbereit" : status === "DEACTIVATED" ? "Deaktiviert" : "Entwurf"}. Katalogeinträge bleiben auf die ausgewählte Version eingefroren.
         </p>
       </header>
 
@@ -299,14 +318,17 @@ export default function ChainEditor({ chain, entries, discovery, approvals }: Pr
       )}
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-        {readOnly ? (
-          <button type="button" onClick={() => void createRevision()} disabled={saving}>Neue Entwurfsversion erstellen</button>
-        ) : (
+        {chain.status === "READY" ? (
+          <>
+            <button type="button" onClick={() => void createRevision()} disabled={saving}>Neue Entwurfsversion erstellen</button>
+            <button type="button" onClick={() => void deactivate()} disabled={saving}>Deaktivieren</button>
+          </>
+        ) : chain.status === "DRAFT" ? (
           <>
             <button type="button" onClick={() => void save("DRAFT")} disabled={saving}>Entwurf speichern</button>
             <button type="button" onClick={() => void save("READY")} disabled={saving}>Als einsatzbereit markieren</button>
           </>
-        )}
+        ) : null}
         {error && <p style={{ color: "#a00", margin: 0 }}>{error}</p>}
       </div>
     </main>

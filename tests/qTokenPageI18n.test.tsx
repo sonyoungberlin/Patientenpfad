@@ -14,6 +14,11 @@
 
 import { renderToStaticMarkup } from "react-dom/server";
 
+jest.mock("@/lib/auth", () => ({
+  getCurrentKioskMode: jest.fn(),
+  getKioskSessionAccountFromCookies: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     patientQuestionnaireSession: {

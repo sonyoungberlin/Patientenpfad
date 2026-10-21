@@ -68,7 +68,7 @@ export default function Runner({ runner }: { runner: RunnerChain }) {
         <p className="text-muted">Dieser Lauf wurde nicht gespeichert und enthält keine Patientendaten.</p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <button type="button" onClick={restart}>Von vorn beginnen</button>
-          <Link href="/practice/chains">Zur Kettenverwaltung</Link>
+          <Link href="/practice/chains">Zur Praxisfall-Ketten</Link>
         </div>
       </main>
     );
@@ -77,7 +77,7 @@ export default function Runner({ runner }: { runner: RunnerChain }) {
   return (
     <main style={{ padding: "2rem", maxWidth: "64rem", margin: "0 auto", display: "grid", gap: "1.25rem" }}>
       <header>
-        <Link href="/practice/chains" className="text-small text-muted">← Kettenverwaltung</Link>
+        <Link href="/practice/chains" className="text-small text-muted">← Praxisfall-Ketten</Link>
         <h1 style={{ marginBottom: "0.35rem" }}>{runner.name}</h1>
         <p className="text-small text-muted" style={{ margin: 0 }}>Version {runner.version} · Flüchtiger Lauf ohne Patientendaten</p>
       </header>

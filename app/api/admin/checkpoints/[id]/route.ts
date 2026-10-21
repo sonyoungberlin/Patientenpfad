@@ -4,9 +4,6 @@
  * Speichert einen Checkpoint in der Bibliothek (Upsert).
  * Nur Plattform-Admins dürfen diese Route verwenden.
  *
- * Löschschutz: Anker-IDs, die in gespeicherten WorkflowSession-Snapshots
- * referenziert sind, dürfen nicht entfernt werden.
- *
  * Request body (JSON):
  *   { title, description, orientationHint, orientationAnchors: [{ id, text }] }
  *
@@ -17,7 +14,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/authz";
 import { deleteLibraryCheckpoint, upsertLibraryCheckpoint, getCheckpointFromLib } from "@/lib/practiceProcesses";
-import { prisma } from "@/lib/prisma";
 import type { PracticeCheckpointAnchor } from "@/lib/practiceProcesses";
 
 function isAnchorArray(v: unknown): v is PracticeCheckpointAnchor[] {
@@ -30,17 +26,6 @@ function isAnchorArray(v: unknown): v is PracticeCheckpointAnchor[] {
       (a as Record<string, unknown>).id !== "" &&
       typeof (a as Record<string, unknown>).text === "string",
   );
-}
-
-/** Prüft, ob eine Anchor-ID in einer aktuellen Praxisdefinition verwendet wird. */
-async function isAnchorReferenced(anchorId: string): Promise<boolean> {
-  const rows = await prisma.$queryRaw<Array<{ exists: boolean }>>`
-    SELECT EXISTS (
-      SELECT 1 FROM "PracticeCheckpointDefinition"
-      WHERE "selected_anchor_ids" @> ${JSON.stringify([anchorId])}::jsonb
-    ) AS "exists"
-  `;
-  return rows[0]?.exists ?? false;
 }
 
 export async function PUT(
@@ -85,25 +70,7 @@ export async function PUT(
     );
   }
 
-  // Löschschutz: gelöschte Anker prüfen
   const current = await getCheckpointFromLib(id);
-  if (current?.orientationAnchors) {
-    const incomingIds = new Set(orientationAnchors.map((a) => a.id));
-    const removedAnchors = current.orientationAnchors.filter((a) => !incomingIds.has(a.id));
-    for (const anchor of removedAnchors) {
-      const referenced = await isAnchorReferenced(anchor.id);
-      if (referenced) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: `Orientierungsanker „${anchor.text || anchor.id}" wird in gespeicherten Praxisprozessen verwendet und kann nicht gelöscht werden.`,
-          },
-          { status: 409 },
-        );
-      }
-    }
-  }
-
   const currentIds = new Set((current?.orientationAnchors ?? []).map((anchor) => anchor.id));
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const normalizedAnchors = orientationAnchors.map((anchor) => ({

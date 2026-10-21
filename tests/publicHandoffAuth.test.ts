@@ -5,6 +5,7 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 import { prisma } from "@/lib/prisma";
+import { PUBLIC_CHECK_IN_BLOCK_IDS } from "@/lib/questionnaire/publicCheckIn";
 import {
   hashPublicHandoffSecret,
   publicHandoffCookieName,
@@ -17,8 +18,8 @@ const parent = {
   source: "public_check_in", session_kind: "patient_communication", context: "patient",
   owner_account_id: null,
   owner_practice_id: "practice-1", created_by_kiosk_device_id: null,
-  selected_block_ids: ["KONTAKT", "CHECK_IN"],
-  frozen_blocks: [{ id: "KONTAKT", questions: [] }, { id: "CHECK_IN", questions: [] }],
+  selected_block_ids: PUBLIC_CHECK_IN_BLOCK_IDS,
+  frozen_blocks: PUBLIC_CHECK_IN_BLOCK_IDS.map((id) => ({ id, questions: [] })),
   status: "completed", deleted_at: null,
   patient_reference: "4711",
 };

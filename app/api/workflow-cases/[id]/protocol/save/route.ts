@@ -4,12 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
 import { canAccessWorkflowCases, requirePracticeCatalogAccess } from "@/lib/authz";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
+import { getCatalogOwnershipFilter } from "@/lib/practiceCatalog/scope";
 import {
   isInternalProtocolWorkflowSnapshot,
   isProtocolWorkflowCheckpoint,
   type ProtocolWorkflowCheckpoint,
 } from "@/lib/workflow/internalProtocol/workflowAdapter";
 import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
+import type { PracticeWorkflowBuilderCheckpoint } from "@/lib/practiceProcesses/workflowSnapshot";
+import { resolvePracticeWorkflowBuilderCheckpoints } from "@/lib/practiceProcesses/practiceWorkflowBuilder";
 
 export async function GET(
   req: NextRequest,
@@ -34,11 +37,31 @@ export async function GET(
     }
   }
 
+  let builderCheckpoints: PracticeWorkflowBuilderCheckpoint[] | undefined;
   if (isPracticeWorkflowDraftSnapshot(session.process_snapshot)) {
     const practiceAccess = await requirePracticeCatalogAccess(req);
     if (practiceAccess.error) return practiceAccess.error;
+    const scope = getCatalogOwnershipFilter(practiceAccess.account);
+    if (!scope) {
+      return NextResponse.json({ ok: false, error: "Kein Praxiskontext." }, { status: 403 });
+    }
+    try {
+      builderCheckpoints = await resolvePracticeWorkflowBuilderCheckpoints(
+        scope.practice_id,
+        session.process_snapshot.checkpoints.map((checkpoint) => checkpoint.checkpointId),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Checkpoint-Metadaten konnten nicht geladen werden.";
+      return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    }
   }
-  return NextResponse.json({ ok: true, id: session.id, title: session.title, snapshot: session.process_snapshot });
+  return NextResponse.json({
+    ok: true,
+    id: session.id,
+    title: session.title,
+    snapshot: session.process_snapshot,
+    ...(builderCheckpoints ? { builderCheckpoints } : {}),
+  });
 }
 
 export async function PATCH(

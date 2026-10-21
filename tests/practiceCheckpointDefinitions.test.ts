@@ -17,6 +17,7 @@ import {
 } from "@/lib/practiceProcesses/practiceDefinition";
 import {
   assertDefinitionsComplete,
+  resolveDefinitionsForPublish,
   upsertPracticeCheckpointDefinition,
 } from "@/lib/practiceProcesses/practiceDefinitionService";
 
@@ -105,5 +106,35 @@ describe("Current PracticeCheckpointDefinition", () => {
     definitionModel.findMany.mockResolvedValue([]);
     await expect(assertDefinitionsComplete({ practiceId: "practice-1", checkpointIds: ["cp-1"] }))
       .rejects.toMatchObject({ statusCode: 422 });
+  });
+
+  it("blockiert Publish mit stale Anchor-IDs und erlaubt es nach bewusster Korrektur", async () => {
+    const definition = {
+      id: "definition-1",
+      practice_id: "practice-1",
+      checkpoint_id: "cp-1",
+      selected_anchor_ids: ["anchor-2"],
+      implementation: "Standard",
+      updated_at: new Date("2026-10-01T12:00:00Z"),
+    };
+    definitionModel.findMany.mockResolvedValue([definition]);
+
+    await expect(resolveDefinitionsForPublish({
+      practiceId: "practice-1",
+      checkpoints: [{ checkpointId: "cp-1" }],
+    })).rejects.toMatchObject({ statusCode: 422 });
+
+    definitionModel.findMany.mockResolvedValue([{
+      ...definition,
+      selected_anchor_ids: ["anchor-1"],
+    }]);
+    await expect(resolveDefinitionsForPublish({
+      practiceId: "practice-1",
+      checkpoints: [{ checkpointId: "cp-1" }],
+    })).resolves.toMatchObject([{
+      checkpointId: "cp-1",
+      checkpointAnchors: [{ id: "anchor-1", text: "Anker" }],
+      selectedAnchorIds: ["anchor-1"],
+    }]);
   });
 });

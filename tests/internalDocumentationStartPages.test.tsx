@@ -12,6 +12,16 @@ import type { PracticeDocumentationTemplate } from "@/lib/practice/documentation
 const mockPush = jest.fn();
 const mockFetch = jest.fn();
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
+jest.mock("@/lib/questionnaireKiosk/auth", () => ({
+  getQuestionnaireKioskAccessFromCookies: jest.fn().mockResolvedValue({
+    kind: "device",
+    deviceId: "device-1",
+    practiceId: "practice-1",
+    deviceName: "Empfang",
+    capabilities: ["internal_documentation"],
+  }),
+  hasQuestionnaireKioskCapability: jest.fn().mockReturnValue(true),
+}));
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 Object.defineProperty(globalThis, "fetch", { configurable: true, writable: true, value: mockFetch });
@@ -34,8 +44,8 @@ function PracticeStart() {
 }
 
 const starts = [
-  ["Praxisstart", PracticeStart, "/api/internal-documentation"],
-  ["Kioskstart", KioskInternalDocumentationStartPage, "/api/questionnaire-kiosk/internal"],
+  ["Praxisstart", async () => <PracticeStart />, "/api/internal-documentation"],
+  ["Kioskstart", () => KioskInternalDocumentationStartPage(), "/api/questionnaire-kiosk/internal"],
 ] as const;
 
 function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
@@ -44,7 +54,7 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   element.dispatchEvent(new Event(element instanceof HTMLSelectElement ? "change" : "input", { bubbles: true }));
 }
 
-describe.each(starts)("interner Dokumentationslauncher: %s", (_label, StartComponent, endpoint) => {
+describe.each(starts)("interner Dokumentationslauncher: %s", (_label, renderStartPage, endpoint) => {
   beforeEach(() => {
     mockPush.mockReset();
     mockFetch.mockReset().mockImplementation(async (input) => {
@@ -62,7 +72,8 @@ describe.each(starts)("interner Dokumentationslauncher: %s", (_label, StartCompo
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
-    await act(async () => root.render(<StartComponent />));
+    const page = await renderStartPage();
+    await act(async () => root.render(page));
     await act(async () => Promise.resolve());
 
     const selects = container.querySelectorAll<HTMLSelectElement>("select");
@@ -90,7 +101,8 @@ describe.each(starts)("interner Dokumentationslauncher: %s", (_label, StartCompo
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
-    await act(async () => root.render(<StartComponent />));
+    const page = await renderStartPage();
+    await act(async () => root.render(page));
     await act(async () => Promise.resolve());
 
     const reference = container.querySelector<HTMLInputElement>('input[required]:not([type="checkbox"])')!;

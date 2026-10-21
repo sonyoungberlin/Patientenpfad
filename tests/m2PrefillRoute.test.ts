@@ -19,17 +19,11 @@ jest.mock("@/lib/auth", () => ({
 }));
 
 jest.mock("@/lib/server/prefillRuns", () => ({
-  getOpenRun: jest.fn(),
-  createOpenRun: jest.fn(),
-  freezeRun: jest.fn(),
+  saveCurrentRun: jest.fn(),
 }));
 
 import { prisma } from "@/lib/prisma";
-import {
-  createOpenRun,
-  freezeRun,
-  getOpenRun,
-} from "@/lib/server/prefillRuns";
+import { saveCurrentRun } from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
   caseSession: {
@@ -39,21 +33,24 @@ type PrismaMock = {
 };
 
 const prismaMock = prisma as unknown as PrismaMock;
-const getOpenRunMock = getOpenRun as unknown as jest.Mock;
-const createOpenRunMock = createOpenRun as unknown as jest.Mock;
-const freezeRunMock = freezeRun as unknown as jest.Mock;
+const saveCurrentRunMock = saveCurrentRun as unknown as jest.Mock;
 
 describe("PATCH /api/cases/[id]/m2/prefill", () => {
   beforeEach(() => {
     prismaMock.caseSession.findUnique.mockReset();
     prismaMock.caseSession.update.mockReset();
-    getOpenRunMock.mockReset();
-    createOpenRunMock.mockReset();
-    freezeRunMock.mockReset();
-    // Defaults: kein offener Run vorhanden → createOpenRun wird genutzt.
-    getOpenRunMock.mockResolvedValue(null);
-    createOpenRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: null });
-    freezeRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: new Date() });
+    saveCurrentRunMock.mockReset();
+    saveCurrentRunMock.mockImplementation(async (input: {
+      caseId: string;
+      answers: Record<string, unknown>;
+      caseSessionUpdate?: Record<string, unknown>;
+    }) => {
+      await prismaMock.caseSession.update({
+        where: { id: input.caseId },
+        data: { ...input.caseSessionUpdate, ctx_prefill: input.answers },
+      });
+      return { run: { id: "run-current", answers: input.answers }, changed: true };
+    });
   });
 
   it("speichert strukturierte Prefill-Daten in ctx_prefill (mode-konsistente MFA-IDs)", async () => {
@@ -90,6 +87,9 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
         preparation_mode: "mfa",
       }),
     });
+    expect(saveCurrentRunMock.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ resetM3RatingsOnChange: true }),
+    );
   });
 
   it("verwirft Cross-Mode-IDs: MFA-Speicherung lässt Patienten-IDs (M2-…) nicht durch", async () => {
@@ -268,14 +268,8 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
     expect(response.status).toBe(400);
   });
 
-  describe("Scope-Fix: Delta-Run-Kontaminierung", () => {
-    it("friert nur Checkpoints im Run-Scope ein – Out-of-Scope-Antworten vom Client werden nicht übernommen", async () => {
-      // Szenario: Ergänzungs-Flow hat Delta-Run nur für K01 angelegt.
-      // K04 ist zwar in session.active_checkpoints (DB), gehört aber nicht
-      // zum Delta. Der Client schickt trotzdem K04-Antworten mit "offen"
-      // (weil M2PrefillClient withDefaultOffenForCheckpoints für alle
-      // DB-Checkpoints aufruft). Ohne den Scope-Fix würden diese K04-Antworten
-      // blind in den eingefrorenen Run kopiert und in M3 als "offen" erscheinen.
+  describe("M2-Korrektur über Delta-Runs", () => {
+    it("übernimmt Antworten des vollständigen aktiven Scopes trotz offenem Delta-Run", async () => {
       prismaMock.caseSession.findUnique.mockResolvedValue({
         owner_account_id: "acc-test",
         m2_status: "none",
@@ -283,16 +277,7 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
       });
       prismaMock.caseSession.update.mockResolvedValue({});
 
-      // Existierender offener Delta-Run: scope ist nur K01.
-      getOpenRunMock.mockResolvedValue({
-        id: "run-delta",
-        sequence: 2,
-        frozen_at: null,
-        active_checkpoints: [{ id: "K01" }],
-      });
-      freezeRunMock.mockResolvedValue({ id: "run-delta", sequence: 2, frozen_at: new Date() });
-
-      // Client sendet Antworten für K01 UND K04 ("offen" für K04, außerhalb des Deltas).
+      // M2 sendet K01 und K04; K04 kann ein früher gespeicherter Checkpoint sein.
       const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
         method: "PATCH",
         body: JSON.stringify({
@@ -307,51 +292,66 @@ describe("PATCH /api/cases/[id]/m2/prefill", () => {
       const response = await PATCH(req, { params: Promise.resolve({ id: "case-1" }) });
       expect(response.status).toBe(200);
 
-      // freezeRun muss mit Antworten NUR für K01 aufgerufen werden.
-      expect(freezeRunMock).toHaveBeenCalledTimes(1);
-      const frozenAnswers = (freezeRunMock.mock.calls[0][0] as { answers: Record<string, unknown> }).answers;
-      expect(frozenAnswers).toHaveProperty("K01");
-      expect(frozenAnswers).not.toHaveProperty("K04");
-    });
-
-    it("normaler Run (kein Delta, voller Snapshot) schreibt alle Checkpoint-Antworten", async () => {
-      // Szenario: kein offener Run → createOpenRun liefert vollen Snapshot.
-      // Alle DB-Checkpoints sind im Scope → scopedPrefill == sanitizedPrefill.
-      prismaMock.caseSession.findUnique.mockResolvedValue({
-        owner_account_id: "acc-test",
-        m2_status: "none",
-        active_checkpoints: [{ id: "K01" }, { id: "K04" }],
-      });
-      prismaMock.caseSession.update.mockResolvedValue({});
-
-      // Kein offener Run – createOpenRun gibt vollen Snapshot zurück.
-      getOpenRunMock.mockResolvedValue(null);
-      createOpenRunMock.mockResolvedValue({
-        id: "run-full",
-        sequence: 1,
-        frozen_at: null,
-        active_checkpoints: [{ id: "K01" }, { id: "K04" }],
-      });
-      freezeRunMock.mockResolvedValue({ id: "run-full", sequence: 1, frozen_at: new Date() });
-
-      const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
-        method: "PATCH",
-        body: JSON.stringify({
-          prefill: {
-            K01: { "MFA-K01-01": "ja" },
-            K04: { "MFA-K04-01": "offen" },
-          },
-        }),
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const response = await PATCH(req, { params: Promise.resolve({ id: "case-1" }) });
-      expect(response.status).toBe(200);
-
-      // Beide Checkpoints müssen im Run eingefroren sein.
-      const frozenAnswers = (freezeRunMock.mock.calls[0][0] as { answers: Record<string, unknown> }).answers;
+      // Der Quellen-Upsert erhält den vollständigen aktiven Scope.
+      expect(saveCurrentRunMock).toHaveBeenCalledTimes(1);
+      const frozenAnswers = (saveCurrentRunMock.mock.calls[0][0] as { answers: Record<string, unknown> }).answers;
       expect(frozenAnswers).toHaveProperty("K01");
       expect(frozenAnswers).toHaveProperty("K04");
     });
+
+    it("normaler Run (kein Delta, voller Snapshot) schreibt alle Checkpoint-Antworten", async () => {
+      // Ohne offenen Delta-Run sind alle DB-Checkpoints im Scope.
+      prismaMock.caseSession.findUnique.mockResolvedValue({
+        owner_account_id: "acc-test",
+        m2_status: "none",
+        active_checkpoints: [{ id: "K01" }, { id: "K04" }],
+      });
+      prismaMock.caseSession.update.mockResolvedValue({});
+
+      const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+        method: "PATCH",
+        body: JSON.stringify({
+          prefill: {
+            K01: { "MFA-K01-01": "ja" },
+            K04: { "MFA-K04-01": "offen" },
+          },
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const response = await PATCH(req, { params: Promise.resolve({ id: "case-1" }) });
+      expect(response.status).toBe(200);
+
+      // Beide Checkpoints müssen dem aktuellen Quellenstand übergeben werden.
+      const frozenAnswers = (saveCurrentRunMock.mock.calls[0][0] as { answers: Record<string, unknown> }).answers;
+      expect(frozenAnswers).toHaveProperty("K01");
+      expect(frozenAnswers).toHaveProperty("K04");
+    });
+  });
+
+  it("speichert einen Entwurf ohne einen wartenden Patientenlink abzuschließen", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      m2_status: "waiting_for_patient",
+      active_checkpoints: [{ id: "K01" }],
+    });
+
+    const req = new NextRequest("http://localhost/api/cases/case-1/m2/prefill", {
+      method: "PATCH",
+      body: JSON.stringify({
+        prefill: { K01: { "MFA-K01-01": "ja" } },
+        mode: "mfa",
+        draft: true,
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await PATCH(req, { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(response.status).toBe(200);
+    const update = saveCurrentRunMock.mock.calls[0][0].caseSessionUpdate;
+    expect(update).toEqual({ preparation_mode: "mfa" });
+    expect(update).not.toHaveProperty("m2_status");
+    expect(update).not.toHaveProperty("m2_token");
   });
 });

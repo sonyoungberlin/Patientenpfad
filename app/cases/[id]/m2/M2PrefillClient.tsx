@@ -13,6 +13,10 @@ import {
 } from "@/lib/types";
 import { buildCaseM3Path } from "@/lib/flow/caseNavigation";
 import {
+  buildMfaDocumentationText,
+  getMfaDocumentationOptions,
+} from "@/lib/logic/mfaDocumentation";
+import {
   M2_QUESTIONS,
   M2_QUESTIONS_MFA,
   sanitizePrefillForMode,
@@ -123,50 +127,80 @@ const ASSESSMENT_GROUP_TITLE = "Durchgeführte Assessments";
 export function M2PrefillClient({
   caseId,
   checkpoints,
-  initialPrefill,
+  m1SnapshotInitial,
+  initialPrefillBySource,
   initialPreparationMode = "none",
-  answeredCheckpointIdsBySource = { mfa: [], conversation: [], patient: [] },
 }: {
   caseId: string;
   checkpoints: ActiveCheckpoint[];
-  initialPrefill: M2PrefillData;
-  initialPreparationMode?: string;
-  /**
-   * Pro Quelle: Checkpoint-IDs, die bereits in einem eingefrorenen Run
-   * dieser Quelle Antworten haben. Diese Checkpoints werden in M2 nicht
-   * mehr als aktive Eingabe angezeigt (sie sind im Prefill-Fenster der
-   * Quelle bereits ausgefüllt).
-   */
-  answeredCheckpointIdsBySource?: {
-    mfa: string[];
-    conversation: string[];
-    patient: string[];
+  m1SnapshotInitial?: unknown;
+  initialPrefillBySource: {
+    mfa: M2PrefillData;
+    conversation: M2PrefillData;
   };
+  initialPreparationMode?: string;
 }) {
   const router = useRouter();
-  const [values, setValues] = useState<M2PrefillData>(() => {
-    const init: M2PrefillData = {};
-    for (const cp of checkpoints) {
-      init[cp.id] = initialPrefill[cp.id] ?? {};
-    }
-    return init;
+  const [valuesBySource, setValuesBySource] = useState(() => {
+    const initialize = (prefill: M2PrefillData): M2PrefillData => {
+      const init: M2PrefillData = {};
+      for (const cp of checkpoints) init[cp.id] = prefill[cp.id] ?? {};
+      return init;
+    };
+    return {
+      mfa: initialize(initialPrefillBySource.mfa),
+      conversation: initialize(initialPrefillBySource.conversation),
+    };
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const isDirtyRef = useRef(false);
+  const [dirtySources, setDirtySources] = useState({ mfa: false, conversation: false });
+  const [documentationActivityIds, setDocumentationActivityIds] = useState<string[]>([]);
+  const [documentationNextStepIds, setDocumentationNextStepIds] = useState<string[]>([]);
+  const [documentationAdditionalText, setDocumentationAdditionalText] = useState("");
+  const [documentationCopied, setDocumentationCopied] = useState(false);
+  const [documentationCopyError, setDocumentationCopyError] = useState<string | null>(null);
+  const dirtySourcesRef = useRef(dirtySources);
   // Lokaler Modus, der nur die Fragenquelle bestimmt:
   // - "mfa"     → MFA-Standardweg (M2_QUESTIONS_MFA)
-  // - "patient" → Patientengespräch in der Praxis (M2_QUESTIONS)
+  // - "patient" → Patientengespräch in der Praxis (Quelle "conversation")
+  // Asynchrone Patientenlink-Antworten (Quelle "patient") sind ein eigener Weg.
   // Persistenz/API/DB bleiben unverändert (immer derselbe Prefill-Endpunkt).
   // Initial wird der zuletzt gespeicherte Vorbereitungsweg übernommen,
   // damit ein bereits abgeschlossener Fall nicht beim erneuten Öffnen
   // unbemerkt vom MFA-Default überschrieben werden kann.
   const [mode, setMode] = useState<"mfa" | "patient">(() =>
-    initialPreparationMode === "conversation" || initialPreparationMode === "patient"
+    initialPreparationMode === "conversation"
       ? "patient"
       : "mfa",
   );
+  const sourceForMode = mode === "patient" ? "conversation" : "mfa";
+  const values = valuesBySource[sourceForMode];
+  const documentationOptions = getMfaDocumentationOptions(m1SnapshotInitial, checkpoints);
+  const documentationText = buildMfaDocumentationText(
+    documentationOptions,
+    documentationActivityIds,
+    documentationNextStepIds,
+    documentationAdditionalText,
+  );
+
+  async function copyDocumentation() {
+    if (!documentationText) return;
+    setDocumentationCopyError(null);
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        throw new Error("Clipboard API unavailable");
+      }
+      await navigator.clipboard.writeText(documentationText);
+      setDocumentationActivityIds([]);
+      setDocumentationNextStepIds([]);
+      setDocumentationAdditionalText("");
+      setDocumentationCopied(true);
+    } catch {
+      setDocumentationCopied(false);
+      setDocumentationCopyError("Kurzdokumentation konnte nicht kopiert werden.");
+    }
+  }
 
   useEffect(() => {
     function handleSetMode(e: Event) {
@@ -180,12 +214,12 @@ export function M2PrefillClient({
   }, []);
 
   useEffect(() => {
-    isDirtyRef.current = isDirty;
-  }, [isDirty]);
+    dirtySourcesRef.current = dirtySources;
+  }, [dirtySources]);
 
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
-      if (isDirtyRef.current) {
+      if (dirtySourcesRef.current.mfa || dirtySourcesRef.current.conversation) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -196,7 +230,7 @@ export function M2PrefillClient({
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (!isDirtyRef.current) return;
+      if (!dirtySourcesRef.current.mfa && !dirtySourcesRef.current.conversation) return;
       const anchor = (e.target as HTMLElement).closest("a");
       if (!anchor || !anchor.href) return;
       try {
@@ -215,17 +249,20 @@ export function M2PrefillClient({
   }, []);
 
   function handleAnswer(checkpointId: string, questionId: string, answer: M2Answer) {
-    setIsDirty(true);
-    setValues((prev) => ({
+    setDirtySources((prev) => ({ ...prev, [sourceForMode]: true }));
+    setValuesBySource((prev) => ({
       ...prev,
-      [checkpointId]: {
-        ...(prev[checkpointId] ?? {}),
-        [questionId]: answer,
+      [sourceForMode]: {
+        ...prev[sourceForMode],
+        [checkpointId]: {
+          ...(prev[sourceForMode][checkpointId] ?? {}),
+          [questionId]: answer,
+        },
       },
     }));
   }
 
-  async function handleSave() {
+  async function handleSave(continueToM3: boolean) {
     setSaving(true);
     setError(null);
 
@@ -233,8 +270,8 @@ export function M2PrefillClient({
       // Vor dem Senden lokal nach aktivem Modus filtern, damit nie versehentlich
       // Antworten des jeweils anderen Wegs (z. B. nach Modus-Toggle) mitgeschickt
       // werden. Die Server-Route sanitisiert zusätzlich erneut.
-      const persistedMode = mode === "patient" ? "conversation" : "mfa";
-      const cleanValues = sanitizePrefillForMode(values, persistedMode);
+      const persistedMode = sourceForMode;
+      const cleanValues = sanitizePrefillForMode(valuesBySource[sourceForMode], persistedMode);
       // Verbindliche Regel: Nach dem Speichern müssen alle Fragen aller
       // aktiven Checkpoints im Prefill enthalten sein. Fehlende Antworten
       // werden hier explizit auf "offen" gesetzt, bevor der Request raus geht.
@@ -254,6 +291,7 @@ export function M2PrefillClient({
           // - "mfa"     → "mfa"
           // - "patient" (Patientengespräch in der Praxis) → "conversation"
           mode: persistedMode,
+          draft: !continueToM3,
         }),
       });
 
@@ -262,8 +300,8 @@ export function M2PrefillClient({
         return;
       }
 
-      setIsDirty(false);
-      router.push(buildCaseM3Path(caseId));
+      setDirtySources((prev) => ({ ...prev, [sourceForMode]: false }));
+      if (continueToM3) router.push(buildCaseM3Path(caseId));
     } catch {
       setError("Angaben konnten nicht gespeichert werden.");
     } finally {
@@ -277,14 +315,6 @@ export function M2PrefillClient({
         {mode === "patient" ? "Patientengespräch" : "MFA-Vorbereitung"}
       </h2>
       {(() => {
-        // Per-Source-Filter: Nur Checkpoints anzeigen, die für die aktuelle
-        // Quelle noch nicht in einem eingefrorenen Run beantwortet wurden.
-        // "patient"-Modus nutzt die "conversation"-Quelle (Patientengespräch
-        // in der Praxis wird als source="conversation" gespeichert).
-        const sourceForMode = mode === "patient" ? "conversation" : "mfa";
-        const answeredSet = new Set(
-          answeredCheckpointIdsBySource[sourceForMode] ?? [],
-        );
         // Primäre Sichtbarkeitsregel: nur Checkpoints rendern, deren perspectives
         // die aktive Vorbereitungsperspektive enthält.
         const perspectiveForMode =
@@ -292,7 +322,6 @@ export function M2PrefillClient({
             ? CheckpointPerspective.PATIENT
             : CheckpointPerspective.MFA;
         const visibleCheckpoints = checkpoints.filter((cp) => {
-          if (answeredSet.has(cp.id)) return false;
           // MULTI_SELECT-Checkpoints sind M3-only → immer aus M2 ausblenden.
           if (isMultiSelectCheckpoint(cp)) return false;
           // ASSESSMENT-Checkpoints (K12) nur anzeigen, wenn enabled === true.
@@ -621,14 +650,122 @@ export function M2PrefillClient({
       ) : null}
       <button
         type="button"
+        className="btn-secondary"
+        data-m2-save-draft
+        onClick={() => void handleSave(false)}
+        disabled={saving}
+        style={{ marginTop: "1rem", marginRight: "0.5rem" }}
+      >
+        Entwurf speichern
+      </button>
+      <button
+        type="button"
         className="btn-primary"
         data-m2-save
-        onClick={() => void handleSave()}
+        onClick={() => void handleSave(true)}
         disabled={saving}
         style={{ marginTop: "1rem" }}
       >
         Speichern und weiter zur ärztlichen Checkliste
       </button>
+      {mode === "mfa" && documentationOptions.activities.length > 0 ? (
+        <section
+          data-mfa-documentation
+          aria-label="MFA-Kurzdokumentation"
+          style={{ display: "grid", gap: "0.6rem", marginTop: "1.5rem" }}
+        >
+          <h3 style={{ margin: 0 }}>Kurzdokumentation fürs Krankenblatt</h3>
+          <fieldset
+            data-mfa-documentation-activities
+            style={{ border: 0, margin: 0, padding: 0, display: "grid", gap: "0.25rem" }}
+          >
+            <legend>Was wurde gemacht?</legend>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))", gap: "0.25rem 0.75rem" }}>
+              {documentationOptions.activities.map((option) => (
+                <label key={option.id} style={{ display: "flex", gap: "0.4rem", alignItems: "flex-start" }}>
+                  <input
+                    type="checkbox"
+                    data-mfa-documentation-activity-option={option.id}
+                    checked={documentationActivityIds.includes(option.id)}
+                    onChange={() => {
+                      setDocumentationActivityIds((current) =>
+                        current.includes(option.id)
+                          ? current.filter((id) => id !== option.id)
+                          : [...current, option.id],
+                      );
+                      setDocumentationCopied(false);
+                      setDocumentationCopyError(null);
+                    }}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset
+            data-mfa-documentation-next-steps
+            style={{ border: 0, margin: 0, padding: 0, display: "grid", gap: "0.25rem" }}
+          >
+            <legend>Was ist als nächster organisatorischer Schritt vorgesehen?</legend>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))", gap: "0.25rem 0.75rem" }}>
+              {documentationOptions.nextSteps.map((option) => (
+                <label key={option.id} style={{ display: "flex", gap: "0.4rem", alignItems: "flex-start" }}>
+                  <input
+                    type="checkbox"
+                    data-mfa-documentation-next-step-option={option.id}
+                    checked={documentationNextStepIds.includes(option.id)}
+                    onChange={() => {
+                      setDocumentationNextStepIds((current) =>
+                        current.includes(option.id)
+                          ? current.filter((id) => id !== option.id)
+                          : [...current, option.id],
+                      );
+                      setDocumentationCopied(false);
+                      setDocumentationCopyError(null);
+                    }}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label style={{ display: "grid", gap: "0.25rem" }}>
+            Ergänzung (optional)
+            <textarea
+              data-mfa-documentation-additional
+              value={documentationAdditionalText}
+              maxLength={160}
+              rows={2}
+              onChange={(event) => {
+                setDocumentationAdditionalText(event.target.value);
+                setDocumentationCopied(false);
+                setDocumentationCopyError(null);
+              }}
+            />
+          </label>
+          <p
+            data-mfa-documentation-preview
+            aria-live="polite"
+            style={{ margin: 0, whiteSpace: "pre-wrap" }}
+          >
+            {documentationText || "Tätigkeit und nächsten organisatorischen Schritt auswählen."}
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              data-mfa-documentation-copy
+              disabled={!documentationText}
+              onClick={() => void copyDocumentation()}
+            >
+              {documentationCopied ? "Kopiert ✓" : "Kurzdokumentation kopieren"}
+            </button>
+            {documentationCopyError ? (
+              <span className="text-error" role="alert">{documentationCopyError}</span>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

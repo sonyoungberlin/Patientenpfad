@@ -163,6 +163,14 @@ describe("practice working-state lifecycle", () => {
 
   it("8. erzeugt beim Publish den Katalogeintrag und löscht die Working Session", async () => {
     pm.practiceCatalogEntry.findFirst.mockResolvedValueOnce(null);
+    resolveDefinitionsMock.mockResolvedValueOnce([{
+      checkpointId: "cp-a",
+      checkpointTitle: "Aktueller DB-Titel",
+      checkpointDescription: "Beschreibung",
+      checkpointAnchors: [],
+      selectedAnchorIds: [],
+      implementation: "Umsetzen",
+    }]);
     pm.workflowSession.findFirst.mockResolvedValue({
       id: "session-1",
       owner_practice_id: "practice-1",
@@ -179,7 +187,34 @@ describe("practice working-state lifecycle", () => {
 
     expect(result).toEqual({ ok: true, id: "entry-2" });
     expect(pm.practiceCatalogEntry.create).toHaveBeenCalledTimes(1);
+    expect(pm.practiceCatalogEntry.create.mock.calls[0][0].data.snapshot.checkpoints[0].checkpointTitle)
+      .toBe("Aktueller DB-Titel");
     expect(pm.workflowSession.delete).toHaveBeenCalledWith({ where: { id: "session-1" } });
+  });
+
+  it("blockiert Publish solange eine Praxisdefinition eine stale Anchor-ID enthält", async () => {
+    pm.practiceCatalogEntry.findFirst.mockResolvedValue(null);
+    pm.workflowSession.findFirst.mockResolvedValue({
+      id: "session-1",
+      owner_practice_id: "practice-1",
+      process_snapshot: {
+        ...snapshot,
+        checkpoints: [{ ...snapshot.checkpoints[0], decision: "PFLICHT" }],
+      },
+      source_catalog_entry_id: null,
+    });
+    resolveDefinitionsMock.mockRejectedValueOnce(
+      Object.assign(new Error("Praxisdefinition ist stale"), { statusCode: 422 }),
+    );
+
+    await expect(publishToCatalog({
+      sessionId: "session-1",
+      title: "Fall A",
+      practiceId: "practice-1",
+      accountId: "account-1",
+    })).rejects.toMatchObject({ statusCode: 422 });
+    expect(pm.practiceCatalogEntry.create).not.toHaveBeenCalled();
+    expect(pm.workflowSession.delete).not.toHaveBeenCalled();
   });
 
   it("9. liefert beim Publish-Retry den bestehenden Eintrag ohne Duplikat", async () => {

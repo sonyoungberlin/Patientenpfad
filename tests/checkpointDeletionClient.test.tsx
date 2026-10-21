@@ -83,3 +83,81 @@ describe("Checkpoint löschen", () => {
     await act(async () => root.unmount());
   });
 });
+
+describe("Checkpoint speichern", () => {
+  let originalFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    push.mockReset();
+    refresh.mockReset();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    document.body.replaceChildren();
+  });
+
+  it("übernimmt beim Save die serverseitig persistierte Anchor-ID", async () => {
+    const persistedAnchorId = "9e860f4a-2b96-4f45-8f6b-f5061a6f2a88";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        checkpoint: {
+          id: "mein-checkpoint",
+          title: "Mein Checkpoint",
+          description: "",
+          orientationHint: "",
+          orientationAnchors: [
+            { id: "mein-checkpoint-a1", text: "Bestehender Anker" },
+            { id: persistedAnchorId, text: "Neuer Anker" },
+          ],
+        },
+      }),
+    }) as jest.Mock;
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<CheckpointDetailClient
+        initialDraft={{
+          title: "Mein Checkpoint",
+          description: "",
+          orientationHint: "",
+          orientationAnchors: [{ id: "mein-checkpoint-a1", text: "Bestehender Anker" }],
+        }}
+        fixedId="mein-checkpoint"
+      />);
+    });
+
+    await act(async () => {
+      [...container.querySelectorAll("button")]
+        .find((button) => button.textContent === "+ Orientierungsfrage")?.click();
+    });
+    const anchorIdLabel = [...container.querySelectorAll("span")]
+      .find((span) => span.textContent === "ID: mein-checkpoint-a2");
+    const newAnchorInput = anchorIdLabel?.parentElement?.querySelectorAll("input")[1];
+    expect(newAnchorInput).toBeDefined();
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(newAnchorInput, "Neuer Anker");
+      newAnchorInput?.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    await act(async () => {
+      [...container.querySelectorAll("button")]
+        .find((button) => button.textContent === "Speichern")?.click();
+      await Promise.resolve();
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/admin/checkpoints/mein-checkpoint",
+      expect.objectContaining({ method: "PUT" }),
+    );
+    expect(container.textContent).toContain(`ID: ${persistedAnchorId}`);
+    expect(container.textContent).not.toContain("ID: mein-checkpoint-a2");
+    expect(container.textContent).toContain("Erfolgreich gespeichert.");
+    await act(async () => root.unmount());
+  });
+});

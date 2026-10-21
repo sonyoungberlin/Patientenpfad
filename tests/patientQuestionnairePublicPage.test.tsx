@@ -16,6 +16,11 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
+jest.mock("@/lib/auth", () => ({
+  getCurrentKioskMode: jest.fn(),
+  getKioskSessionAccountFromCookies: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock("@/components/SelfCheckInQrCode", () => ({
   SelfCheckInQrCode: ({ reference }: { reference: string }) => (
     <div data-self-check-in-qr data-reference={reference} />

@@ -116,6 +116,7 @@ export function M3ChecklistClient({
   messageSignature = "",
   doctorConfirmed = false,
   clinicalStatus = "none",
+  prefillReviewPending = false,
   ergaenzungGestartet = false,
 }: {
   caseId: string;
@@ -126,6 +127,7 @@ export function M3ChecklistClient({
   messageSignature?: string;
   doctorConfirmed?: boolean;
   clinicalStatus?: string;
+  prefillReviewPending?: boolean;
   /** Wenn true, wurde für diesen Fall bereits ein Ergänzungslauf gestartet. */
   ergaenzungGestartet?: boolean;
 }) {
@@ -144,12 +146,15 @@ export function M3ChecklistClient({
   // - "prepared"  : Arzt hat in M3 vorbereitet / Lücken markiert (MFA übernimmt weiter)
   // - "confirmed" : Arzt hat M3 final geprüft (fachlicher Abschluss)
   const [clinical, setClinical] = useState<string>(clinicalStatus);
+  const clinicalStatusRef = useRef(clinical);
+  const [showPrefillReviewNotice, setShowPrefillReviewNotice] =
+    useState(prefillReviewPending);
   const [savingClinical, setSavingClinical] = useState<boolean>(false);
   // Schritt 4 der PrefillRun-Umstellung: Einstieg „Weitere Vorbereitung
   // starten". Nur lokaler UI-Zustand; Klick ruft die neue Route, navigiert
   // dann nach M2. Keine Wirkung auf bestehende Buttons / M3-Lock-Logik.
   const [startingPrefillRun, setStartingPrefillRun] = useState<boolean>(false);
-  const isLocked = waitingForPatient || confirmed;
+  const isLocked = waitingForPatient || confirmed || clinical === "confirmed";
   // MULTI_SELECT checkpoints (K10/K11) are read from the DB via initialCheckpoints
   // but are no longer editable in M3 – they are set/changed in M1.
   // They are still included in allCheckpoints for M5 documentation output.
@@ -171,12 +176,25 @@ export function M3ChecklistClient({
       status: normalizeStatus(checkpoint),
     })),
   );
-  // isDirty tracks unsaved local M3 checkpoint changes (per-Klick-Saves
-  // wurden entfernt – nur "Ärztlich bestätigt" persistiert den Stand).
+  // isDirty is true only while checkpoint status requests are in flight.
   const [isDirty, setIsDirty] = useState<boolean>(false);
+  const [savingStatuses, setSavingStatuses] = useState(false);
+  const pendingStatusSavesRef = useRef(0);
+  const statusSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [skipping, setSkipping] = useState(false);
+
+  function applyPrefillResetResponse(value: unknown) {
+    if (!value || typeof value !== "object") return;
+    const body = value as Record<string, unknown>;
+    if (typeof body.clinical_status === "string") {
+      clinicalStatusRef.current = body.clinical_status;
+      setClinical(body.clinical_status);
+    }
+    if (body.prefill_reset === true) setShowPrefillReviewNotice(true);
+    router.refresh();
+  }
 
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
@@ -375,16 +393,57 @@ export function M3ChecklistClient({
     }
   }
 
-  // Fachregel: M3 speichert nicht jeden Klick – Checkpoint-Status-Änderungen
-  // sind zunächst nur lokaler Arbeitsstand. Fehlerbehandlung und Persistenz
-  // erfolgen ausschließlich beim Batch-Save in closeCase().
-  function updateStatus(checkpointId: string, status: CheckpointStatus) {
-    setCheckpoints((current) =>
-      current.map((checkpoint) =>
-        checkpoint.id === checkpointId ? { ...checkpoint, status } : checkpoint,
-      ),
-    );
+  async function updateStatus(checkpointId: string, status: CheckpointStatus) {
+    if (isLocked) return;
+
+    setError(null);
+    pendingStatusSavesRef.current += 1;
+    setSavingStatuses(true);
     setIsDirty(true);
+
+    const saveOperation = statusSaveQueueRef.current.then(async () => {
+      const response = await fetch(`/api/cases/${caseId}/checkpoint/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkpoint_id: checkpointId,
+          status,
+          expected_clinical_status: clinicalStatusRef.current,
+        }),
+      });
+      const body =
+        typeof response.json === "function"
+          ? await response.json().catch(() => null)
+          : null;
+      if (!response.ok) {
+        applyPrefillResetResponse(body);
+        throw new Error("checkpoint_save_failed");
+      }
+
+      if (typeof body?.clinical_status === "string") {
+        clinicalStatusRef.current = body.clinical_status;
+        setClinical(body.clinical_status);
+      }
+      if (body?.review_complete === true) setShowPrefillReviewNotice(false);
+
+      setCheckpoints((current) =>
+        current.map((checkpoint) =>
+          checkpoint.id === checkpointId ? { ...checkpoint, status } : checkpoint,
+        ),
+      );
+    });
+    statusSaveQueueRef.current = saveOperation.catch(() => undefined);
+
+    try {
+      await saveOperation;
+    } catch {
+      setError("Bewertung konnte nicht gespeichert werden. Bitte erneut versuchen.");
+    } finally {
+      pendingStatusSavesRef.current -= 1;
+      const hasPendingSaves = pendingStatusSavesRef.current > 0;
+      setSavingStatuses(hasPendingSaves);
+      setIsDirty(hasPendingSaves);
+    }
   }
 
   async function skipM2Waiting() {
@@ -407,7 +466,7 @@ export function M3ChecklistClient({
   }
 
   async function closeCase() {
-    if (confirmed) return;
+    if (confirmed || isLocked || pendingStatusSavesRef.current > 0) return;
     setClosing(true);
     setError(null);
     // Fachregel: „Ärztlich bestätigt" friert M3 ein und persistiert den
@@ -422,9 +481,17 @@ export function M3ChecklistClient({
       const response = await fetch(`/api/cases/${caseId}/close`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkpoints: allCp }),
+        body: JSON.stringify({
+          checkpoints: allCp,
+          expected_clinical_status: clinicalStatusRef.current,
+        }),
       });
+      const responseBody =
+        typeof response.json === "function"
+          ? await response.json().catch(() => null)
+          : null;
       if (!response.ok) {
+        applyPrefillResetResponse(responseBody);
         setError("Fall konnte nicht ärztlich bestätigt werden.");
         return;
       }
@@ -482,6 +549,17 @@ export function M3ChecklistClient({
 
   return (
     <section>
+      {showPrefillReviewNotice && !confirmed && clinical !== "confirmed" ? (
+        <p
+          data-prefill-reset-notice
+          role="status"
+          aria-live="polite"
+          className="text-error"
+          style={{ marginBottom: "1rem" }}
+        >
+          M2 wurde aktualisiert – die ärztlichen Bewertungen wurden zurückgesetzt. Bitte erneut beurteilen.
+        </p>
+      ) : null}
       {m2Status === "waiting_for_patient" ? (
         <div
           data-m2-waiting-banner
@@ -751,7 +829,7 @@ export function M3ChecklistClient({
           data-close-case
           data-doctor-confirm
           onClick={closeCase}
-          disabled={closing || confirmed}
+          disabled={closing || confirmed || savingStatuses || clinical === "confirmed"}
         >
           {confirmed
             ? "Ärztlich bestätigt ✓"

@@ -88,7 +88,7 @@ describe("getSessionAccount: current_practice", () => {
     // is_admin bleibt Account-Eigenschaft
     expect(acc!.is_admin).toBe(false);
     expect(acc!.memberships).toEqual([
-      { practice_id: "p-1", role: PracticeRole.OWNER },
+      { practice_id: "p-1", role: PracticeRole.OWNER, kiosk_mode: null },
     ]);
   });
 

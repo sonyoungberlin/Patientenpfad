@@ -3,16 +3,22 @@ import { PATCH as closeHandler } from "@/app/api/cases/[id]/close/route";
 import { SESSION_COOKIE } from "@/lib/auth";
 
 jest.mock("@/lib/prisma", () => ({
-  prisma: {
+  prisma: (() => {
+    const caseSession = {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    };
+    return {
     session: {
       findUnique: jest.fn(),
       delete: jest.fn(),
     },
-    caseSession: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-  },
+      caseSession,
+      $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
+        callback({ caseSession }),
+      ),
+    };
+  })(),
 }));
 
 import { prisma } from "@/lib/prisma";
@@ -24,10 +30,14 @@ type PrismaMock = {
 
 const pm = prisma as unknown as PrismaMock;
 
-function requestWithCookie(url: string) {
+function requestWithCookie(url: string, body?: unknown) {
   return new NextRequest(url, {
     method: "PATCH",
-    headers: { Cookie: `${SESSION_COOKIE}=good-token` },
+    headers: {
+      Cookie: `${SESSION_COOKIE}=good-token`,
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 }
 
@@ -146,6 +156,27 @@ describe("PATCH /api/cases/[id]/close", () => {
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(json.already_confirmed).toBe(true);
+    expect(pm.caseSession.update).not.toHaveBeenCalled();
+  });
+
+  it("lehnt einen veralteten M3-Abschluss nach Prefill-Änderung ab", async () => {
+    mockSession(true);
+    pm.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-owner",
+      doctor_confirmed: false,
+      clinical_status: "prefill_changed:token-new",
+    });
+    const req = requestWithCookie(
+      "http://localhost/api/cases/case-1/close",
+      {
+        checkpoints: [{ id: "K01", status: "OK" }],
+        expected_clinical_status: "prepared",
+      },
+    );
+
+    const res = await closeHandler(req, { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(res.status).toBe(409);
     expect(pm.caseSession.update).not.toHaveBeenCalled();
   });
 });

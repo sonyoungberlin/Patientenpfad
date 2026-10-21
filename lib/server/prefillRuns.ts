@@ -10,28 +10,74 @@
  *
  * Vorab festgelegte fachliche Regeln:
  *
- *  1. Patientenrücklauf bei offenem MFA-Run wird **nicht** gemerged und
- *     überschreibt **nicht** – `appendFrozenRun` mit `source = "patient"`
- *     liefert einen eigenen zusätzlichen Run und tastet einen offenen
- *     MFA-/Conversation-Run nicht an.
+ *  1. Der Patientenrücklauf verwendet denselben aktuellen-Stand-Upsert wie
+ *     MFA und Patientengespräch. Ein offener Run einer anderen Quelle bleibt
+ *     unverändert.
  *  2. Token-Invalidierung beim MFA-Speichern bleibt weiterhin Sache der
  *     Route; diese Schicht ändert `m2_token` / `m2_status` nicht.
- *  3. Bei `clinical_status = "confirmed"` oder `doctor_confirmed = true`
- *     verweigern `createOpenRun`, `freezeRun` und `appendFrozenRun` per
- *     Default die Anlage neuer Runs (Wurf von `PrefillRunError`). Für die
- *     Transition in Schritt 2 können Routen die Sperre mit
- *     `allowConfirmed: true` überbrücken, damit das Außenverhalten
- *     identisch zur vorherigen Implementierung bleibt; der endgültige
- *     Hard-Stop folgt in einem späteren Schritt.
+ *  3. Speichernde Run-Operationen akzeptieren keine ärztlich bestätigten
+ *     Fälle. `allowConfirmed` bleibt für bestehende Aufrufer typisiert,
+ *     kann diese Schreibsperre aber nicht umgehen.
  */
 
 import { Prisma, type PrismaClient, type PrefillRun } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 
 import { prisma as defaultPrisma } from "@/lib/prisma";
 
 /** Erlaubte Quellen eines Runs. */
 export const PREFILL_RUN_SOURCES = ["mfa", "conversation", "patient"] as const;
 export type PrefillRunSource = (typeof PREFILL_RUN_SOURCES)[number];
+export const PREFILL_CHANGED_STATUS_PREFIX = "prefill_changed:";
+
+export type PrefillChangedClinicalStatus = {
+  token: string;
+  wasPrepared: boolean;
+  reviewedCheckpointIds: string[];
+};
+
+export function isPrefillChangedClinicalStatus(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith(PREFILL_CHANGED_STATUS_PREFIX);
+}
+
+export function parsePrefillChangedClinicalStatus(
+  value: unknown,
+): PrefillChangedClinicalStatus | null {
+  if (!isPrefillChangedClinicalStatus(value)) return null;
+  const parts = value.slice(PREFILL_CHANGED_STATUS_PREFIX.length).split(":");
+  const wasPrepared = parts[0] === "prepared";
+  const tokenIndex = wasPrepared ? 1 : 0;
+  const token = parts[tokenIndex];
+  if (!token) return null;
+
+  let reviewedCheckpointIds: string[] = [];
+  if (parts[tokenIndex + 1] === "reviewed" && parts[tokenIndex + 2]) {
+    try {
+      const decoded: unknown = JSON.parse(decodeURIComponent(parts[tokenIndex + 2]));
+      if (Array.isArray(decoded)) {
+        reviewedCheckpointIds = decoded.filter(
+          (checkpointId): checkpointId is string => typeof checkpointId === "string",
+        );
+      }
+    } catch {
+      reviewedCheckpointIds = [];
+    }
+  }
+
+  return { token, wasPrepared, reviewedCheckpointIds };
+}
+
+export function withReviewedPrefillCheckpoints(
+  marker: PrefillChangedClinicalStatus,
+  checkpointIds: Iterable<string>,
+): string {
+  const ids = [...new Set(checkpointIds)].sort();
+  return `${PREFILL_CHANGED_STATUS_PREFIX}${marker.wasPrepared ? "prepared:" : ""}${marker.token}:reviewed:${encodeURIComponent(JSON.stringify(ids))}`;
+}
+
+export function isPreparedClinicalStatus(value: unknown): boolean {
+  return value === "prepared" || parsePrefillChangedClinicalStatus(value)?.wasPrepared === true;
+}
 
 export function isPrefillRunSource(value: unknown): value is PrefillRunSource {
   return (
@@ -104,12 +150,18 @@ type FreezeRunInput = {
 
 type AppendFrozenRunInput = CreateOpenRunInput & {
   answers: PrefillRunAnswers;
+  caseSessionUpdate?: Omit<Prisma.CaseSessionUpdateInput, "ctx_prefill">;
+  /** Neutralisiert M3-Ratings atomar, aber nur wenn sich der effektive Prefill ändert. */
+  resetM3RatingsOnChange?: boolean;
 };
+
+type SaveCurrentRunInput = AppendFrozenRunInput;
 
 type CaseGuardRow = {
   id: string;
   doctor_confirmed: boolean;
   clinical_status: string;
+  active_checkpoints?: unknown;
 };
 
 /**
@@ -136,6 +188,25 @@ export async function getOpenRun(
     where: { case_id: caseId, frozen_at: null },
     orderBy: { sequence: "desc" },
   });
+}
+
+/**
+ * Liefert den aktuell wirksamen Antwortstand einer Quelle. Ältere Delta-Runs
+ * bleiben dabei gültig: spätere Antworten überschreiben nur dieselben
+ * Checkpoint-/Fragewerte; ausgelassene Antworten werden beibehalten. `null`
+ * bedeutet, dass es für die Quelle noch keinen Run gibt.
+ */
+export async function getCurrentRunAnswers(
+  caseId: string,
+  source: PrefillRunSource,
+  client: PrismaLike = defaultPrisma,
+): Promise<PrefillRunAnswers | null> {
+  const runs = await client.prefillRun.findMany({
+    where: { case_id: caseId },
+    orderBy: { sequence: "asc" },
+  });
+  const sourceRuns = runs.filter((run) => run.source === source);
+  return sourceRuns.length > 0 ? mergeRunAnswers(sourceRuns) : null;
 }
 
 /**
@@ -237,27 +308,100 @@ export async function appendFrozenRun(
   input: AppendFrozenRunInput,
   client: PrismaLike = defaultPrisma,
 ): Promise<PrefillRun> {
+  const result = await saveCurrentRun(input, client);
+  return result.run;
+}
+
+/**
+ * Aktualisiert den aktuellen wirksamen Run einer Quelle. Vorhandene Runs
+ * werden je Checkpoint in Sequenzreihenfolge zusammengeführt, damit ältere
+ * Delta-Runs weiterhin gültige Antworten beitragen. Der neueste Run dieser
+ * Quelle wird anschließend als vollständiger aktueller Stand überschrieben.
+ *
+ * Das Schreiben des Runs und optionaler CaseSession-Kompatibilitätsdaten
+ * erfolgt atomar. Der Rückgabewert `changed` vergleicht den wirksamen
+ * Antwortstand vor und nach dem Speichern und steuert bei aktivierter
+ * `resetM3RatingsOnChange`-Option den M3-Reset in derselben Transaktion.
+ */
+export async function saveCurrentRun(
+  input: SaveCurrentRunInput,
+  client: PrismaLike = defaultPrisma,
+): Promise<{ run: PrefillRun; changed: boolean }> {
   if (!isPrefillRunSource(input.source)) {
     throw new PrefillRunError("invalid_source", `Ungültige Quelle: ${String(input.source)}`);
   }
 
-  return client.$transaction(async (tx) => {
-    const guard = await loadCaseGuard(tx, input.caseId);
-    if (!input.allowConfirmed) assertCaseAcceptsNewRun(guard);
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await client.$transaction(async (tx) => {
+        const guard = await loadCaseGuard(tx, input.caseId);
+        assertCaseAcceptsNewRun(guard);
 
-    const sequence = await nextSequence(tx, input.caseId);
-    return tx.prefillRun.create({
-      data: {
-        case_id: input.caseId,
-        sequence,
-        source: input.source,
-        active_checkpoints: toJsonInput(input.activeCheckpoints),
-        answers: toJsonInput(input.answers),
-        created_by_account_id: input.createdByAccountId ?? null,
-        frozen_at: new Date(),
-      },
-    });
-  });
+        const runs = await tx.prefillRun.findMany({
+          where: { case_id: input.caseId },
+          orderBy: { sequence: "asc" },
+        });
+        const sourceRuns = runs.filter((run) => run.source === input.source);
+        const existingAnswers = mergeRunAnswers(sourceRuns);
+        const nextAnswers = mergePrefillAnswers(existingAnswers, input.answers);
+        const changed = stableJson(existingAnswers) !== stableJson(nextAnswers);
+
+        const now = new Date();
+        const currentRun = sourceRuns[sourceRuns.length - 1];
+        const run = currentRun
+          ? await tx.prefillRun.update({
+              where: { id: currentRun.id },
+              data: {
+                source: input.source,
+                active_checkpoints: toJsonInput(input.activeCheckpoints),
+                answers: toJsonInput(nextAnswers),
+                created_by_account_id: input.createdByAccountId ?? currentRun.created_by_account_id,
+                frozen_at: now,
+              },
+            })
+          : await tx.prefillRun.create({
+              data: {
+                case_id: input.caseId,
+                sequence: nextSequenceFromRuns(runs),
+                source: input.source,
+                active_checkpoints: toJsonInput(input.activeCheckpoints),
+                answers: toJsonInput(nextAnswers),
+                created_by_account_id: input.createdByAccountId ?? null,
+                frozen_at: now,
+              },
+            });
+
+        const shouldResetRatings = input.resetM3RatingsOnChange === true && changed;
+        if (input.caseSessionUpdate || shouldResetRatings) {
+          const caseSessionUpdate: Prisma.CaseSessionUpdateInput = {
+            ...input.caseSessionUpdate,
+            ctx_prefill: toJsonInput(nextAnswers),
+          };
+          if (shouldResetRatings) {
+            const neutralizedCheckpoints = resetM3CheckpointStatuses(guard.active_checkpoints);
+            if (neutralizedCheckpoints) {
+              caseSessionUpdate.active_checkpoints = toJsonInput(neutralizedCheckpoints);
+            }
+            const preparedPrefix = isPreparedClinicalStatus(guard.clinical_status)
+              ? "prepared:"
+              : "";
+            caseSessionUpdate.clinical_status =
+              `${PREFILL_CHANGED_STATUS_PREFIX}${preparedPrefix}${randomUUID()}`;
+          }
+          await tx.caseSession.update({
+            where: { id: input.caseId },
+            data: caseSessionUpdate,
+          });
+        }
+
+        return { run, changed };
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (err) {
+      const code = (err as { code?: unknown } | null)?.code;
+      if (code === "P2034" && attempt < 2) continue;
+      throw err;
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -270,12 +414,31 @@ async function loadCaseGuard(
 ): Promise<CaseGuardRow> {
   const row = await tx.caseSession.findUnique({
     where: { id: caseId },
-    select: { id: true, doctor_confirmed: true, clinical_status: true },
+    select: {
+      id: true,
+      doctor_confirmed: true,
+      clinical_status: true,
+      active_checkpoints: true,
+    },
   });
   if (!row) {
     throw new PrefillRunError("case_not_found", `Fall ${caseId} existiert nicht.`);
   }
   return row;
+}
+
+function resetM3CheckpointStatuses(value: unknown): unknown[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.map((checkpoint) => {
+    if (!checkpoint || typeof checkpoint !== "object" || Array.isArray(checkpoint)) {
+      return checkpoint;
+    }
+    const record = checkpoint as Record<string, unknown>;
+    if (record.mode === "MULTI_SELECT" || typeof record.status !== "string") {
+      return checkpoint;
+    }
+    return { ...record, status: "TO_DO" };
+  });
 }
 
 function assertCaseAcceptsNewRun(guard: CaseGuardRow): void {
@@ -285,6 +448,76 @@ function assertCaseAcceptsNewRun(guard: CaseGuardRow): void {
       `Fall ${guard.id} ist ärztlich bestätigt – keine neuen PrefillRuns mehr möglich.`,
     );
   }
+}
+
+function mergeRunAnswers(runs: PrefillRun[]): PrefillRunAnswers {
+  const answers: PrefillRunAnswers = {};
+  for (const run of runs) {
+    if (!run.answers || typeof run.answers !== "object" || Array.isArray(run.answers)) {
+      continue;
+    }
+    for (const [checkpointId, checkpointAnswers] of Object.entries(run.answers)) {
+      if (
+        checkpointAnswers &&
+        typeof checkpointAnswers === "object" &&
+        !Array.isArray(checkpointAnswers)
+      ) {
+        answers[checkpointId] = mergeCheckpointAnswers(
+          answers[checkpointId] ?? {},
+          checkpointAnswers as Record<string, string>,
+        );
+      }
+    }
+  }
+  return answers;
+}
+
+function mergePrefillAnswers(
+  current: PrefillRunAnswers,
+  update: PrefillRunAnswers,
+): PrefillRunAnswers {
+  const answers = { ...current };
+  for (const [checkpointId, checkpointAnswers] of Object.entries(update)) {
+    answers[checkpointId] = mergeCheckpointAnswers(
+      answers[checkpointId] ?? {},
+      checkpointAnswers,
+    );
+  }
+  return answers;
+}
+
+function mergeCheckpointAnswers(
+  current: Record<string, string>,
+  update: Record<string, string>,
+): Record<string, string> {
+  const answers = { ...current };
+  for (const [questionId, answer] of Object.entries(update)) {
+    // `offen` is the server's default for unanswered questions, not an
+    // explicit answer option. Do not let a default-filled delta erase a
+    // previously captured response.
+    if (answer === "offen" && answers[questionId] && answers[questionId] !== "offen") {
+      continue;
+    }
+    answers[questionId] = answer;
+  }
+  return answers;
+}
+
+function nextSequenceFromRuns(runs: PrefillRun[]): number {
+  return runs.reduce((highest, run) => Math.max(highest, run.sequence), 0) + 1;
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableJson).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`);
+    return `{${entries.join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 async function nextSequence(

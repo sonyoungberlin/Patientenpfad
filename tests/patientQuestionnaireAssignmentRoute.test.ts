@@ -21,6 +21,7 @@ jest.mock("@/lib/authz", () => ({
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { PATCH } from "@/app/api/questionnaire/[id]/route";
+import { PUBLIC_CHECK_IN_BLOCK_IDS } from "@/lib/questionnaire/publicCheckIn";
 
 type PrismaMock = {
   $transaction: jest.Mock;
@@ -83,11 +84,8 @@ function publicCheckInSession(overrides: Record<string, unknown> = {}) {
     owner_account_id: null,
     source: "public_check_in",
     confirmed_at: null,
-    selected_block_ids: ["KONTAKT", "CHECK_IN"],
-    frozen_blocks: [
-      { id: "KONTAKT", questions: [] },
-      { id: "CHECK_IN", questions: [] },
-    ],
+    selected_block_ids: PUBLIC_CHECK_IN_BLOCK_IDS,
+    frozen_blocks: PUBLIC_CHECK_IN_BLOCK_IDS.map((id) => ({ id, questions: [] })),
     public_check_in_handoff: {
       status: "waiting",
       expires_at: new Date(Date.now() + 60_000),

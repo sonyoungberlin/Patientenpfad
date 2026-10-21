@@ -28,6 +28,7 @@ jest.mock("@/lib/server/prefillRuns", () => ({
   createOpenRun: jest.fn(),
   freezeRun: jest.fn(),
   appendFrozenRun: jest.fn(),
+  saveCurrentRun: jest.fn(),
 }));
 
 import { NextRequest } from "next/server";
@@ -39,6 +40,7 @@ import {
   createOpenRun,
   freezeRun,
   getOpenRun,
+  saveCurrentRun,
 } from "@/lib/server/prefillRuns";
 
 type PrismaMock = {
@@ -49,6 +51,7 @@ const getOpenRunMock = getOpenRun as unknown as jest.Mock;
 const createOpenRunMock = createOpenRun as unknown as jest.Mock;
 const freezeRunMock = freezeRun as unknown as jest.Mock;
 const appendFrozenRunMock = appendFrozenRun as unknown as jest.Mock;
+const saveCurrentRunMock = saveCurrentRun as unknown as jest.Mock;
 
 function futureDate(daysFromNow: number): Date {
   return new Date(Date.now() + daysFromNow * 24 * 60 * 60 * 1000);
@@ -61,10 +64,11 @@ beforeEach(() => {
   createOpenRunMock.mockReset();
   freezeRunMock.mockReset();
   appendFrozenRunMock.mockReset();
+  saveCurrentRunMock.mockReset();
 });
 
 describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
-  it("legt einen neuen offenen Run an, friert ihn ein und hält ctx_prefill als Cache", async () => {
+  it("speichert den aktuellen Quellenstand samt Cache atomar", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
       m2_status: "none",
@@ -72,8 +76,10 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     });
     prismaMock.caseSession.update.mockResolvedValue({});
     getOpenRunMock.mockResolvedValue(null);
-    createOpenRunMock.mockResolvedValue({ id: "run-42", sequence: 1, frozen_at: null });
-    freezeRunMock.mockResolvedValue({ id: "run-42", sequence: 1, frozen_at: new Date() });
+    saveCurrentRunMock.mockResolvedValue({
+      run: { id: "run-42", sequence: 1, frozen_at: new Date() },
+      changed: true,
+    });
 
     const req = new NextRequest("http://localhost/api/cases/c1/m2/prefill", {
       method: "PATCH",
@@ -84,35 +90,21 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "c1" }) });
     expect(res.status).toBe(200);
 
-    // Reihenfolge: getOpenRun → createOpenRun → freezeRun → caseSession.update
-    expect(getOpenRunMock).toHaveBeenCalledWith("c1");
-    expect(createOpenRunMock).toHaveBeenCalledWith(
+    expect(saveCurrentRunMock).toHaveBeenCalledWith(
       expect.objectContaining({
         caseId: "c1",
         source: "mfa",
         createdByAccountId: "acc-test",
-        allowConfirmed: true,
+        caseSessionUpdate: expect.objectContaining({ preparation_mode: "mfa" }),
         activeCheckpoints: [{ id: "K01" }],
-      }),
-    );
-    expect(freezeRunMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        caseId: "c1",
-        runId: "run-42",
-        allowConfirmed: true,
         answers: expect.objectContaining({
           K01: expect.objectContaining({ "MFA-K01-01": "ja" }),
         }),
       }),
     );
-
-    // Cache-Sync: ctx_prefill + preparation_mode gesetzt.
-    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
-    expect(updateData.preparation_mode).toBe("mfa");
-    expect(updateData.ctx_prefill.K01["MFA-K01-01"]).toBe("ja");
   });
 
-  it("führt einen bereits offenen Run weiter (createOpenRun wird nicht aufgerufen)", async () => {
+  it("verwendet den Scope eines offenen Runs derselben Quelle", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
       m2_status: "none",
@@ -120,7 +112,7 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     });
     prismaMock.caseSession.update.mockResolvedValue({});
     getOpenRunMock.mockResolvedValue({ id: "run-existing", sequence: 3, source: "mfa", frozen_at: null, active_checkpoints: [{ id: "K01" }] });
-    freezeRunMock.mockResolvedValue({ id: "run-existing", sequence: 3, frozen_at: new Date() });
+    saveCurrentRunMock.mockResolvedValue({ run: { id: "run-existing" }, changed: true });
 
     const req = new NextRequest("http://localhost/api/cases/c1/m2/prefill", {
       method: "PATCH",
@@ -130,14 +122,16 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "c1" }) });
     expect(res.status).toBe(200);
 
-    expect(createOpenRunMock).not.toHaveBeenCalled();
-    expect(freezeRunMock).toHaveBeenCalledWith(
-      expect.objectContaining({ runId: "run-existing" }),
+    expect(saveCurrentRunMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        caseId: "c1",
+        source: "mfa",
+        answers: expect.objectContaining({ K01: expect.any(Object) }),
+      }),
     );
   });
 
-  // Fehler-2-Fix: offener MFA-Run wird auf Patientengespräch-Source umgestellt
-  it("korrigiert die source eines offenen MFA-Runs wenn als 'conversation' gespeichert wird", async () => {
+  it("übernimmt beim Quellenwechsel nicht den fremden offenen Run-Scope", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
       m2_status: "none",
@@ -152,7 +146,7 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
       frozen_at: null,
       active_checkpoints: [{ id: "K01" }],
     });
-    freezeRunMock.mockResolvedValue({ id: "run-mfa-open", sequence: 2, frozen_at: new Date() });
+    saveCurrentRunMock.mockResolvedValue({ run: { id: "run-conversation" }, changed: true });
 
     // Nutzer speichert im Patientengespräch-Modus.
     const req = new NextRequest("http://localhost/api/cases/c1/m2/prefill", {
@@ -163,14 +157,16 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "c1" }) });
     expect(res.status).toBe(200);
 
-    // freezeRun muss mit source="conversation" aufgerufen werden, damit
-    // der Run korrekt als Gesprächs-Run eingefroren wird – nicht als MFA.
-    expect(freezeRunMock).toHaveBeenCalledWith(
+    // Der MFA-Draft bleibt unberührt; Gespräch wird als eigener Quellenstand
+    // über den vollen Fall-Scope gespeichert.
+    expect(saveCurrentRunMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        runId: "run-mfa-open",
         source: "conversation",
+        activeCheckpoints: [{ id: "K01" }],
+        answers: { K01: expect.any(Object) },
       }),
     );
+    expect(saveCurrentRunMock.mock.calls[0][0]).not.toHaveProperty("runId");
   });
 
   it("setzt bei waiting_for_patient m2_status='none' und invalidiert den Token (Verhalten unverändert)", async () => {
@@ -181,8 +177,7 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     });
     prismaMock.caseSession.update.mockResolvedValue({});
     getOpenRunMock.mockResolvedValue(null);
-    createOpenRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: null });
-    freezeRunMock.mockResolvedValue({ id: "run-new", sequence: 1, frozen_at: new Date() });
+    saveCurrentRunMock.mockResolvedValue({ run: { id: "run-new" }, changed: true });
 
     const req = new NextRequest("http://localhost/api/cases/c1/m2/prefill", {
       method: "PATCH",
@@ -192,10 +187,30 @@ describe("Schritt 2 – MFA-Schreibpfad (m2/prefill)", () => {
     const res = await PATCH(req, { params: Promise.resolve({ id: "c1" }) });
     expect(res.status).toBe(200);
 
-    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
+    const updateData = saveCurrentRunMock.mock.calls[0][0].caseSessionUpdate;
     expect(updateData.m2_status).toBe("none");
     expect(updateData.m2_token).toBeNull();
     expect(updateData.m2_token_expires_at).toBeNull();
+  });
+
+  it("weist M2-Schreibzugriffe auf bestätigte Fälle ab", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      m2_status: "none",
+      active_checkpoints: [{ id: "K01" }],
+    });
+    saveCurrentRunMock.mockRejectedValue(
+      Object.assign(new Error("confirmed"), { code: "case_confirmed" }),
+    );
+
+    const req = new NextRequest("http://localhost/api/cases/c1/m2/prefill", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prefill: { K01: { "MFA-K01-01": "ja" } } }),
+    });
+    const res = await PATCH(req, { params: Promise.resolve({ id: "c1" }) });
+    expect(res.status).toBe(403);
+    expect(prismaMock.caseSession.update).not.toHaveBeenCalled();
   });
 });
 
@@ -237,16 +252,19 @@ describe("Schritt 2 – Patient-Schreibpfad (m2-link/[token])", () => {
         allowConfirmed: true,
         answers: { K01: { "M2-01": "ja" } },
         activeCheckpoints: [{ id: "K01" }],
+        resetM3RatingsOnChange: true,
+        caseSessionUpdate: {
+          preparation_mode: "patient",
+          m2_token: null,
+          m2_token_expires_at: null,
+          m2_status: "completed",
+        },
       }),
     );
     expect(appendFrozenRunMock.mock.calls[0][0]).not.toHaveProperty("patientTokenUsed");
 
-    // Cache-Sync + Token-Invalidierung unverändert.
-    const updateData = prismaMock.caseSession.update.mock.calls[0][0].data;
-    expect(updateData.preparation_mode).toBe("patient");
-    expect(updateData.m2_status).toBe("completed");
-    expect(updateData.m2_token).toBeNull();
-    expect(updateData.m2_token_expires_at).toBeNull();
+    // Cache-Sync + Token-Invalidierung liegen atomar im aktuellen Run-Upsert.
+    expect(prismaMock.caseSession.update).not.toHaveBeenCalled();
   });
 
   it("schreibt keine Daten, wenn appendFrozenRun fehlschlägt (kein ctx_prefill-Overwrite)", async () => {

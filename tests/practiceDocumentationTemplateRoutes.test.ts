@@ -3,7 +3,7 @@ import { PracticeRole } from "@prisma/client";
 
 jest.mock("@/lib/authz", () => ({ requirePracticeRole: jest.fn() }));
 jest.mock("@/lib/questionnaireKiosk/auth", () => ({
-  requireUnlockedQuestionnaireKioskDevice: jest.fn(),
+  requireQuestionnaireKioskAccess: jest.fn(),
   hasQuestionnaireKioskCapability: jest.fn(),
 }));
 jest.mock("@/lib/prisma", () => ({
@@ -24,14 +24,14 @@ import { requirePracticeRole } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import {
   hasQuestionnaireKioskCapability,
-  requireUnlockedQuestionnaireKioskDevice,
+  requireQuestionnaireKioskAccess,
 } from "@/lib/questionnaireKiosk/auth";
 import { POST } from "@/app/api/practice/documentation-templates/route";
 import { DELETE, POST as DuplicatePOST, PATCH } from "@/app/api/practice/documentation-templates/[id]/route";
 import { GET } from "@/app/api/questionnaire-kiosk/internal/templates/route";
 
 const requireRole = requirePracticeRole as jest.Mock;
-const kioskGuard = requireUnlockedQuestionnaireKioskDevice as jest.Mock;
+const kioskGuard = requireQuestionnaireKioskAccess as jest.Mock;
 const hasCapability = hasQuestionnaireKioskCapability as jest.Mock;
 const templateDb = prisma.practiceDocumentationTemplate as unknown as {
   findMany: jest.Mock;
@@ -64,7 +64,16 @@ describe("Dokumentationsvorlagen-Routen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     requireRole.mockResolvedValue({ account: { current_practice: { id: "practice-1" } }, error: null });
-    kioskGuard.mockResolvedValue({ device: { deviceId: "device-1", practiceId: "practice-1" }, error: null });
+    kioskGuard.mockResolvedValue({
+      access: {
+        kind: "device",
+        deviceId: "device-1",
+        practiceId: "practice-1",
+        deviceName: "Empfang",
+        capabilities: ["internal_documentation"],
+      },
+      error: null,
+    });
     hasCapability.mockReturnValue(true);
     templateDb.create.mockResolvedValue({ id: "template-1" });
     templateDb.findFirst.mockResolvedValue({ id: "template-1", name: "Kardiologie", output_format: "formell", document_title_option: "stellungnahme", block_layout: layout });

@@ -1,4 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
+import { redirect } from "next/navigation";
 import {
   buildCaseM2Path,
   buildCaseM3Path,
@@ -6,6 +8,7 @@ import {
   isGatekeeperResponse,
 } from "@/lib/flow/caseNavigation";
 import M2Page from "@/app/cases/[id]/m2/page";
+import CaseListClient from "@/app/cases/CaseListClient";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
@@ -78,5 +81,76 @@ describe("M2 Skip-Option", () => {
 
   it("M1-Zielpfad zu M2 bleibt konsistent", () => {
     expect(buildCaseM2Path("case-123")).toBe("/cases/case-123/m2");
+  });
+
+  it("M2 verlinkt zur Fallliste und M3 desselben Falls", async () => {
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [],
+      ctx_prefill: null,
+      doctor_confirmed: false,
+      clinical_status: "none",
+    });
+
+    const markup = renderToStaticMarkup(
+      await M2Page({ params: Promise.resolve({ id: "case-123" }) }),
+    );
+
+    expect(markup).toContain('data-m2-case-list-link="true" href="/cases"');
+    expect(markup).toContain('data-m2-m3-link="true" href="/cases/case-123/m3"');
+  });
+
+  it("M2 leitet bestätigte Fälle zurück nach M3 statt Bearbeitung zu öffnen", async () => {
+    const redirectMock = redirect as unknown as jest.Mock;
+    prismaMock.caseSession.findUnique.mockResolvedValue({
+      owner_account_id: "acc-test",
+      active_checkpoints: [],
+      ctx_prefill: null,
+      doctor_confirmed: false,
+      clinical_status: "confirmed",
+    });
+
+    await M2Page({ params: Promise.resolve({ id: "case-123" }) });
+
+    expect(redirectMock).toHaveBeenCalledWith("/cases/case-123/m3");
+  });
+});
+
+describe("Fallliste – direkter M2-Einstieg", () => {
+  it("bietet M2 für einen unbestätigten Fall an, ohne einen zweiten Eintrag anzulegen", () => {
+    const markup = renderToStaticMarkup(
+      createElement(CaseListClient, {
+        cases: [
+          {
+            id: "case-123",
+            title: "Testfall",
+            patient_reference: "PAT-123",
+            statusLabel: "Vorbereitung abgeschlossen",
+          },
+        ],
+      }),
+    );
+
+    expect(markup).toContain('href="/cases/case-123"');
+    expect(markup).toContain('href="/cases/case-123/m2"');
+    expect((markup.match(/<article\b/g) ?? []).length).toBe(1);
+  });
+
+  it("bietet für bestätigte Fälle keinen direkten M2-Einstieg an", () => {
+    const markup = renderToStaticMarkup(
+      createElement(CaseListClient, {
+        cases: [
+          {
+            id: "case-confirmed",
+            title: "Bestätigter Fall",
+            patient_reference: null,
+            statusLabel: "Ärztlich bestätigt",
+          },
+        ],
+      }),
+    );
+
+    expect(markup).toContain('href="/cases/case-confirmed"');
+    expect(markup).not.toContain('href="/cases/case-confirmed/m2"');
   });
 });

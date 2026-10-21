@@ -468,7 +468,7 @@ describe("DigitalRequestsPage — Interne Liste", () => {
     expect(markup).toContain("Gabi Testerin");
     expect(markup).toContain("Neu");
     expect(markup).toContain("Neupatient/in");
-    expect(markup).toContain("Termin: Ich hätte gerne einen Termin.");
+    expect(markup).toContain("Termin: Ich hätte gerne eine…");
 
     // Scoping: owner_practice_id aus current_practice
     const whereArg = pm.digitalRequest.findMany.mock.calls[0][0].where as Record<

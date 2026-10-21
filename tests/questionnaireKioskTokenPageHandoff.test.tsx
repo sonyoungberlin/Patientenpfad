@@ -6,6 +6,10 @@ const redirectMock = jest.fn((url: string) => { throw new Error(`__REDIRECT__:${
 jest.mock("next/navigation", () => ({
   redirect: (url: string) => redirectMock(url),
 }));
+jest.mock("@/lib/auth", () => ({
+  getCurrentKioskMode: jest.fn(),
+  getKioskSessionAccountFromCookies: jest.fn().mockResolvedValue(null),
+}));
 jest.mock("@/lib/prisma", () => ({
   prisma: { patientQuestionnaireSession: { findUnique: jest.fn() } },
 }));

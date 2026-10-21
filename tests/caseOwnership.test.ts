@@ -15,24 +15,32 @@ import { NextRequest } from "next/server";
 // ---------------------------------------------------------------------------
 
 jest.mock("@/lib/prisma", () => ({
-  prisma: {
-    session: {
-      findUnique: jest.fn(),
-      delete: jest.fn(),
-    },
-    caseSession: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-  },
+  prisma: (() => {
+    const caseSession = { findUnique: jest.fn(), update: jest.fn() };
+    return {
+      session: { findUnique: jest.fn(), delete: jest.fn() },
+      caseSession,
+      $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
+        callback({ caseSession }),
+      ),
+    };
+  })(),
 }));
 
 // Schritt 2: Schreibroute nutzt PrefillRun-Service – hier nur neutrale
 // Stubs, damit die Owner-/Approval-Kontrolle isoliert getestet bleibt.
 jest.mock("@/lib/server/prefillRuns", () => ({
+  isPrefillChangedClinicalStatus: (value: unknown) =>
+    typeof value === "string" && value.startsWith("prefill_changed:"),
+  parsePrefillChangedClinicalStatus: jest.fn().mockReturnValue(null),
+  withReviewedPrefillCheckpoints: jest.fn(),
   getOpenRun: jest.fn().mockResolvedValue(null),
   createOpenRun: jest.fn().mockResolvedValue({ id: "run-1", sequence: 1, frozen_at: null }),
   freezeRun: jest.fn().mockResolvedValue({ id: "run-1", sequence: 1, frozen_at: new Date() }),
+  saveCurrentRun: jest.fn().mockResolvedValue({
+    run: { id: "run-1", sequence: 1, frozen_at: new Date(), answers: {} },
+    changed: true,
+  }),
 }));
 
 import { prisma } from "@/lib/prisma";
@@ -51,6 +59,7 @@ import {
 type PrismaMock = {
   session: { findUnique: jest.Mock; delete: jest.Mock };
   caseSession: { findUnique: jest.Mock; update: jest.Mock };
+  $transaction: jest.Mock;
 };
 
 const pm = prisma as unknown as PrismaMock;

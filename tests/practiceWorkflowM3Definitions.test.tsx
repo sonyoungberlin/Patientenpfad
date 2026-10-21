@@ -18,15 +18,6 @@ jest.mock("@/lib/workflow/internalProtocol/workflowSnapshotUpdater", () => ({
   setCheckpointDecision: (snapshot: unknown) => snapshot,
 }));
 
-jest.mock("@/lib/practiceProcesses", () => ({
-  getCheckpoint: () => ({
-    id: "patient-bekannt",
-    title: "Patient bekannt",
-    description: "Bekannter Patient",
-    orientationAnchors: [{ id: "identity", text: "Identität geprüft" }],
-  }),
-}));
-
 jest.mock("@/app/workflow-cases/internal-protocol/draft/_saveDraft", () => ({
   savePracticeWorkflowDraft: jest.fn(),
 }));
@@ -50,16 +41,38 @@ const definition = {
   updatedAt: "2026-09-30T10:00:00.000Z",
 };
 
+const builderCheckpoint = {
+  checkpointId: "patient-bekannt",
+  title: "Aktueller DB-Titel",
+  description: "Aktuelle DB-Beschreibung",
+  orientationHint: "Aktueller DB-Orientierungshinweis",
+  orientationAnchors: [{ id: "identity", text: "Aktueller DB-Anker" }],
+};
+
 function response(body: unknown, ok = true) {
   return Promise.resolve({ ok, json: async () => body });
 }
 
-async function renderM3(definitions: unknown[]) {
+async function renderM3(currentDefinition: typeof definition | null, builderOverrides = {}) {
+  const checkpoint = {
+    ...builderCheckpoint,
+    ...builderOverrides,
+    definition: currentDefinition
+      ? {
+          selectedAnchorIds: currentDefinition.selectedAnchorIds,
+          implementation: currentDefinition.implementation,
+        }
+      : null,
+  };
   global.fetch = jest.fn((input: string | URL | Request) => {
     if (String(input).includes("/protocol/save")) {
-      return response({ ok: true, snapshot }) as never;
+      const draftSnapshot = {
+        ...snapshot,
+        checkpoints: snapshot.checkpoints.map((item) => ({ ...item, checkpointId: checkpoint.checkpointId })),
+      };
+      return response({ ok: true, snapshot: draftSnapshot, builderCheckpoints: [checkpoint] }) as never;
     }
-    return response({ ok: true, definitions }) as never;
+    return response({ ok: true }) as never;
   });
 
   const container = document.createElement("div");
@@ -81,19 +94,26 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("M3 löst aktuelle PracticeCheckpointDefinition live auf", () => {
+describe("M3 verwendet die aktuelle Builder-Projektion", () => {
   it("zeigt die vorhandene zentrale Definition statt 'Noch nicht definiert'", async () => {
-    const { container, root } = await renderM3([definition]);
+    const { container, root } = await renderM3(definition);
 
     expect(container.textContent).toContain("Aktueller Praxisstandard");
+    expect(container.textContent).toContain("Aktueller DB-Titel");
+    expect(container.textContent).toContain("Aktuelle DB-Beschreibung");
+    expect(container.textContent).toContain("Aktueller DB-Orientierungshinweis");
+    expect(container.textContent).toContain("Aktueller DB-Anker");
     expect(container.textContent).toContain(definition.implementation);
     expect(container.textContent).not.toContain("Noch nicht definiert.");
+    expect((global.fetch as jest.Mock).mock.calls.some(([input]) =>
+      String(input) === "/api/practice-checkpoint-definitions",
+    )).toBe(false);
 
     root.unmount();
   });
 
   it("zeigt 'Noch nicht definiert', wenn keine zentrale Definition existiert", async () => {
-    const { container, root } = await renderM3([]);
+    const { container, root } = await renderM3(null);
 
     expect(container.textContent).toContain("Aktueller Praxisstandard");
     expect(container.textContent).toContain("Noch nicht definiert.");
@@ -102,15 +122,28 @@ describe("M3 löst aktuelle PracticeCheckpointDefinition live auf", () => {
   });
 
   it("behandelt eine Anchor-only-Definition als definierten Praxisstandard", async () => {
-    const { container, root } = await renderM3([{
+    const { container, root } = await renderM3({
       ...definition,
       selectedAnchorIds: ["identity"],
       implementation: "",
-    }]);
+    });
 
-    expect(container.textContent).toContain("Identität geprüft");
+    expect(container.textContent).toContain("Aktueller DB-Anker");
     expect(container.textContent).toContain("Nur ausgewählte Kriterien");
     expect(container.textContent).not.toContain("Noch nicht definiert.");
+
+    root.unmount();
+  });
+
+  it("markiert veraltete Anchor-IDs statt einen statischen Anchor zuzuordnen", async () => {
+    const { container, root } = await renderM3({
+      ...definition,
+      selectedAnchorIds: ["old-static-anchor"],
+    });
+
+    expect(container.textContent).toContain("old-static-anchor");
+    expect(container.textContent).toContain("nicht durch statische Anker ersetzt");
+    expect(container.textContent).not.toContain("Identität geprüft");
 
     root.unmount();
   });

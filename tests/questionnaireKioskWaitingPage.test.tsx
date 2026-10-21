@@ -9,6 +9,8 @@ jest.mock("next/navigation", () => ({
 }));
 jest.mock("@/lib/questionnaireKiosk/auth", () => ({
   getQuestionnaireKioskDeviceFromCookies: jest.fn(),
+  getQuestionnaireKioskAccessFromCookies: jest.fn(),
+  hasQuestionnaireKioskCapability: jest.fn(),
 }));
 jest.mock("@/lib/prisma", () => ({
   prisma: { patientQuestionnaireSession: { findFirst: jest.fn() } },
@@ -20,10 +22,16 @@ jest.mock("@/app/questionnaire-kiosk/check-in/[id]/waiting/KioskCheckInWaitingCl
 }));
 
 import WaitingPage from "@/app/questionnaire-kiosk/check-in/[id]/waiting/page";
-import { getQuestionnaireKioskDeviceFromCookies } from "@/lib/questionnaireKiosk/auth";
+import {
+  getQuestionnaireKioskAccessFromCookies,
+  getQuestionnaireKioskDeviceFromCookies,
+  hasQuestionnaireKioskCapability,
+} from "@/lib/questionnaireKiosk/auth";
 import { prisma } from "@/lib/prisma";
 
 const getDevice = getQuestionnaireKioskDeviceFromCookies as jest.Mock;
+const getAccess = getQuestionnaireKioskAccessFromCookies as jest.Mock;
+const hasCapability = hasQuestionnaireKioskCapability as jest.Mock;
 const findFirst = prisma.patientQuestionnaireSession.findFirst as jest.Mock;
 const props = { params: Promise.resolve({ id: "check-in-1" }) };
 
@@ -36,6 +44,14 @@ describe("Kiosk Check-in Waiting Page", () => {
       practiceId: "practice-1",
       deviceName: "Empfang",
     });
+    getAccess.mockReset().mockResolvedValue({
+      kind: "device",
+      deviceId: "device-1",
+      practiceId: "practice-1",
+      deviceName: "Empfang",
+      capabilities: ["questionnaires"],
+    });
+    hasCapability.mockReset().mockReturnValue(true);
     findFirst.mockReset().mockResolvedValue({ id: "check-in-1" });
   });
 
@@ -54,6 +70,7 @@ describe("Kiosk Check-in Waiting Page", () => {
 
   it("leitet ohne registriertes Kioskgerät zum Lock um", async () => {
     getDevice.mockResolvedValue(null);
+    getAccess.mockResolvedValue(null);
     await expect(WaitingPage(props)).rejects.toThrow("__REDIRECT__:/questionnaire-kiosk/lock");
     expect(findFirst).not.toHaveBeenCalled();
   });
