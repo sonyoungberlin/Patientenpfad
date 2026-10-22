@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/office-cases/[id]/checkpoint/update/route";
-import { OFFICE_TOPIC_REGRESS } from "@/lib/office/checkpointCatalog";
+import {
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_REGRESS,
+} from "@/lib/office/checkpointCatalog";
 import { OfficeCheckpointKind, OfficeCheckpointState } from "@/lib/office/types";
 
 jest.mock("@/lib/prisma", () => ({
@@ -237,5 +240,83 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
 
     expect(checkpoint?.missing_note).toBe("Alt");
     expect(checkpoint?.answer_source).toBe("Team");
+  });
+
+  it("erlaubt NOT_REQUIRED nur auf freigegebenen Prüfpunkten, verlangt einen Grund und erhält Snapshot-Felder", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    const finalReview = {
+      decision: "APPROVED",
+      reviewer_account_id: "acc-1",
+      reviewed_revision: 4,
+    };
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      internal_saved_at: null,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,
+        templateVersion: 2,
+        decisionRevision: 4,
+        planned_start_date: "2027-01-15",
+        final_review: finalReview,
+          final_review_history: [finalReview],
+        checkpoints: [
+          {
+            id: "NC-ZUSATZQUALIFIKATIONEN",
+            title: "Zusatzqualifikationen",
+            kind: OfficeCheckpointKind.FACT,
+            state: OfficeCheckpointState.OPEN,
+          },
+        ],
+      },
+    });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
+
+    const response = await PATCH(makeRequest({
+      checkpoint_id: "NC-ZUSATZQUALIFIKATIONEN",
+      state: OfficeCheckpointState.NOT_REQUIRED,
+      not_required_reason: "Für den geplanten Tätigkeitsumfang nicht einschlägig.",
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(response.status).toBe(200);
+    const savedSnapshot = prismaMock.officeCaseSession.update.mock.calls[0]?.[0]
+      .data?.checkpoint_snapshot as Record<string, unknown>;
+    expect(savedSnapshot.templateVersion).toBe(2);
+    expect(savedSnapshot.planned_start_date).toBe("2027-01-15");
+    expect(savedSnapshot.final_review).toEqual(finalReview);
+    expect(savedSnapshot.final_review_history).toEqual([finalReview]);
+    expect(savedSnapshot.decisionRevision).toBe(5);
+    expect((savedSnapshot.checkpoints as Array<Record<string, unknown>>)[0]?.not_required_reason)
+      .toBe("Für den geplanten Tätigkeitsumfang nicht einschlägig.");
+  });
+
+  it("weist NOT_REQUIRED für einen nicht ausdrücklich freigegebenen Prüfpunkt zurück", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      internal_saved_at: null,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,
+        templateVersion: 2,
+        checkpoints: [{
+          id: "NC-APPROBATION",
+          title: "Approbation",
+          kind: OfficeCheckpointKind.DECISION,
+          state: OfficeCheckpointState.OPEN,
+        }],
+      },
+    });
+
+    const response = await PATCH(makeRequest({
+      checkpoint_id: "NC-APPROBATION",
+      state: OfficeCheckpointState.NOT_REQUIRED,
+      not_required_reason: "Fehlt.",
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.officeCaseSession.update).not.toHaveBeenCalled();
   });
 });

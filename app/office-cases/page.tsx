@@ -4,6 +4,8 @@ import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { getOfficeTopic, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import OfficeCasesClient, { type OfficeCaseListItem } from "./OfficeCasesClient";
 import { requireOfficeCasesManagementAccessFromCookies } from "@/lib/authz";
+import { getCheckpointDueStatus } from "@/lib/office/deadlines";
+import { OfficeCheckpointState, type OfficeCheckpointSnapshot } from "@/lib/office/types";
 
 export default async function OfficeCasesPage() {
   const account = await requireOfficeCasesManagementAccessFromCookies();
@@ -42,6 +44,22 @@ export default async function OfficeCasesPage() {
     const checkpointCount = Array.isArray(snapshot?.checkpoints)
       ? snapshot.checkpoints.length
       : 0;
+    const checkpoints = Array.isArray(snapshot?.checkpoints)
+      ? snapshot.checkpoints as OfficeCheckpointSnapshot[]
+      : [];
+    const overdueTasks = checkpoints
+      .filter((checkpoint) => getCheckpointDueStatus(checkpoint) === "overdue")
+      .map((checkpoint) => `${checkpoint.title} · ${checkpoint.deadline}`)
+      .slice(0, 3);
+    const dueSoonTasks = checkpoints
+      .filter((checkpoint) => getCheckpointDueStatus(checkpoint) === "due_soon")
+      .map((checkpoint) => `${checkpoint.title} · ${checkpoint.deadline}`)
+      .slice(0, 3);
+    const openCount = checkpoints.filter(
+      (checkpoint) =>
+        checkpoint.state === OfficeCheckpointState.OPEN ||
+        checkpoint.state === OfficeCheckpointState.NO,
+    ).length;
 
     return {
       id: officeCase.id,
@@ -51,6 +69,9 @@ export default async function OfficeCasesPage() {
       topicId,
       topicTitle,
       checkpointCount,
+      openCount,
+      overdueTasks,
+      dueSoonTasks,
     };
   });
 

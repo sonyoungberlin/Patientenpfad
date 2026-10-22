@@ -37,13 +37,15 @@ export type OfficeWriteModule = {
  */
 function buildStateMap(
   checkpoints: OfficeCheckpointSnapshot[],
-): Record<string, "YES" | "NO" | "OPEN"> {
-  const map: Record<string, "YES" | "NO" | "OPEN"> = {};
+): Record<string, "YES" | "NO" | "OPEN" | "NOT_REQUIRED"> {
+  const map: Record<string, "YES" | "NO" | "OPEN" | "NOT_REQUIRED"> = {};
   for (const cp of checkpoints) {
     if (cp.state === OfficeCheckpointState.YES) {
       map[cp.id] = "YES";
     } else if (cp.state === OfficeCheckpointState.NO) {
       map[cp.id] = "NO";
+    } else if (cp.state === OfficeCheckpointState.NOT_REQUIRED) {
+      map[cp.id] = "NOT_REQUIRED";
     } else {
       map[cp.id] = "OPEN";
     }
@@ -53,7 +55,7 @@ function buildStateMap(
 
 function conditionMet(
   item: OfficeWriteConditionItem,
-  stateMap: Record<string, "YES" | "NO" | "OPEN">,
+  stateMap: Record<string, "YES" | "NO" | "OPEN" | "NOT_REQUIRED">,
 ): boolean {
   const actual = stateMap[item.checkpointId] ?? "OPEN";
   return actual === item.state;
@@ -73,13 +75,14 @@ function conditionMet(
 function evaluateTrigger(
   trigger: OfficeWriteTrigger,
   topicId: string,
-  stateMap: Record<string, "YES" | "NO" | "OPEN">,
+  stateMap: Record<string, "YES" | "NO" | "OPEN" | "NOT_REQUIRED">,
   titleMap: Record<string, string>,
 ): { available: boolean; reason?: string } {
-  const stateLabel: Record<"YES" | "NO" | "OPEN", string> = {
+  const stateLabel: Record<"YES" | "NO" | "OPEN" | "NOT_REQUIRED", string> = {
     YES: "geklärt",
     NO: "nicht vollständig",
     OPEN: "offen",
+    NOT_REQUIRED: "nicht erforderlich",
   };
   const cpTitle = (id: string) => titleMap[id] ?? id;
   // 1. Topic-Filter

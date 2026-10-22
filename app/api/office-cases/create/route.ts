@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   buildInitialSnapshotForTopic,
+  getCurrentOfficeTopicVersion,
   getOfficeTopic,
   isOfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
   const checkpointSnapshot = {
     topicId: topic.id,
     topicTitle: topic.title,
+    templateVersion: getCurrentOfficeTopicVersion(topic.id),
+    decisionRevision: 0,
+    planned_start_date: "",
     checkpoints: buildInitialSnapshotForTopic(topic.id),
   } as Prisma.InputJsonValue;
 

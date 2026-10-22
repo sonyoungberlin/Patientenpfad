@@ -98,6 +98,7 @@ function aggregateStateForId(
   if (states.length === 0) return "MISSING";
   if (states.includes(OfficeCheckpointState.NO)) return OfficeCheckpointState.NO;
   if (states.includes(OfficeCheckpointState.OPEN)) return OfficeCheckpointState.OPEN;
+  if (states.includes(OfficeCheckpointState.NOT_REQUIRED)) return "MISSING";
   return OfficeCheckpointState.YES;
 }
 

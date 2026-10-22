@@ -499,3 +499,24 @@ Begleitende Frage-/Zuordnungsstrukturen liegen in [lib/office/m2Questions.ts](li
 - Transparenz über den aktuellen Nutzungsstand von HR-GOV-A bis HR-GOV-D.
 - Trennung zwischen aktuellem Ist-Stand und späterer Zielmodell-Entscheidung.
 - Dokumentation ohne Vorgriff auf Runtime- oder Datenstrukturänderungen.
+
+## Runtime-Ergänzung: bedingte Prüfpunkte und Snapshot-Versionen
+
+Der gemeinsame Office-Status `NOT_REQUIRED` ist ausschließlich für Checkpoints
+verfügbar, die im jeweiligen Vorlagenkatalog ausdrücklich als bedingt
+gekennzeichnet sind. Eine Begründung ist erforderlich. Der Status bedeutet
+weder „erledigt“ noch „Nachweis liegt vor“ und darf keine zwingende
+Voraussetzung erfüllen.
+
+Die Arzt-Einstellungsvorlage `arzt-anstellen-nachbesetzung` wird für neue Fälle
+mit `templateVersion: 2` und 25 Checkpoints angelegt. Bestehende Fälle ohne
+Versionsfeld bleiben auf dem Legacy-Katalog; ihre gespeicherten Checkpoints
+werden nicht automatisch ergänzt oder überschrieben. Zusätzliche Felder wie
+geplanter Arbeitsbeginn und manuelle Abschlussprüfung bleiben im vorhandenen
+JSON-Snapshot. Es wird dafür keine Datenbanktabelle oder Migration benötigt.
+
+Fristen kennzeichnen interne Kontrolltermine, individuelle Aufgabenfristen
+oder fallbezogen belegte KV-/Behördenfristen getrennt. Ein Datum allein erzeugt
+keine rechtliche Frist. Die manuelle Abschlussentscheidung bleibt bei einer
+Praxis-OWNER- oder Praxis-ADMIN-Rolle; Änderungen an entscheidungsrelevanten
+Punkten nach einer Freigabe verlangen eine erneute Prüfung.

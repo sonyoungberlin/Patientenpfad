@@ -147,8 +147,9 @@ function mapIds<T>(
  */
 export function buildCheckpointComplianceMap(
   topicId: OfficeTopicId,
+  templateVersion?: number,
 ): Record<string, CheckpointComplianceView> {
-  const catalog = getOfficeCheckpointCatalog(topicId);
+  const catalog = getOfficeCheckpointCatalog(topicId, templateVersion);
   const result: Record<string, CheckpointComplianceView> = {};
   for (const cp of catalog) {
     result[cp.id] = {

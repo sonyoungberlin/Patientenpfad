@@ -8,10 +8,11 @@ import { isEvidenceId } from "@/lib/office/evidenceCatalog";
 
 describe("Office-Topic arzt-anstellen-nachbesetzung: fachliche Anreicherung", () => {
   const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT);
+  const legacyCatalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT, 1);
   const byId = new Map(catalog.map((cp) => [cp.id, cp]));
 
-  it("enthaelt unveraendert die 12 NC-Checkpoints in stabiler Reihenfolge", () => {
-    expect(catalog.map((cp) => cp.id)).toEqual([
+  it("bewahrt die Legacy-Version mit 12 stabilen IDs und erweitert neue Fälle auf 25 Prüfpunkte", () => {
+    const legacyIds = [
       "NC-REGISTERSTATUS",
       "NC-APPROBATION",
       "NC-FACHARZTQUALIFIKATION",
@@ -24,11 +25,16 @@ describe("Office-Topic arzt-anstellen-nachbesetzung: fachliche Anreicherung", ()
       "NC-ARBEITSVERTRAG_FREIGABE",
       "NC-LANR_BSNR_ZUORDNUNG",
       "NC-SYSTEMZUGRIFFE_EINGERICHTET",
-    ]);
+    ];
+    expect(legacyCatalog.map((cp) => cp.id)).toEqual(legacyIds);
+    expect(catalog).toHaveLength(25);
+    expect(catalog.slice(0, 12).map((cp) => cp.id)).toEqual(legacyIds);
+    expect(new Set(catalog.map((cp) => cp.id)).size).toBe(25);
+    expect(new Set(catalog.map((cp) => cp.section)).size).toBe(4);
   });
 
   it("jeder NC-Checkpoint traegt mindestens eine LegalRef, einen AuthorityKey oder einen Evidence-Key", () => {
-    for (const cp of catalog) {
+    for (const cp of legacyCatalog) {
       const hasLegal = (cp.legalRefs?.length ?? 0) > 0;
       const hasAuthority = (cp.authorityKeys?.length ?? 0) > 0;
       const hasEvidence =
@@ -39,7 +45,7 @@ describe("Office-Topic arzt-anstellen-nachbesetzung: fachliche Anreicherung", ()
   });
 
   it("alle Referenzen sind in den Registries auffindbar", () => {
-    for (const cp of catalog) {
+    for (const cp of legacyCatalog) {
       for (const ref of cp.legalRefs ?? []) expect(isLegalSourceId(ref)).toBe(true);
       for (const ref of cp.authorityKeys ?? []) expect(isAuthorityId(ref)).toBe(true);
       for (const ref of cp.requiredEvidenceKeys ?? []) expect(isEvidenceId(ref)).toBe(true);
@@ -50,8 +56,30 @@ describe("Office-Topic arzt-anstellen-nachbesetzung: fachliche Anreicherung", ()
   it("NC-REGISTERSTATUS verweist auf SGB V § 95 und Heilberufekammergesetz Berlin", () => {
     const cp = byId.get("NC-REGISTERSTATUS");
     expect(cp?.legalRefs).toEqual(expect.arrayContaining(["SGB_V_PAR_95", "HEILBERG_BLN"]));
-    expect(cp?.authorityKeys).toEqual(["AERZTEKAMMER_BERLIN"]);
+    expect(cp?.authorityKeys).toEqual(["KV_BERLIN"]);
     expect(cp?.requiredEvidenceKeys).toContain("REGISTERAUSZUG_AERZTE");
+  });
+
+  it("behält für bestehende Snapshots den bisherigen Legacy-Katalog unverändert", () => {
+    expect(legacyCatalog.find((cp) => cp.id === "NC-REGISTERSTATUS")?.authorityKeys)
+      .toEqual(["AERZTEKAMMER_BERLIN"]);
+  });
+
+  it("erlaubt Nicht-erforderlich nur auf ausdrücklich bedingten Prüfpunkten", () => {
+    expect(catalog.filter((checkpoint) => checkpoint.notRequiredAllowed).map((checkpoint) => checkpoint.id))
+      .toEqual(expect.arrayContaining([
+        "NC-LEBENSLAUF_TAETIGKEITEN",
+        "NC-ZUSATZQUALIFIKATIONEN",
+        "NC-ANDERE_BESCHAEFTIGUNGEN",
+        "NC-VORHERIGE_ZULASSUNGEN",
+        "NC-FUEHRUNGSZEUGNIS",
+        "NC-KV_ERKLAERUNGEN",
+        "NC-QUALITAETSGENEHMIGUNGEN",
+        "NC-AERZTEKAMMER_MELDUNG",
+        "NC-EHBA",
+      ]));
+    expect(catalog.find((checkpoint) => checkpoint.id === "NC-APPROBATION")?.notRequiredAllowed).toBeUndefined();
+    expect(catalog.find((checkpoint) => checkpoint.id === "NC-GENEHMIGUNGSSTATUS")?.notRequiredAllowed).toBeUndefined();
   });
 
   it("NC-APPROBATION verweist auf BAeO § 3 und die Approbationsurkunde", () => {

@@ -8,6 +8,7 @@ type OfficeCaseSnapshotRecord = {
   topicId?: unknown;
   topicTitle?: unknown;
   checkpoints?: unknown;
+  [key: string]: unknown;
 };
 
 function readSnapshot(value: unknown): OfficeCaseSnapshotRecord | null {
@@ -58,10 +59,7 @@ export async function GET(
       trigger_note: officeCase.trigger_note,
       topicId,
       topicTitle: topicId ? getOfficeTopic(topicId).title : null,
-      checkpoint_snapshot: {
-        topicId,
-        checkpoints,
-      },
+      checkpoint_snapshot: snapshot ?? { topicId, checkpoints },
       owner_account_id: officeCase.owner_account_id,
       owner_practice_id: officeCase.owner_practice_id,
     },

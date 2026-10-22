@@ -8,6 +8,9 @@ export type OfficeCaseListItem = {
   topicId: string | null;
   topicTitle: string | null;
   checkpointCount: number;
+  openCount: number;
+  overdueTasks: string[];
+  dueSoonTasks: string[];
 };
 
 type Props = {
@@ -33,8 +36,18 @@ export default function OfficeCasesClient({ items }: Props) {
                 <a href={`/office-cases/${item.id}/m2`}>Öffnen</a>
               </div>
               <div className="text-small text-muted">
-                {item.checkpointCount} Checkpoints · {new Date(item.createdAt).toLocaleDateString("de-DE")}
+                {item.checkpointCount} Prüfpunkte · {item.openCount} offen · {new Date(item.createdAt).toLocaleDateString("de-DE")}
               </div>
+              {item.overdueTasks.length > 0 ? (
+                <div className="text-small" style={{ color: "#b42318" }}>
+                  <strong>Überfällig:</strong> {item.overdueTasks.join("; ")}
+                </div>
+              ) : null}
+              {item.dueSoonTasks.length > 0 ? (
+                <div className="text-small" style={{ color: "#a15c00" }}>
+                  <strong>Innerhalb von 30 Tagen fällig:</strong> {item.dueSoonTasks.join("; ")}
+                </div>
+              ) : null}
             </article>
           ))}
         </div>

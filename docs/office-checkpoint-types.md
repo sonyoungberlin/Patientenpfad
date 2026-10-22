@@ -62,7 +62,7 @@ Ein Checkpoint, bei dem eine Information/Qualifikation/Status durch Dokument (Ur
 | **Externe Stelle erforderlich** | Optional (Verifikation durch Register/Behörde möglich) |
 | **Typische externe Stellen** | Approbationsbehörde, Ärztekammer, Medizinisches Berufsregister |
 | **M2-Verhalten** | Wenn M2: Ja/Nein/Unklar auf "Nachweis vorhanden?" und "Gültig?" |
-| **M3-Bewertungsform** | Select: `Nachweis akzeptabel` (YES) / `Nachweis unzureichend/ungültig` (NO) / `Information fehlt` (OPEN) |
+| **M3-Bewertungsform** | Select: `Nachweis akzeptabel` (YES) / `Nachweis unzureichend/ungültig` (NO) / `Information fehlt` (OPEN); `NOT_REQUIRED` nur bei ausdrücklich bedingten Prüfpunkten mit Begründung |
 | **M4-Folgeaktion** | Bei negativer oder offener Bewertung: Task "Nachweis anfordern" oder "Gültigkeitsprüfung"; External: Kontakt zur Quelle |
 | **M5-Dokumentation** | Art, Nummer, Ausstellerdatum, Gültigkeitsfrist des Nachweises; ggf. Registerreferenz |
 | **failureEffect** | checkpoint-spezifisch; typischerweise siehe konkreter Checkpoint |
@@ -71,6 +71,7 @@ Ein Checkpoint, bei dem eine Information/Qualifikation/Status durch Dokument (Ur
 **Hinweis:**  
 - NACHWEIS_PFLICHT ≠ automatisch M2 (kann auch direkt in M3 geprüft werden).
 - Beispiel: "Approbation liegt vor?" könnte in M2 geklärt sein, oder M3-Prüfer lädt Register selbst.
+- `NOT_REQUIRED` ist keine Bestätigung und kein Nachweis. Der Status darf nicht für zwingende Voraussetzungen verwendet werden und ersetzt keine fallbezogene fachliche Prüfung.
 
 ---
 

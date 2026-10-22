@@ -41,6 +41,7 @@ type DeriveCheckpointActionsInput = {
 
 type DeriveTopicActionsInput = {
   topicId?: string | null;
+  templateVersion?: number;
   checkpoints: OfficeCheckpointSnapshot[];
 };
 
@@ -182,6 +183,9 @@ export function deriveCheckpointActions(input: DeriveCheckpointActionsInput): De
   if (input.checkpoint.state === OfficeCheckpointState.YES) {
     return [];
   }
+  if (input.checkpoint.state === OfficeCheckpointState.NOT_REQUIRED) {
+    return [];
+  }
 
   if (input.checkpoint.state === OfficeCheckpointState.NO) {
     return [{
@@ -234,7 +238,7 @@ export function deriveTopicActions(input: DeriveTopicActionsInput): DerivedActio
     : null;
 
   if (topicId) {
-    for (const checkpoint of getOfficeCheckpointCatalog(topicId)) {
+    for (const checkpoint of getOfficeCheckpointCatalog(topicId, input.templateVersion)) {
       templateById.set(checkpoint.id, checkpoint);
     }
   }
@@ -243,7 +247,7 @@ export function deriveTopicActions(input: DeriveTopicActionsInput): DerivedActio
 
   for (const checkpoint of checkpoints) {
     const questions = topicId
-      ? getM2QuestionsForCheckpoint(topicId, checkpoint.id)
+      ? getM2QuestionsForCheckpoint(topicId, checkpoint.id, input.templateVersion)
       : [];
 
     const actions = deriveCheckpointActions({

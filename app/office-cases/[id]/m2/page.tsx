@@ -2,7 +2,12 @@ import { redirect } from "next/navigation";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { prisma } from "@/lib/prisma";
 import OfficeCaseEditorClient from "../OfficeCaseEditorClient";
+import { getOfficeTopicVersion, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { requireOfficeCasesManagementAccessFromCookies } from "@/lib/authz";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
 
 export default async function OfficeCaseM2Page({
   params,
@@ -38,6 +43,11 @@ export default async function OfficeCaseM2Page({
       ? (officeCase.checkpoint_snapshot as {
           topicId?: unknown;
           topicTitle?: unknown;
+          templateVersion?: unknown;
+          planned_start_date?: unknown;
+          decisionRevision?: unknown;
+          final_review?: unknown;
+          final_review_history?: unknown;
           checkpoints?: unknown;
         })
       : null;
@@ -72,6 +82,22 @@ export default async function OfficeCaseM2Page({
           topicTitle: typeof snapshot?.topicTitle === "string" ? snapshot.topicTitle : null,
           checkpoint_snapshot: {
             topicId: typeof snapshot?.topicId === "string" ? snapshot.topicId : null,
+            templateVersion:
+              typeof snapshot?.topicId === "string" && isOfficeTopicId(snapshot.topicId)
+                ? getOfficeTopicVersion(snapshot.topicId, snapshot.templateVersion)
+                : 1,
+            plannedStartDate:
+              typeof snapshot?.planned_start_date === "string" ? snapshot.planned_start_date : "",
+            decisionRevision:
+              typeof snapshot?.decisionRevision === "number" ? snapshot.decisionRevision : 0,
+            finalReview: isRecord(snapshot?.final_review) ? snapshot.final_review : null,
+            finalReviewHistory:
+              Array.isArray(snapshot?.final_review_history)
+                ? snapshot.final_review_history.filter(
+                    (item): item is Record<string, unknown> =>
+                      Boolean(item) && typeof item === "object" && !Array.isArray(item),
+                  )
+                : [],
             checkpoints,
           },
         }}

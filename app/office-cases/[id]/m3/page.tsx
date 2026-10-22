@@ -1,10 +1,14 @@
 import { redirect } from "next/navigation";
 import { getOfficeOwnershipFilter } from "@/lib/office/scope";
 import { prisma } from "@/lib/prisma";
-import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
+import { getOfficeTopicVersion, isOfficeTopicId } from "@/lib/office/checkpointCatalog";
 import { buildCheckpointComplianceMap } from "@/lib/office/checkpointCompliance";
 import OfficeCaseEditorClient from "../OfficeCaseEditorClient";
 import { requireOfficeCasesManagementAccessFromCookies } from "@/lib/authz";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
 
 export default async function OfficeCaseM3Page({
   params,
@@ -40,6 +44,11 @@ export default async function OfficeCaseM3Page({
       ? (officeCase.checkpoint_snapshot as {
           topicId?: unknown;
           topicTitle?: unknown;
+          templateVersion?: unknown;
+          planned_start_date?: unknown;
+          decisionRevision?: unknown;
+          final_review?: unknown;
+          final_review_history?: unknown;
           checkpoints?: unknown;
         })
       : null;
@@ -57,9 +66,12 @@ export default async function OfficeCaseM3Page({
     : [];
 
   const topicIdString = typeof snapshot?.topicId === "string" ? snapshot.topicId : null;
+  const templateVersion = topicIdString && isOfficeTopicId(topicIdString)
+    ? getOfficeTopicVersion(topicIdString, snapshot?.templateVersion)
+    : 1;
   const complianceByCheckpointId =
     topicIdString && isOfficeTopicId(topicIdString)
-      ? buildCheckpointComplianceMap(topicIdString)
+      ? buildCheckpointComplianceMap(topicIdString, templateVersion)
       : {};
 
   return (
@@ -80,6 +92,19 @@ export default async function OfficeCaseM3Page({
           topicTitle: typeof snapshot?.topicTitle === "string" ? snapshot.topicTitle : null,
           checkpoint_snapshot: {
             topicId: topicIdString,
+            templateVersion,
+            plannedStartDate:
+              typeof snapshot?.planned_start_date === "string" ? snapshot.planned_start_date : "",
+            decisionRevision:
+              typeof snapshot?.decisionRevision === "number" ? snapshot.decisionRevision : 0,
+            finalReview: isRecord(snapshot?.final_review) ? snapshot.final_review : null,
+            finalReviewHistory:
+              Array.isArray(snapshot?.final_review_history)
+                ? snapshot.final_review_history.filter(
+                    (item): item is Record<string, unknown> =>
+                      Boolean(item) && typeof item === "object" && !Array.isArray(item),
+                  )
+                : [],
             checkpoints,
           },
         }}

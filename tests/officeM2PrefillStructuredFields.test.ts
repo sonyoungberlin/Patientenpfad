@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/office-cases/[id]/m2/prefill/route";
-import { OFFICE_TOPIC_REGRESS } from "@/lib/office/checkpointCatalog";
+import {
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_REGRESS,
+} from "@/lib/office/checkpointCatalog";
 import { OfficeCheckpointKind, OfficeCheckpointState } from "@/lib/office/types";
 
 jest.mock("@/lib/prisma", () => ({
@@ -228,5 +231,72 @@ describe("PATCH /api/office-cases/[id]/m2/prefill structured fields", () => {
     }), { params: Promise.resolve({ id: "case-1" }) });
 
     expect(res.status).toBe(400);
+  });
+
+  it("erhält Zusatzfelder des versionierten Arzt-Snapshots und markiert geänderte M2-Antworten", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,
+        templateVersion: 2,
+        planned_start_date: "2027-03-01",
+        decisionRevision: 2,
+        final_review: { decision: "APPROVED", reviewed_revision: 2 },
+        final_review_history: [{ decision: "APPROVED", reviewed_revision: 2 }],
+        checkpoints: [{
+          id: "NC-APPROBATION",
+          title: "Approbation",
+          kind: OfficeCheckpointKind.DECISION,
+          state: OfficeCheckpointState.OPEN,
+          m2_answers: {},
+        }],
+      },
+    });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
+
+    const res = await PATCH(makeRequest({
+      checkpoints: [{ id: "NC-APPROBATION", m2_answers: { "M2-01": "YES" } }],
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(res.status).toBe(200);
+    const snapshot = prismaMock.officeCaseSession.update.mock.calls[0]?.[0]
+      .data?.checkpoint_snapshot as Record<string, unknown>;
+    expect(snapshot.templateVersion).toBe(2);
+    expect(snapshot.planned_start_date).toBe("2027-03-01");
+    expect(snapshot.final_review).toEqual({ decision: "APPROVED", reviewed_revision: 2 });
+    expect(snapshot.final_review_history).toEqual([{ decision: "APPROVED", reviewed_revision: 2 }]);
+    expect(snapshot.decisionRevision).toBe(3);
+  });
+
+  it("verhindert sensible Personalnummern in M2-Freitextfeldern", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,
+        templateVersion: 2,
+        checkpoints: [{
+          id: "NC-PERSONALDATEN_LOHNABRECHNUNG",
+          title: "Personalverwaltung",
+          kind: OfficeCheckpointKind.DEPENDENCY,
+          state: OfficeCheckpointState.OPEN,
+        }],
+      },
+    });
+
+    const res = await PATCH(makeRequest({
+      checkpoints: [{
+        id: "NC-PERSONALDATEN_LOHNABRECHNUNG",
+        known_note: "Steuer-ID 12345678901",
+      }],
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.officeCaseSession.update).not.toHaveBeenCalled();
   });
 });

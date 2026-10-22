@@ -10,9 +10,15 @@ import {
   getPrimaryOpenTextForBlock,
   getTopNextSteps,
 } from "@/lib/office/officeBlocks";
-import { isOfficeTopicId, inferOfficeTopicIdFromCheckpoints } from "@/lib/office/checkpointCatalog";
+import {
+  isOfficeTopicId,
+  inferOfficeTopicIdFromCheckpoints,
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
+} from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
 import type { CheckpointComplianceView } from "@/lib/office/checkpointCompliance";
+import { getCheckpointDueStatus, subtractCalendarMonths, subtractDays } from "@/lib/office/deadlines";
+import { isFinalReviewOutdated } from "@/lib/office/finalReview";
 import OfficeComplianceFooter from "@/components/office/OfficeComplianceFooter";
 import OfficeWritePanel from "@/components/office/OfficeWritePanel";
 import {
@@ -30,6 +36,11 @@ type OfficeCaseData = {
   topicTitle: string | null;
   checkpoint_snapshot: {
     topicId: string | null;
+    templateVersion?: number;
+    plannedStartDate?: string;
+    decisionRevision?: number;
+    finalReview?: Record<string, unknown> | null;
+    finalReviewHistory?: Record<string, unknown>[];
     checkpoints: OfficeCheckpointSnapshot[];
   };
 };
@@ -66,9 +77,13 @@ function kindLabel(kind: OfficeCheckpointKind) {
   }
 }
 
-function getQuestionsForCheckpoint(topicId: string | null, checkpointId: string): readonly OfficeM2Question[] {
+function getQuestionsForCheckpoint(
+  topicId: string | null,
+  checkpointId: string,
+  templateVersion: number,
+): readonly OfficeM2Question[] {
   if (!topicId || !isOfficeTopicId(topicId)) return [];
-  return getM2QuestionsForCheckpoint(topicId, checkpointId);
+  return getM2QuestionsForCheckpoint(topicId, checkpointId, templateVersion);
 }
 
 function m2AnswerLabel(value: M2AnswerValue | null | undefined): string {
@@ -87,8 +102,9 @@ function compactQuestionLabel(text: string, maxLength = 42): string {
 function getCompactPrefillItems(
   topicId: string | null,
   checkpoint: OfficeCheckpointSnapshot,
+  templateVersion: number,
 ): Array<{ question: string; answer: M2AnswerValue | null }> {
-  const questions = getQuestionsForCheckpoint(topicId, checkpoint.id);
+  const questions = getQuestionsForCheckpoint(topicId, checkpoint.id, templateVersion);
   const answers = checkpoint.m2_answers;
   if (questions.length === 0 || !answers) return [];
 
@@ -115,6 +131,7 @@ function getCompactPrefillItems(
 function statusLabel(status: DerivedActionStatus | OfficeCheckpointState): string {
   if (status === "geklaert" || status === OfficeCheckpointState.YES) return "geklaert";
   if (status === "offen" || status === OfficeCheckpointState.OPEN) return "offen";
+  if (status === OfficeCheckpointState.NOT_REQUIRED) return "nicht erforderlich";
   return "nicht vollstaendig";
 }
 
@@ -127,11 +144,33 @@ export default function OfficeCaseEditorClient({
   const [checkpoints, setCheckpoints] = useState<OfficeCheckpointSnapshot[]>(
     cloneCheckpoints(officeCase.checkpoint_snapshot.checkpoints),
   );
+  const templateVersion = officeCase.checkpoint_snapshot.templateVersion ?? 1;
+  const [plannedStartDate, setPlannedStartDate] = useState(
+    officeCase.checkpoint_snapshot.plannedStartDate ?? "",
+  );
+  const [finalReview, setFinalReview] = useState(officeCase.checkpoint_snapshot.finalReview ?? null);
+  const [finalReviewHistory, setFinalReviewHistory] = useState(
+    officeCase.checkpoint_snapshot.finalReviewHistory ?? [],
+  );
+  const [reviewNote, setReviewNote] = useState("");
+  const [decisionRevision, setDecisionRevision] = useState(
+    officeCase.checkpoint_snapshot.decisionRevision ?? 0,
+  );
 
   // Fallback: Topic aus Checkpoint-IDs ableiten, falls snapshot.topicId fehlt
   // (ältere Fälle ohne gespeichertes topicId).
   const effectiveTopicId =
     officeCase.topicId ?? inferOfficeTopicIdFromCheckpoints(checkpoints);
+  const isHiringV2 =
+    effectiveTopicId === OFFICE_TOPIC_HIRING_REPLACEMENT &&
+    templateVersion === 2;
+  const approvalIsStale = isFinalReviewOutdated(finalReview, decisionRevision);
+  const overdueCount = checkpoints.filter(
+    (checkpoint) => getCheckpointDueStatus(checkpoint) === "overdue",
+  ).length;
+  const dueSoonCount = checkpoints.filter(
+    (checkpoint) => getCheckpointDueStatus(checkpoint) === "due_soon",
+  ).length;
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,14 +181,16 @@ export default function OfficeCaseEditorClient({
       buildOfficeSummaryText({
         topicTitle: officeCase.topicTitle ?? officeCase.title ?? "Office-Snapshot",
         topicId: officeCase.topicId,
+        templateVersion,
         checkpoints,
       }),
-    [checkpoints, officeCase.title, officeCase.topicId, officeCase.topicTitle],
+    [checkpoints, templateVersion, officeCase.title, officeCase.topicId, officeCase.topicTitle],
   );
 
   const actionsByCheckpoint = useMemo(() => {
     const actions = deriveTopicActions({
       topicId: officeCase.topicId,
+      templateVersion,
       checkpoints,
     });
 
@@ -160,15 +201,16 @@ export default function OfficeCaseEditorClient({
       grouped.set(action.checkpointId, list);
     }
     return grouped;
-  }, [checkpoints, officeCase.topicId]);
+  }, [checkpoints, templateVersion, officeCase.topicId]);
 
   const blocks = useMemo(
     () =>
       buildOfficeBlocks({
         topicId: officeCase.topicId,
+        templateVersion,
         checkpoints,
       }),
-    [checkpoints, officeCase.topicId],
+    [checkpoints, templateVersion, officeCase.topicId],
   );
 
   const topNextSteps = useMemo(() => getTopNextSteps(blocks, 5), [blocks]);
@@ -177,6 +219,48 @@ export default function OfficeCaseEditorClient({
     setCheckpoints((prev) =>
       prev.map((checkpoint) => (checkpoint.id === id ? { ...checkpoint, ...patch } : checkpoint)),
     );
+  }
+
+  function updatePlannedStartDate(value: string) {
+    setPlannedStartDate(value);
+    const fourMonthsBefore = subtractCalendarMonths(value, 4) ?? "";
+    const fourWeeksBefore = subtractDays(value, 28) ?? "";
+    setCheckpoints((previous) =>
+      previous.map((checkpoint) => {
+        if (checkpoint.deadline_is_manual) return checkpoint;
+        if (checkpoint.deadline_kind !== "INTERNAL_CONTROL") return checkpoint;
+        if (checkpoint.id === "NC-KONTROLLE_4M") return { ...checkpoint, deadline: fourMonthsBefore };
+        if (checkpoint.id === "NC-KONTROLLE_4W") return { ...checkpoint, deadline: fourWeeksBefore };
+        return checkpoint;
+      }),
+    );
+  }
+
+  async function handleFinalReview(decision: "APPROVED" | "NOT_APPROVED") {
+    setSaving(true);
+    setError(null);
+    setStatus(null);
+    try {
+      const response = await fetch(`/api/office-cases/${officeCase.id}/final-review`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision, note: reviewNote }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Freigabe konnte nicht gespeichert werden.");
+        return;
+      }
+      setFinalReview(data.checkpoint_snapshot.final_review);
+      setFinalReviewHistory(data.checkpoint_snapshot.final_review_history);
+      setReviewNote("");
+      setStatus("Abschlussentscheidung gespeichert.");
+      router.refresh();
+    } catch {
+      setError("Netzwerkfehler beim Speichern der Abschlussentscheidung.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSave() {
@@ -201,8 +285,28 @@ export default function OfficeCaseEditorClient({
           setError(data.error ?? "Speichern fehlgeschlagen.");
           return;
         }
+        setDecisionRevision(data.office_case?.checkpoint_snapshot?.decisionRevision ?? decisionRevision);
         setStatus("Operative Prüfung gespeichert.");
       } else {
+        const invalidNotRequired = checkpoints.find(
+          (checkpoint) =>
+            checkpoint.state === OfficeCheckpointState.NOT_REQUIRED &&
+            !checkpoint.not_required_reason?.trim(),
+        );
+        if (invalidNotRequired) {
+          setError(`Bitte begründen Sie „Nicht erforderlich“ bei „${invalidNotRequired.title}“.`);
+          return;
+        }
+        const missingAuthoritySource = checkpoints.find(
+          (checkpoint) =>
+            checkpoint.deadline_kind === "AUTHORITY" &&
+            checkpoint.deadline &&
+            !checkpoint.authority?.trim(),
+        );
+        if (missingAuthoritySource) {
+          setError(`Bitte dokumentieren Sie die offizielle Quelle der Frist bei „${missingAuthoritySource.title}“.`);
+          return;
+        }
         for (const checkpoint of checkpoints) {
           const res = await fetch(`/api/office-cases/${officeCase.id}/checkpoint/update`, {
             method: "PATCH",
@@ -211,6 +315,19 @@ export default function OfficeCaseEditorClient({
               checkpoint_id: checkpoint.id,
               state: checkpoint.state,
               known_note: checkpoint.known_note ?? "",
+              ...(isHiringV2
+                ? {
+                    missing_note: checkpoint.missing_note ?? "",
+                    answer_source: checkpoint.answer_source ?? "",
+                    deadline: checkpoint.deadline ?? "",
+                    deadline_kind: checkpoint.deadline_kind ?? "TASK",
+                    deadline_is_manual: checkpoint.deadline_is_manual ?? false,
+                    responsible_role: checkpoint.responsible_role ?? "",
+                    authority: checkpoint.authority ?? "",
+                    not_required_reason: checkpoint.not_required_reason ?? "",
+                    planned_start_date: plannedStartDate,
+                  }
+                : {}),
             }),
           });
           const data = await res.json().catch(() => ({}));
@@ -218,6 +335,9 @@ export default function OfficeCaseEditorClient({
             setError(data.error ?? `Checkpoint ${checkpoint.id} konnte nicht gespeichert werden.`);
             return;
           }
+          setDecisionRevision(
+            data.office_case?.checkpoint_snapshot?.decisionRevision ?? decisionRevision,
+          );
         }
         setStatus("Klärungsstand gespeichert.");
       }
@@ -239,8 +359,108 @@ export default function OfficeCaseEditorClient({
       </header>
 
       {mode === "m3" ? (
+        isHiringV2 ? (
+          <section className="card" style={{ display: "grid", gap: "0.75rem" }}>
+            <h2 style={{ marginTop: 0 }}>Abschlusskontrolle der Praxisleitung</h2>
+            <p className="text-small text-muted" style={{ margin: 0 }}>
+              Die Häkchen ersetzen keine rechtliche Prüfung. OWNER oder ADMIN entscheidet manuell und dokumentiert
+              die eigene Einschätzung. KV- und Behördenanforderungen sind für den Einzelfall anhand aktueller
+              offizieller Informationen zu prüfen.
+            </p>
+            <div>
+              <strong>Vor dem Einsatz fallbezogen zu bewerten:</strong>
+              <ul className="text-small">
+                <li>Approbation und erforderliche Qualifikation</li>
+                <li>Arztregisterstatus und wirksame Anstellungsgenehmigung</li>
+                <li>Berufshaftpflicht und einschlägige Zusatzgenehmigungen</li>
+                <li>LANR-/BSNR-Zuordnung sowie eHBA und technische Vorbereitung</li>
+                <li>Personalverwaltung und Bedeutung aller offenen Punkte für den Arbeitsbeginn</li>
+              </ul>
+              <p className="text-small text-muted">
+                Erforderliche Voraussetzungen, interne organisatorische Aufgaben und begründet nicht erforderliche
+                Nachweise sind getrennt zu beurteilen. Eine KV-Frist ist nur verbindlich, wenn sie aus einer
+                konkreten offiziellen Mitteilung hervorgeht.
+              </p>
+            </div>
+            {approvalIsStale ? (
+              <strong role="status" style={{ color: "#a15c00" }}>Erneute Prüfung erforderlich</strong>
+            ) : null}
+            {finalReviewHistory.length > 0 ? (
+              <div style={{ display: "grid", gap: "0.4rem" }}>
+                <strong>Freigabehistorie</strong>
+                {[...finalReviewHistory].reverse().map((review, index) => (
+                  <div
+                    key={`${String(review.reviewed_at ?? "review")}-${index}`}
+                    className="text-small"
+                    style={{ borderLeft: "3px solid #d8e0ea", paddingLeft: "0.6rem" }}
+                  >
+                    <strong>{review.decision === "APPROVED" ? "Manuell freigegeben" : "Nicht freigegeben"}</strong>
+                    {typeof review.reviewer_email === "string" ? ` von ${review.reviewer_email}` : ""}
+                    {typeof review.reviewer_role === "string" ? ` (${review.reviewer_role})` : ""}
+                    {typeof review.reviewed_at === "string"
+                      ? ` am ${new Date(review.reviewed_at).toLocaleString("de-DE")}`
+                      : ""}
+                    {typeof review.note === "string" && review.note ? (
+                      <div>Begründung / offene Punkte: {review.note}</div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : finalReview ? (
+              <div className="text-small">
+                <strong>{finalReview.decision === "APPROVED" ? "Manuell freigegeben" : "Nicht freigegeben"}</strong>
+                {typeof finalReview.reviewer_email === "string" ? ` von ${finalReview.reviewer_email}` : ""}
+                {typeof finalReview.reviewed_at === "string"
+                  ? ` am ${new Date(finalReview.reviewed_at).toLocaleString("de-DE")}`
+                  : ""}
+              </div>
+            ) : (
+              <p className="text-small text-muted" style={{ margin: 0 }}>Noch keine manuelle Abschlussentscheidung dokumentiert.</p>
+            )}
+            <label style={{ display: "grid", gap: "0.25rem" }}>
+              Begründung oder Einordnung offener Punkte
+              <textarea
+                value={reviewNote}
+                maxLength={1000}
+                onChange={(event) => setReviewNote(event.target.value)}
+              />
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button type="button" disabled={saving} onClick={() => void handleFinalReview("APPROVED")}>
+                Manuell freigeben
+              </button>
+              <button type="button" disabled={saving} onClick={() => void handleFinalReview("NOT_APPROVED")}>
+                Nicht freigeben
+              </button>
+            </div>
+          </section>
+        ) : null
+      ) : null}
+
+      {mode === "m3" ? (
         <section className="card" style={{ display: "grid", gap: "0.75rem" }}>
           <h2 style={{ marginTop: 0 }}>Klärungsstand je Bereich</h2>
+          {isHiringV2 ? (
+            <div style={{ display: "grid", gap: "0.6rem" }}>
+              <label style={{ display: "grid", gap: "0.25rem", maxWidth: "24rem" }}>
+                Geplanter Arbeitsbeginn
+                <input
+                  type="date"
+                  value={plannedStartDate}
+                  onChange={(event) => updatePlannedStartDate(event.target.value)}
+                />
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <strong>Fristenübersicht:</strong>
+                <span>{overdueCount} überfällig</span>
+                <span>{dueSoonCount} innerhalb von 30 Tagen fällig</span>
+              </div>
+              <p className="text-small text-muted" style={{ margin: 0 }}>
+                Interne Kontrolltermine werden zunächst ungefähr vier Monate und vier Wochen vor dem Arbeitsbeginn berechnet.
+                Diese Werte sind keine KV- oder Behördenfristen und können pro Aufgabe angepasst werden.
+              </p>
+            </div>
+          ) : null}
           {blocks.length > 0 ? (
             <div style={{ display: "grid", gap: "0.6rem" }}>
               {blocks.map((block) => {
@@ -260,7 +480,13 @@ export default function OfficeCaseEditorClient({
                     <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                       <strong>{block.title}</strong>
                       <span className="text-small" style={{ fontWeight: 600 }}>
-                        {block.status === "offen" ? "Offen" : "Geklärt"}
+                        {block.status === "offen"
+                          ? "Offen"
+                          : block.status === "nicht_erforderlich"
+                            ? "Nicht erforderlich"
+                            : block.status === "mit_nicht_erforderlich"
+                              ? "Geklärt, teilweise nicht erforderlich"
+                              : "Geklärt"}
                       </span>
                     </div>
                     {primaryText ? (
@@ -272,7 +498,12 @@ export default function OfficeCaseEditorClient({
                       {block.checkpoints.map((checkpoint) => {
                         const checkpointActions = actionsByCheckpoint.get(checkpoint.id) ?? [];
                         const shortStatus = checkpointActions[0]?.text ?? statusLabel(checkpoint.state);
-                        const compactPrefill = getCompactPrefillItems(officeCase.topicId, checkpoint);
+                        const compactPrefill = getCompactPrefillItems(
+                          officeCase.topicId,
+                          checkpoint,
+                          templateVersion,
+                        );
+                        const dueStatus = getCheckpointDueStatus(checkpoint);
 
                         return (
                           <div
@@ -288,7 +519,22 @@ export default function OfficeCaseEditorClient({
                           >
                             <div style={{ display: "grid", gap: "0.2rem" }}>
                               <strong>{checkpoint.title}</strong>
+                              {checkpoint.description ? (
+                                <div className="text-small text-muted">{checkpoint.description}</div>
+                              ) : null}
                               <div className="text-small text-muted">Klärungsstand: {shortStatus}</div>
+                              {dueStatus !== "none" ? (
+                                <strong
+                                  className="text-small"
+                                  style={{ color: dueStatus === "overdue" ? "#b42318" : dueStatus === "due_soon" ? "#a15c00" : undefined }}
+                                >
+                                  {dueStatus === "overdue"
+                                    ? `Überfällig · ${checkpoint.deadline}`
+                                    : dueStatus === "due_soon"
+                                      ? `Fällig innerhalb von 30 Tagen · ${checkpoint.deadline}`
+                                      : `Fällig am ${checkpoint.deadline}`}
+                                </strong>
+                              ) : null}
                               <div className="text-small text-muted">
                                 Vorbereitung:{" "}
                                 {compactPrefill.length > 0
@@ -353,7 +599,117 @@ export default function OfficeCaseEditorClient({
                               >
                                 Offen
                               </button>
+                              {checkpoint.not_required_allowed ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateCheckpoint(checkpoint.id, {
+                                      state: OfficeCheckpointState.NOT_REQUIRED,
+                                    })
+                                  }
+                                  style={{
+                                    fontWeight: checkpoint.state === OfficeCheckpointState.NOT_REQUIRED ? 700 : 400,
+                                    outline:
+                                      checkpoint.state === OfficeCheckpointState.NOT_REQUIRED
+                                        ? "2px solid currentColor"
+                                        : undefined,
+                                  }}
+                                >
+                                  Nicht erforderlich
+                                </button>
+                              ) : null}
                             </div>
+                            {checkpoint.state === OfficeCheckpointState.NOT_REQUIRED ? (
+                              <label style={{ display: "grid", gap: "0.25rem" }}>
+                                Begründung (erforderlich)
+                                <textarea
+                                  value={checkpoint.not_required_reason ?? ""}
+                                  maxLength={500}
+                                  onChange={(event) =>
+                                    updateCheckpoint(checkpoint.id, {
+                                      not_required_reason: event.target.value,
+                                    })
+                                  }
+                                />
+                              </label>
+                            ) : null}
+                            {isHiringV2 ? (
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(12rem, 1fr))", gap: "0.5rem" }}>
+                              <label style={{ display: "grid", gap: "0.2rem" }}>
+                                Verantwortlich
+                                <input
+                                  type="text"
+                                  maxLength={120}
+                                  value={checkpoint.responsible_role ?? ""}
+                                  onChange={(event) =>
+                                    updateCheckpoint(checkpoint.id, {
+                                      responsible_role: event.target.value,
+                                    })
+                                  }
+                                  placeholder="Name oder Funktion"
+                                />
+                              </label>
+                              <label style={{ display: "grid", gap: "0.2rem" }}>
+                                Fristenart
+                                <select
+                                  value={checkpoint.deadline_kind ?? "TASK"}
+                                  onChange={(event) =>
+                                    updateCheckpoint(checkpoint.id, {
+                                      deadline_kind: event.target.value as OfficeCheckpointSnapshot["deadline_kind"],
+                                    })
+                                  }
+                                >
+                                  <option value="TASK">Individuelle Aufgabenfrist</option>
+                                  <option value="INTERNAL_CONTROL">Interner Kontrolltermin</option>
+                                  <option value="AUTHORITY">KV-/Behördenfrist</option>
+                                </select>
+                              </label>
+                              <label style={{ display: "grid", gap: "0.2rem" }}>
+                                Fällig am
+                                <input
+                                  type="date"
+                                  value={checkpoint.deadline ?? ""}
+                                  onChange={(event) =>
+                                    updateCheckpoint(checkpoint.id, {
+                                      deadline: event.target.value,
+                                      deadline_is_manual:
+                                        checkpoint.deadline_kind === "INTERNAL_CONTROL"
+                                          ? true
+                                          : checkpoint.deadline_is_manual,
+                                    })
+                                  }
+                                />
+                              </label>
+                              </div>
+                            ) : null}
+                            {isHiringV2 && checkpoint.deadline_kind === "AUTHORITY" ? (
+                              <label style={{ display: "grid", gap: "0.2rem" }}>
+                                Quelle der verbindlichen Frist (z. B. Bescheid oder offizielle Mitteilung)
+                                <input
+                                  type="text"
+                                  maxLength={300}
+                                  value={checkpoint.authority ?? ""}
+                                  onChange={(event) =>
+                                    updateCheckpoint(checkpoint.id, { authority: event.target.value })
+                                  }
+                                />
+                              </label>
+                            ) : null}
+                            {checkpoint.id !== "NC-PERSONALDATEN_LOHNABRECHNUNG" ? (
+                              <label style={{ display: "grid", gap: "0.2rem" }}>
+                                Notiz / offener Punkt
+                                <textarea
+                                  value={checkpoint.known_note ?? ""}
+                                  onChange={(event) =>
+                                    updateCheckpoint(checkpoint.id, { known_note: event.target.value })
+                                  }
+                                />
+                              </label>
+                            ) : (
+                              <p className="text-small text-muted" style={{ margin: 0 }}>
+                                Hier nur den Bearbeitungsstatus dokumentieren, keine Personalnummern oder Bankdaten.
+                              </p>
+                            )}
                             {complianceByCheckpointId?.[checkpoint.id] ? (
                               <OfficeComplianceFooter
                                 compliance={complianceByCheckpointId[checkpoint.id]}
@@ -361,7 +717,11 @@ export default function OfficeCaseEditorClient({
                               />
                             ) : null}
                             {(() => {
-                              const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
+                              const questions = getQuestionsForCheckpoint(
+                                officeCase.topicId,
+                                checkpoint.id,
+                                templateVersion,
+                              );
                               const answers = checkpoint.m2_answers;
                               return questions.length > 0 && answers ? (
                                 <details style={{ opacity: 0.82 }}>
@@ -430,7 +790,11 @@ export default function OfficeCaseEditorClient({
       {mode !== "m3" ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {checkpoints.map((checkpoint) => {
-            const questions = getQuestionsForCheckpoint(officeCase.topicId, checkpoint.id);
+            const questions = getQuestionsForCheckpoint(
+              officeCase.topicId,
+              checkpoint.id,
+              templateVersion,
+            );
 
             return (
               <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>

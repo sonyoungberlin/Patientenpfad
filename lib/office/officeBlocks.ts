@@ -10,7 +10,11 @@ import {
 import { deriveTopicActions, type DerivedAction } from "@/lib/office/derivedActions";
 import { OfficeCheckpointState, OfficeCheckpointType, type OfficeCheckpointSnapshot } from "@/lib/office/types";
 
-export type OfficeBlockStatus = "geklaert" | "offen";
+export type OfficeBlockStatus =
+  | "geklaert"
+  | "offen"
+  | "nicht_erforderlich"
+  | "mit_nicht_erforderlich";
 
 export type OfficeBlock = {
   id: string;
@@ -27,6 +31,7 @@ type OfficeBlockDefinition = {
 
 type BuildOfficeBlocksInput = {
   topicId?: string | null;
+  templateVersion?: number;
   checkpoints: OfficeCheckpointSnapshot[];
 };
 
@@ -54,7 +59,13 @@ const BLOCK_DEFINITIONS: readonly OfficeBlockDefinition[] = [
   { id: "weitere-klaerung", title: "Weitere Klaerung" },
 ] as const;
 
-const BLOCK_TITLE_BY_ID = new Map(BLOCK_DEFINITIONS.map((entry) => [entry.id, entry.title]));
+const BLOCK_TITLE_BY_ID = new Map([
+  ...BLOCK_DEFINITIONS.map((entry) => [entry.id, entry.title] as const),
+  ["hiring-v2-Unterlagen und Qualifikationen", "Unterlagen und Qualifikationen"],
+  ["hiring-v2-Anträge und Genehmigungen", "Anträge und Genehmigungen"],
+  ["hiring-v2-Personal und technische Vorbereitung", "Personal und technische Vorbereitung"],
+  ["hiring-v2-Fristen und Abschluss", "Fristen und Abschluss"],
+]);
 
 const CHECKPOINT_ID_TO_BLOCK_ID: Record<string, string> = {
   "NC-REGISTERSTATUS": "berufsrechtliche-voraussetzungen",
@@ -127,6 +138,7 @@ function isOpenAction(action: DerivedAction): boolean {
 }
 
 function resolveBlockId(checkpoint: OfficeCheckpointSnapshot): string {
+  if (checkpoint.section) return `hiring-v2-${checkpoint.section}`;
   const byCheckpointId = CHECKPOINT_ID_TO_BLOCK_ID[checkpoint.id];
   if (byCheckpointId) return byCheckpointId;
 
@@ -147,6 +159,7 @@ export function buildOfficeBlocks(input: BuildOfficeBlocksInput): OfficeBlock[] 
 
   const topicActions = deriveTopicActions({
     topicId: input.topicId,
+    templateVersion: input.templateVersion,
     checkpoints,
   });
 
@@ -189,14 +202,27 @@ export function buildOfficeBlocks(input: BuildOfficeBlocksInput): OfficeBlock[] 
       const hasOpenOrNoCheckpoint = block.checkpoints.some(
         (checkpoint) => checkpoint.state === OfficeCheckpointState.OPEN || checkpoint.state === OfficeCheckpointState.NO,
       );
+      const allNotRequired = block.checkpoints.every(
+        (checkpoint) => checkpoint.state === OfficeCheckpointState.NOT_REQUIRED,
+      );
+      const hasNotRequired = block.checkpoints.some(
+        (checkpoint) => checkpoint.state === OfficeCheckpointState.NOT_REQUIRED,
+      );
       return {
         ...block,
-        status: hasOpenOrNoCheckpoint ? "offen" : "geklaert",
+        status: hasOpenOrNoCheckpoint
+          ? "offen"
+          : allNotRequired
+            ? "nicht_erforderlich"
+            : hasNotRequired
+              ? "mit_nicht_erforderlich"
+              : "geklaert",
       };
     });
 }
 
 export function getPrimaryOpenTextForBlock(block: OfficeBlock): string | null {
+  if (block.status === "nicht_erforderlich") return "Alle Prüfpunkte dieses Abschnitts wurden begründet als nicht erforderlich markiert.";
   if (block.status !== "offen") return null;
 
   const firstOpenAction = block.actions.find(isOpenAction);

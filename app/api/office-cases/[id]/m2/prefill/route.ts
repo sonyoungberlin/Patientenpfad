@@ -1,14 +1,22 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isOfficeTopicId } from "@/lib/office/checkpointCatalog";
+import {
+  getOfficeCheckpointCatalog,
+  getOfficeTopicVersion,
+  isOfficeTopicId,
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
+} from "@/lib/office/checkpointCatalog";
 import { ownsOfficeCase } from "@/lib/office/scope";
 import type { M2AnswerValue, OfficeCheckpointSnapshot } from "@/lib/office/types";
 import { requireOfficeCasesManagementAccess } from "@/lib/authz";
+import { containsSensitivePersonalIdentifier } from "@/lib/office/privacy";
 
 type OfficeCaseSnapshotRecord = {
   topicId?: unknown;
   topicTitle?: unknown;
+  templateVersion?: unknown;
+  decisionRevision?: unknown;
   checkpoints?: unknown;
 };
 
@@ -129,6 +137,38 @@ export async function PATCH(
   }
 
   const updates: CheckpointNoteUpdate[] = rawUpdates;
+  const templateVersion = getOfficeTopicVersion(topicId, snapshot.templateVersion);
+  const templateById = new Map(
+    getOfficeCheckpointCatalog(topicId, templateVersion).map((checkpoint) => [checkpoint.id, checkpoint]),
+  );
+  if (templateVersion === 2 && topicId === OFFICE_TOPIC_HIRING_REPLACEMENT) {
+    for (const update of updates) {
+      const freeTextValues = [
+        update.known_note,
+        update.missing_note,
+        update.answer_source,
+        update.authority,
+        update.responsible_role,
+      ];
+      if (freeTextValues.some(
+        (value) => isString(value) && containsSensitivePersonalIdentifier(value),
+      )) {
+        return NextResponse.json(
+          { ok: false, error: "Bitte keine Steuer-ID, Sozialversicherungsnummer oder Bankverbindung im Office-Snapshot speichern." },
+          { status: 400 },
+        );
+      }
+      if (
+        update.id === "NC-PERSONALDATEN_LOHNABRECHNUNG" &&
+        freeTextValues.some((value) => isString(value) && value.trim().length > 0)
+      ) {
+        return NextResponse.json(
+          { ok: false, error: "Zu Personal- und Abrechnungsdaten darf nur der Bearbeitungsstatus dokumentiert werden." },
+          { status: 400 },
+        );
+      }
+    }
+  }
 
   const nextCheckpoints = snapshot.checkpoints.map((checkpoint) => {
     const update = updates.find((item) => item.id === checkpoint.id);
@@ -164,8 +204,23 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: "Checkpoint nicht gefunden." }, { status: 404 });
   }
 
+  const decisionChanged = templateVersion === 2 && snapshot.checkpoints.some((checkpoint, index) => {
+    if (!templateById.get(checkpoint.id)?.approvalRelevant) return false;
+    const before = checkpoint.m2_answers ?? {};
+    const after = nextCheckpoints[index].m2_answers ?? {};
+    return JSON.stringify(before) !== JSON.stringify(after);
+  });
+
   const updatedSnapshot = {
+    ...snapshot,
     topicId,
+    ...(templateVersion === 2
+      ? {
+          decisionRevision:
+            (typeof snapshot.decisionRevision === "number" ? snapshot.decisionRevision : 0) +
+            (decisionChanged ? 1 : 0),
+        }
+      : {}),
     checkpoints: nextCheckpoints,
   } as Prisma.InputJsonValue;
 

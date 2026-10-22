@@ -91,6 +91,11 @@ export type OfficeTopic = {
 export type OfficeCheckpointTemplate = {
   id: string;
   title: string;
+  section?: string;
+  description?: string;
+  notRequiredAllowed?: boolean;
+  approvalRelevant?: boolean;
+  deadlineKind?: "INTERNAL_CONTROL" | "TASK" | "AUTHORITY";
   checkpointType?: OfficeCheckpointType;
   failureEffect?: OfficeFailureEffect;
   outcomeAudience?: OfficeOutcomeAudience[];
@@ -1976,6 +1981,178 @@ const CHECKPOINTS_BY_TOPIC: Record<OfficeTopicId, readonly OfficeCheckpointTempl
   ],
 };
 
+const HIRING_REPLACEMENT_V2_CHECKPOINTS: readonly OfficeCheckpointTemplate[] = [
+  ...CHECKPOINTS_BY_TOPIC[OFFICE_TOPIC_HIRING_REPLACEMENT].map((checkpoint) => {
+    const section =
+      checkpoint.id === "NC-APPROBATION" ||
+      checkpoint.id === "NC-FACHARZTQUALIFIKATION" ||
+      checkpoint.id === "NC-REGISTERSTATUS"
+        ? "Unterlagen und Qualifikationen"
+        : checkpoint.id === "NC-BERUFSHAFTPFLICHT" ||
+            checkpoint.id === "NC-TAETIGKEITSUMFANG" ||
+            checkpoint.id === "NC-EXTERNE_STELLE" ||
+            checkpoint.id === "NC-ANTRAGSWEG" ||
+            checkpoint.id === "NC-GENEHMIGUNGSSTATUS"
+          ? "Anträge und Genehmigungen"
+          : checkpoint.id === "NC-BETRIEBSSTAETTENSTRUKTUR" ||
+              checkpoint.id === "NC-ARBEITSVERTRAG_FREIGABE" ||
+              checkpoint.id === "NC-LANR_BSNR_ZUORDNUNG" ||
+              checkpoint.id === "NC-SYSTEMZUGRIFFE_EINGERICHTET"
+            ? "Personal und technische Vorbereitung"
+            : "Fristen und Abschluss";
+    const descriptions: Record<string, string> = {
+      "NC-REGISTERSTATUS": "Arztregisterantrag, Eintragungsbestätigung und aktuellen Status bei der KV Berlin prüfen; nicht mit der Ärztekammermeldung verwechseln. Anforderungen fallbezogen verifizieren.",
+      "NC-APPROBATION": "Approbationsurkunde und etwaige Einschränkungen für den vorgesehenen Einsatz prüfen.",
+      "NC-FACHARZTQUALIFIKATION": "Facharztanerkennung und Übereinstimmung mit dem geplanten Tätigkeitsbereich prüfen.",
+      "NC-BERUFSHAFTPFLICHT": "Deckung für die konkrete Tätigkeit und den geplanten Beginn nachweisen lassen.",
+      "NC-TAETIGKEITSUMFANG": "Fachgebiet, Einsatzorte, Wochenstunden und vorgesehene Leistungen festhalten.",
+      "NC-EXTERNE_STELLE": "Zuständige KV-/Zulassungs- und Behördenkontakte für genau diesen Fall bestimmen.",
+      "NC-ANTRAGSWEG": "MVZ-Antrag, Vollständigkeit und Einreichung der Unterlagen sowie Eingangsbestätigung, Gebühren und Rückfragen dokumentieren. Verbindliche KV-/Behördenfrist nur aus einer fallbezogenen offiziellen Mitteilung übernehmen.",
+      "NC-GENEHMIGUNGSSTATUS": "Bescheid, Wirksamkeitsbeginn und genehmigten Tätigkeitsumfang prüfen; vertragsärztlicher Einsatz erst nach wirksamer Genehmigung.",
+      "NC-BETRIEBSSTAETTENSTRUKTUR": "Vorgesehene Betriebsstätten sowie LANR-/BSNR-Zuordnung klären.",
+      "NC-ARBEITSVERTRAG_FREIGABE": "Arbeitsvertrag einschließlich Beginn und Umfang unterschrieben ablegen.",
+      "NC-LANR_BSNR_ZUORDNUNG": "LANR und erforderliche BSNR-Zuordnung für den geplanten Einsatz bestätigen.",
+      "NC-SYSTEMZUGRIFFE_EINGERICHTET": "Notwendige Praxissoftware-Zugänge, Datenschutz und erforderliche Unterweisungen vorbereiten.",
+    };
+    return {
+      ...checkpoint,
+      ...(checkpoint.id === "NC-REGISTERSTATUS"
+        ? { title: "Arztregisterstatus (KV Berlin)" }
+        : {}),
+      ...(checkpoint.id === "NC-ANTRAGSWEG"
+        ? { title: "Antrag, Einreichung und Rückmeldungen", deadlineKind: "AUTHORITY" as const }
+        : {}),
+      section,
+      description: descriptions[checkpoint.id],
+      ...(checkpoint.id === "NC-REGISTERSTATUS" ? { authorityKeys: ["KV_BERLIN"] } : {}),
+      approvalRelevant: true,
+    };
+  }),
+  {
+    id: "NC-LEBENSLAUF_TAETIGKEITEN",
+    title: "Lebenslauf und bisherige ärztliche Tätigkeiten",
+    section: "Unterlagen und Qualifikationen",
+    description: "Aktuellen datierten und unterschriebenen Lebenslauf sowie erforderliche Tätigkeitsnachweise erfassen, soweit das konkrete Verfahren sie verlangt.",
+    kind: OfficeCheckpointKind.FACT,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-ZUSATZQUALIFIKATIONEN",
+    title: "Schwerpunkt-, Zusatz- und Fachkundenachweise",
+    section: "Unterlagen und Qualifikationen",
+    description: "Für den geplanten Leistungsumfang relevante Nachweise prüfen; nicht einschlägige Qualifikationen mit Begründung als nicht erforderlich kennzeichnen.",
+    kind: OfficeCheckpointKind.FACT,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-ANDERE_BESCHAEFTIGUNGEN",
+    title: "Weitere Arbeitsverhältnisse und Wochenstunden",
+    section: "Unterlagen und Qualifikationen",
+    description: "Weitere Beschäftigungen und Gesamtumfang erfragen, soweit für Arbeitszeit, Genehmigung oder Einsatzplanung relevant.",
+    kind: OfficeCheckpointKind.FACT,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-VORHERIGE_ZULASSUNGEN",
+    title: "Bisherige Zulassungen oder Anstellungen",
+    section: "Unterlagen und Qualifikationen",
+    description: "Erforderliche Beendigungen oder Änderungen bisheriger Zulassungen und Anstellungen prüfen.",
+    kind: OfficeCheckpointKind.FACT,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-FUEHRUNGSZEUGNIS",
+    title: "Behördenführungszeugnis",
+    section: "Unterlagen und Qualifikationen",
+    description: "Nur soweit vorgeschrieben: Nachweis oder Beantragung dokumentieren; keine Inhalte des Führungszeugnisses im Snapshot speichern.",
+    kind: OfficeCheckpointKind.FACT,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-KV_ERKLAERUNGEN",
+    title: "KV-Erklärungen",
+    section: "Unterlagen und Qualifikationen",
+    description: "Nur aktuell angeforderte Erklärungen, etwa zu Sucht und Abhängigkeit, anhand der offiziellen Verfahrensunterlagen prüfen.",
+    kind: OfficeCheckpointKind.FACT,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-QUALITAETSGENEHMIGUNGEN",
+    title: "Qualitätssicherungs- und Zusatzgenehmigungen",
+    section: "Anträge und Genehmigungen",
+    description: "Für die vorgesehenen Leistungen erforderliche Genehmigungen ermitteln und deren Wirksamkeit vor Leistungserbringung prüfen.",
+    kind: OfficeCheckpointKind.DECISION,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-AERZTEKAMMER_MELDUNG",
+    title: "Meldung bei der Ärztekammer Berlin",
+    section: "Anträge und Genehmigungen",
+    description: "Ärztekammermeldung und Bestätigung separat vom Arztregister der KV Berlin dokumentieren; einschlägige Frist fallbezogen verifizieren.",
+    kind: OfficeCheckpointKind.DEPENDENCY,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-PERSONALDATEN_LOHNABRECHNUNG",
+    title: "Personalverwaltung und Lohnabrechnung vorbereitet",
+    section: "Personal und technische Vorbereitung",
+    description: "Bearbeitungsstatus von Personal-, Steuer-, Sozialversicherungs- und Bankdaten sowie Lohnabrechnung dokumentieren. Keine konkreten Nummern oder Bankdaten in diesem Officefall speichern.",
+    kind: OfficeCheckpointKind.DEPENDENCY,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-EHBA",
+    title: "eHBA-Erforderlichkeit und Gültigkeit geprüft",
+    section: "Personal und technische Vorbereitung",
+    description: "Erforderlichkeit, Vorhandensein und Gültigkeit des eHBA für den vorgesehenen Einsatz prüfen.",
+    kind: OfficeCheckpointKind.DEPENDENCY,
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+  {
+    id: "NC-KONTROLLE_4M",
+    title: "Interne Kontrolle: ungefähr vier Monate vor Arbeitsbeginn",
+    section: "Fristen und Abschluss",
+    description: "Interner Kontrolltermin zur Anforderung fehlender Unterlagen und Prüfung des Verfahrensstands; keine behördliche Frist.",
+    kind: OfficeCheckpointKind.DECISION,
+    deadlineKind: "INTERNAL_CONTROL",
+    approvalRelevant: false,
+  },
+  {
+    id: "NC-KONTROLLE_4W",
+    title: "Interne Kontrolle: ungefähr vier Wochen vor Arbeitsbeginn",
+    section: "Fristen und Abschluss",
+    description: "Interner Kontrolltermin zur Nachverfolgung offener Anträge und Vorbereitung des Starts; keine behördliche Frist.",
+    kind: OfficeCheckpointKind.DECISION,
+    deadlineKind: "INTERNAL_CONTROL",
+    approvalRelevant: false,
+  },
+  {
+    id: "NC-ABSCHLUSSFREIGABE",
+    title: "Abschlussprüfung und manuelle Freigabe",
+    section: "Fristen und Abschluss",
+    description: "Praxisleitung prüft einschlägige Voraussetzungen, organisatorische Aufgaben und offene Punkte und dokumentiert die persönliche Entscheidung. Keine automatische rechtliche Freigabe.",
+    kind: OfficeCheckpointKind.DECISION,
+    approvalRelevant: false,
+  },
+];
+
+export function getCurrentOfficeTopicVersion(topicId: OfficeTopicId): number {
+  return topicId === OFFICE_TOPIC_HIRING_REPLACEMENT ? 2 : 1;
+}
+
+export function getOfficeTopicVersion(topicId: OfficeTopicId, value: unknown): number {
+  return topicId === OFFICE_TOPIC_HIRING_REPLACEMENT && value === 2 ? 2 : 1;
+}
+
 // Temporary additive fallback only.
 // These defaults are intentionally neutral and MUST NOT be interpreted as
 // final fachliche Typisierung. Final values will be set explicitly per checkpoint
@@ -2066,16 +2243,27 @@ export function getOfficeTopic(topicId: OfficeTopicId): OfficeTopic {
 
 export function getOfficeCheckpointCatalog(
   topicId: OfficeTopicId,
+  version = getCurrentOfficeTopicVersion(topicId),
 ): readonly OfficeCheckpointTemplate[] {
+  if (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT && version === 2) {
+    return HIRING_REPLACEMENT_V2_CHECKPOINTS;
+  }
   return CHECKPOINTS_BY_TOPIC[topicId] ?? [];
 }
 
 export function buildInitialSnapshotForTopic(
   topicId: OfficeTopicId,
+  version = getCurrentOfficeTopicVersion(topicId),
 ): OfficeCheckpointSnapshot[] {
-  return getOfficeCheckpointCatalog(topicId).map((checkpoint) => ({
+  return getOfficeCheckpointCatalog(topicId, version).map((checkpoint) => ({
     id: checkpoint.id,
     title: checkpoint.title,
+    ...(checkpoint.section ? { section: checkpoint.section } : {}),
+    ...(checkpoint.description ? { description: checkpoint.description } : {}),
+    ...(checkpoint.notRequiredAllowed ? { not_required_allowed: true } : {}),
+    ...(checkpoint.approvalRelevant !== undefined
+      ? { approval_relevant: checkpoint.approvalRelevant }
+      : {}),
     checkpointType: getCheckpointTypeWithLegacyFallback(checkpoint),
     failureEffect: getFailureEffectWithLegacyFallback(checkpoint),
     outcomeAudience: getOutcomeAudienceWithLegacyFallback(checkpoint),
@@ -2086,6 +2274,8 @@ export function buildInitialSnapshotForTopic(
     missing_note: "",
     answer_source: "",
     deadline: "",
+    ...(checkpoint.deadlineKind ? { deadline_kind: checkpoint.deadlineKind } : {}),
+    ...(checkpoint.deadlineKind === "INTERNAL_CONTROL" ? { deadline_is_manual: false } : {}),
     responsible_role: "",
     authority: "",
     required_documents: [],

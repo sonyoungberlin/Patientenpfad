@@ -34,7 +34,10 @@ export enum OfficeCheckpointState {
   YES = "YES",
   NO = "NO",
   OPEN = "OPEN",
+  NOT_REQUIRED = "NOT_REQUIRED",
 }
+
+export type OfficeDeadlineKind = "INTERNAL_CONTROL" | "TASK" | "AUTHORITY";
 
 export type M2AnswerValue = "YES" | "NO" | "UNCLEAR";
 
@@ -52,11 +55,18 @@ export type OfficeCheckpointSnapshot = {
   // Legacy snapshot field (from officeKind) kept for compatibility.
   office_kind?: string;
   state: OfficeCheckpointState;
+  section?: string;
+  description?: string;
+  not_required_allowed?: boolean;
+  not_required_reason?: string;
+  approval_relevant?: boolean;
   m2_answers?: Record<string, M2AnswerValue>;
   known_note?: string;
   missing_note?: string;
   answer_source?: string;
   deadline?: string;
+  deadline_kind?: OfficeDeadlineKind;
+  deadline_is_manual?: boolean;
   responsible_role?: string;
   authority?: string;
   required_documents?: string[];

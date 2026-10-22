@@ -53,7 +53,7 @@ const OUTCOME_AUDIENCES = new Set<OfficeOutcomeAudience>(Object.values(OfficeOut
 
 describe("office checkpoint catalog", () => {
   it("HR-topic nutzt neutrale NC-Checkpoints ohne Governance-Container", () => {
-    const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT);
+    const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT, 1);
     const ids = catalog.map((checkpoint) => checkpoint.id);
 
     expect(ids).toEqual([

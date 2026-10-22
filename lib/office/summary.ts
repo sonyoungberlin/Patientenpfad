@@ -15,6 +15,7 @@ import type { OfficeM2Question } from "@/lib/office/m2Questions";
 export type OfficeSummaryInput = {
   topicTitle: string;
   topicId?: string | null;
+  templateVersion?: number;
   checkpoints: OfficeCheckpointSnapshot[];
 };
 
@@ -78,11 +79,15 @@ export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
 
   const blocks = buildOfficeBlocks({
     topicId: input.topicId,
+    templateVersion: input.templateVersion,
     checkpoints,
   });
 
   const geklaerteBereiche = blocks
     .filter((block) => block.status === "geklaert")
+    .map((block) => `- ${block.title}`);
+  const teilweiseNichtErforderlich = blocks
+    .filter((block) => block.status === "mit_nicht_erforderlich" || block.status === "nicht_erforderlich")
     .map((block) => `- ${block.title}`);
 
   const offeneBereiche = blocks
@@ -92,6 +97,10 @@ export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
       if (!primaryText) return `- ${block.title}`;
       return `- ${block.title}: ${primaryText}`;
     });
+
+  const nichtErforderlichePunkte = checkpoints
+    .filter((cp) => cp.state === OfficeCheckpointState.NOT_REQUIRED)
+    .map((cp) => `- ${cp.title}${cp.not_required_reason?.trim() ? `: ${cp.not_required_reason.trim()}` : ""}`);
 
   const nextSteps = getTopNextSteps(blocks, 5).map((step) => `- ${step}`);
 
@@ -123,6 +132,11 @@ export function buildOfficeSummaryText(input: OfficeSummaryInput): string {
     "",
     "Offene Bereiche",
     ...(offeneBereiche.length > 0 ? offeneBereiche : ["- Keine offenen Bereiche."]),
+    "",
+    "Nicht erforderlich",
+    ...(nichtErforderlichePunkte.length > 0 || teilweiseNichtErforderlich.length > 0
+      ? [...teilweiseNichtErforderlich, ...nichtErforderlichePunkte]
+      : ["- Keine."]),
     "",
     "Naechste Schritte",
     ...(nextSteps.length > 0 ? nextSteps : ["- Keine offenen Schritte."]),

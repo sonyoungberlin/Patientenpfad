@@ -22,6 +22,7 @@ import {
   OFFICE_TOPIC_RESPONSIBILITY_COORDINATION,
   OFFICE_TOPIC_TRAINING_COORDINATION,
   OFFICE_TOPIC_MFA_EXIT,
+  getCurrentOfficeTopicVersion,
   type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 
@@ -743,17 +744,86 @@ const LEGACY_HR_CHECKPOINT_ID_MAP: Record<string, string> = {
   "HR-05": "HR-GOV-D",
 };
 
+const HIRING_V2_QUESTIONS: OfficeM2QuestionsByCheckpoint = {
+  ...M2_QUESTIONS_BY_TOPIC[OFFICE_TOPIC_HIRING_REPLACEMENT],
+  "NC-ANTRAGSWEG": [
+    { id: "M2-01", text: "Sind Verfahren, Unterlagen und zuständige Stelle für den konkreten MVZ-Antrag geklärt?" },
+    { id: "M2-02", text: "Sind Einreichung, Eingangsbestätigung, Gebühren und Rückfragen nachverfolgt?" },
+  ],
+  "NC-REGISTERSTATUS": [
+    { id: "M2-01", text: "Ist der Arzt im Arztregister bei der KV Berlin eingetragen?" },
+    { id: "M2-02", text: "Liegt eine Bestätigung der KV zum Arztregisterstatus vor?" },
+  ],
+  "NC-LEBENSLAUF_TAETIGKEITEN": [
+    { id: "M2-01", text: "Ist ein aktueller, datierter und unterschriebener Lebenslauf vorhanden, soweit das Verfahren ihn verlangt?" },
+    { id: "M2-02", text: "Sind notwendige Nachweise bisheriger ärztlicher Tätigkeiten erfasst?" },
+  ],
+  "NC-ZUSATZQUALIFIKATIONEN": [
+    { id: "M2-01", text: "Sind die für den geplanten Einsatz relevanten Schwerpunkt-, Zusatzqualifikations- und Fachkundenachweise ermittelt?" },
+    { id: "M2-02", text: "Liegen die für den geplanten Einsatz erforderlichen Nachweise vor?" },
+  ],
+  "NC-ANDERE_BESCHAEFTIGUNGEN": [
+    { id: "M2-01", text: "Sind weitere Arbeitsverhältnisse und Wochenstunden erfasst, soweit relevant?" },
+    { id: "M2-02", text: "Ist der Gesamtumfang für Einsatzplanung und erforderliche Genehmigungen geprüft?" },
+  ],
+  "NC-VORHERIGE_ZULASSUNGEN": [
+    { id: "M2-01", text: "Sind frühere Genehmigungen, Zulassungen und Anstellungen für einen Wechsel erfasst?" },
+    { id: "M2-02", text: "Sind erforderliche Beendigungen und Änderungen nachgewiesen?" },
+  ],
+  "NC-FUEHRUNGSZEUGNIS": [
+    { id: "M2-01", text: "Wird im konkreten Verfahren ein Behördenführungszeugnis verlangt?" },
+    { id: "M2-02", text: "Falls verlangt: Ist die Beantragung des Behördenführungszeugnisses dokumentiert?" },
+  ],
+  "NC-KV_ERKLAERUNGEN": [
+    { id: "M2-01", text: "Sind die aktuell für diesen Fall angeforderten KV-Erklärungen ermittelt?" },
+    { id: "M2-02", text: "Sind die einschlägigen Erklärungen eingereicht und offene Anforderungen nachverfolgt?" },
+  ],
+  "NC-QUALITAETSGENEHMIGUNGEN": [
+    { id: "M2-01", text: "Sind die für die vorgesehenen Leistungen erforderlichen Zusatzgenehmigungen ermittelt?" },
+    { id: "M2-02", text: "Sind erforderliche Genehmigungen für den geplanten Einsatz wirksam?" },
+  ],
+  "NC-AERZTEKAMMER_MELDUNG": [
+    { id: "M2-01", text: "Ist eine Meldung an die Ärztekammer Berlin für den konkreten Fall erforderlich?" },
+    { id: "M2-02", text: "Falls erforderlich: Sind Meldung und Bestätigung dokumentiert?" },
+  ],
+  "NC-PERSONALDATEN_LOHNABRECHNUNG": [
+    { id: "M2-01", text: "Sind erforderliche Personal- und Abrechnungsdaten außerhalb dieses Office-Snapshots bearbeitet?" },
+    { id: "M2-02", text: "Sind Sozialversicherungsanmeldung und Lohnabrechnung vorbereitet?" },
+  ],
+  "NC-EHBA": [
+    { id: "M2-01", text: "Ist geklärt, ob ein eHBA für den vorgesehenen Einsatz benötigt wird?" },
+    { id: "M2-02", text: "Falls benötigt: Ist der eHBA vorhanden und gültig?" },
+  ],
+  "NC-KONTROLLE_4M": [
+    { id: "M2-01", text: "Ist der interne Kontrolltermin ungefähr vier Monate vor Arbeitsbeginn eingeplant?" },
+    { id: "M2-02", text: "Sind zu diesem Zeitpunkt fehlende Unterlagen und Verfahrensschritte nachverfolgt?" },
+  ],
+  "NC-KONTROLLE_4W": [
+    { id: "M2-01", text: "Ist der interne Kontrolltermin ungefähr vier Wochen vor Arbeitsbeginn eingeplant?" },
+    { id: "M2-02", text: "Sind offene Punkte und ihre Bedeutung für den Arbeitsbeginn erneut geprüft?" },
+  ],
+  "NC-ABSCHLUSSFREIGABE": [
+    { id: "M2-01", text: "Hat eine verantwortliche Praxisleitung alle einschlägigen Voraussetzungen und offenen Punkte bewertet?" },
+    { id: "M2-02", text: "Ist die manuelle Freigabe mit Person und Datum dokumentiert?" },
+  ],
+};
+
 export function getM2QuestionsForTopic(
   topicId: OfficeTopicId,
+  version = getCurrentOfficeTopicVersion(topicId),
 ): OfficeM2QuestionsByCheckpoint {
+  if (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT && version === 2) {
+    return HIRING_V2_QUESTIONS;
+  }
   return M2_QUESTIONS_BY_TOPIC[topicId] ?? {};
 }
 
 export function getM2QuestionsForCheckpoint(
   topicId: OfficeTopicId,
   checkpointId: string,
+  version = getCurrentOfficeTopicVersion(topicId),
 ): readonly OfficeM2Question[] {
-  const byCheckpoint = M2_QUESTIONS_BY_TOPIC[topicId];
+  const byCheckpoint = getM2QuestionsForTopic(topicId, version);
   if (!byCheckpoint) return [];
 
   const effectiveCheckpointId =

@@ -92,7 +92,7 @@ export type OfficeWriteInputField = {
  */
 export type OfficeWriteConditionItem = {
   checkpointId: string;
-  state: "YES" | "NO" | "OPEN";
+  state: "YES" | "NO" | "OPEN" | "NOT_REQUIRED";
 };
 
 /**
@@ -3216,4 +3216,3 @@ Arbeitshilfe – keine arbeitsrechtliche Beratung.`,
   },
 
 ];
-

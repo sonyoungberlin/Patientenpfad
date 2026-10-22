@@ -37,10 +37,12 @@ describe("office M2 questions", () => {
       const legacyQuestions = getM2QuestionsForCheckpoint(
         OFFICE_TOPIC_HIRING_REPLACEMENT,
         legacyId,
+        1,
       );
       const governanceQuestions = getM2QuestionsForCheckpoint(
         OFFICE_TOPIC_HIRING_REPLACEMENT,
         governanceId,
+        1,
       );
 
       expect(legacyQuestions.length).toBeGreaterThan(0);
@@ -49,10 +51,10 @@ describe("office M2 questions", () => {
   });
 
   it("HR-topic stellt Fragen fuer alle neuen NC-Checkpoint-IDs bereit", () => {
-    const hrCheckpointIds = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT).map(
+    const hrCheckpointIds = getOfficeCheckpointCatalog(OFFICE_TOPIC_HIRING_REPLACEMENT, 2).map(
       (checkpoint) => checkpoint.id,
     );
-    const byCheckpoint = getM2QuestionsForTopic(OFFICE_TOPIC_HIRING_REPLACEMENT);
+    const byCheckpoint = getM2QuestionsForTopic(OFFICE_TOPIC_HIRING_REPLACEMENT, 2);
     const questionCheckpointIds = Object.keys(byCheckpoint).sort();
 
     const expectedNcIds = [
@@ -68,6 +70,19 @@ describe("office M2 questions", () => {
       "NC-ARBEITSVERTRAG_FREIGABE",
       "NC-LANR_BSNR_ZUORDNUNG",
       "NC-SYSTEMZUGRIFFE_EINGERICHTET",
+      "NC-LEBENSLAUF_TAETIGKEITEN",
+      "NC-ZUSATZQUALIFIKATIONEN",
+      "NC-ANDERE_BESCHAEFTIGUNGEN",
+      "NC-VORHERIGE_ZULASSUNGEN",
+      "NC-FUEHRUNGSZEUGNIS",
+      "NC-KV_ERKLAERUNGEN",
+      "NC-QUALITAETSGENEHMIGUNGEN",
+      "NC-AERZTEKAMMER_MELDUNG",
+      "NC-PERSONALDATEN_LOHNABRECHNUNG",
+      "NC-EHBA",
+      "NC-KONTROLLE_4M",
+      "NC-KONTROLLE_4W",
+      "NC-ABSCHLUSSFREIGABE",
     ].sort();
 
     expect(hrCheckpointIds.sort()).toEqual(expectedNcIds);
@@ -85,11 +100,22 @@ describe("office M2 questions", () => {
       const questions = getM2QuestionsForCheckpoint(
         OFFICE_TOPIC_HIRING_REPLACEMENT,
         checkpointId,
+        2,
       );
       expect(questions.length).toBeGreaterThanOrEqual(2);
       expect(questions.every((item) => item.id.trim().length > 0)).toBe(true);
       expect(questions.every((item) => item.text.trim().length > 0)).toBe(true);
     }
+  });
+
+  it("liefert für bestehende Fälle weiterhin ausschließlich die Legacy-M2-Fragen", () => {
+    expect(Object.keys(getM2QuestionsForTopic(OFFICE_TOPIC_HIRING_REPLACEMENT, 1)))
+      .not.toContain("NC-EHBA");
+    expect(getM2QuestionsForCheckpoint(
+      OFFICE_TOPIC_HIRING_REPLACEMENT,
+      "NC-REGISTERSTATUS",
+      1,
+    )[0]?.text).toContain("Ärztekammer Berlin");
   });
 
   it("liefert fuer jeden Checkpoint der neuen Themen mindestens zwei Leitfragen", () => {
