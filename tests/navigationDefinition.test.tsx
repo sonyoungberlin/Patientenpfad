@@ -113,7 +113,11 @@ describe("zentrale Bereichsdefinition", () => {
       "Neue Sitzung",
     ]);
     expect(sections[5].title).toBe("Praxisverwaltung");
-    expect(sections[5].items.slice(0, 4).map(({ label, href }) => ({ label, href }))).toEqual([
+    expect(sections[5].items.slice(0, 5).map(({ label, href }) => ({ label, href }))).toEqual([
+      {
+        label: "Übersicht",
+        href: "/practice",
+      },
       {
         label: "Praxisfälle",
         href: "/workflow-cases/internal-protocol/new",

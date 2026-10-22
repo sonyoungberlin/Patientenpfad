@@ -24,7 +24,7 @@ export default function PublicPatientCheckInLink({ link }: { link: string }) {
   }, [link]);
 
   return (
-    <section style={{ marginTop: "2.5rem" }} data-testid="patient-check-in-link-section">
+    <section id="patient-check-in-link" style={{ marginTop: "2.5rem" }} data-testid="patient-check-in-link-section">
       <h2>Patienten-Check-in — Öffentlicher Link &amp; QR-Code</h2>
       <p style={{ marginBottom: "0.75rem" }}>
         Öffentlicher Check-in für Patient:innen ohne Termin. Patient:innen können

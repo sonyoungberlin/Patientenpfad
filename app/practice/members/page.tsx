@@ -151,7 +151,7 @@ export default async function PracticeMembersPage({
         </p>
       )}
 
-      <section style={{ marginBottom: "2rem" }}>
+      <section id="member-add" style={{ marginBottom: "2rem" }}>
         <h2>Mitglied hinzufügen</h2>
         <p className="text-muted" style={{ marginBottom: "0.5rem" }}>
           Nur bestehende Accounts können hinzugefügt werden. Es wird keine
@@ -209,50 +209,61 @@ export default async function PracticeMembersPage({
         </form>
       </section>
 
-      <p className="text-muted" style={{ marginBottom: "0.5rem" }}>
-        {memberships.length} Mitglied{memberships.length === 1 ? "" : "er"}
-      </p>
+      <section id="members" aria-labelledby="members-heading">
+        <h2 id="members-heading">Mitglieder</h2>
+        <p className="text-muted" style={{ marginBottom: "0.5rem" }}>
+          {memberships.length} Mitglied{memberships.length === 1 ? "" : "er"}
+        </p>
 
-      <table>
-        <thead>
-          <tr>
-            <th>E-Mail</th>
-            <th>Rolle</th>
-            <th>Beigetreten</th>
-          </tr>
-        </thead>
-        <tbody>
-          {memberships.map((m) => {
-            const isSelf = m.account.id === account.id;
-            return (
-              <tr key={m.id}>
-                <td>
-                  {m.account.email}
-                  {isSelf ? " (Du)" : ""}
-                </td>
-                <td>
-                  {ROLE_LABEL[m.role]}
-                  {m.role === PracticeRole.KIOSK && m.kiosk_mode
-                    ? ` · ${m.kiosk_mode === "INTERNAL_DOCUMENTATION" ? "Interne Dokumentation" : "Patientenfragebogen"}`
-                    : ""}
-                </td>
-                <td>
-                  {new Date(m.created_at).toLocaleDateString("de-DE")}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+        <table>
+          <thead>
+            <tr>
+              <th>E-Mail</th>
+              <th>Rolle</th>
+              <th>Beigetreten</th>
+            </tr>
+          </thead>
+          <tbody>
+            {memberships.map((m) => {
+              const isSelf = m.account.id === account.id;
+              return (
+                <tr key={m.id}>
+                  <td>
+                    {m.account.email}
+                    {isSelf ? " (Du)" : ""}
+                  </td>
+                  <td>
+                    {ROLE_LABEL[m.role]}
+                    {m.role === PracticeRole.KIOSK && m.kiosk_mode
+                      ? ` · ${m.kiosk_mode === "INTERNAL_DOCUMENTATION" ? "Interne Dokumentation" : "Patientenfragebogen"}`
+                      : ""}
+                  </td>
+                  <td>
+                    {new Date(m.created_at).toLocaleDateString("de-DE")}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
 
-      <QuestionnaireAutoExportModeSettings />
-      <QuestionnaireAutoDownloadDeviceSettings />
-      <PersistentAutoDownloadDeviceSettings />
+      <div id="questionnaire-auto-export-mode">
+        <QuestionnaireAutoExportModeSettings />
+      </div>
+      <div id="questionnaire-auto-download">
+        <QuestionnaireAutoDownloadDeviceSettings />
+      </div>
+      <div id="persistent-auto-download-devices">
+        <PersistentAutoDownloadDeviceSettings />
+      </div>
 
-      <PublicPracticeProfileForm
-        initialPublicName={practiceSettings?.public_name ?? ""}
-        initialPublicSlug={practiceSettings?.public_slug ?? null}
-      />
+      <div id="public-practice-profile">
+        <PublicPracticeProfileForm
+          initialPublicName={practiceSettings?.public_name ?? ""}
+          initialPublicSlug={practiceSettings?.public_slug ?? null}
+        />
+      </div>
 
       {practice.patient_communication_enabled && (
         <PublicPatientCheckInLink link={patientCheckInLink} />
@@ -261,6 +272,7 @@ export default async function PracticeMembersPage({
       {practice.patient_communication_enabled && (
         <section
           style={{ marginTop: "2.5rem" }}
+          id="anfrage-link-section"
           data-testid="anfrage-link-section"
         >
           <h2>Digitale Anfrage — Öffentlicher Link</h2>
@@ -292,6 +304,7 @@ export default async function PracticeMembersPage({
       {practice.office_cases_enabled && (
         <section
           style={{ marginTop: "2.5rem" }}
+          id="bewerben-link-section"
           data-testid="bewerben-link-section"
         >
           <h2>Bewerbungsanfrage — Öffentlicher Link</h2>

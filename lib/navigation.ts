@@ -286,6 +286,14 @@ export const NAVIGATION_SECTIONS: readonly NavigationSection[] = [
     description: "Zugang und Einstellungen verwalten",
     items: [
       {
+        id: "practice-overview",
+        label: "Übersicht",
+        href: "/practice",
+        matches: ["/practice"],
+        roles: MANAGEMENT_ROLES,
+        requiresPracticeRole: true,
+      },
+      {
         id: "practice-cases",
         label: "Praxisfälle",
         href: "/workflow-cases/internal-protocol/new",

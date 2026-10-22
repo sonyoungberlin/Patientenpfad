@@ -56,13 +56,17 @@ export default async function DashboardPage() {
             >
               <h2 style={{ marginTop: 0 }}>{section.title}</h2>
               <p>{section.description}</p>
-              <ul style={{ display: "grid", gap: "0.5rem", margin: 0, paddingLeft: "1.25rem" }}>
-                {section.items.map((item) => (
-                  <li key={item.id}>
-                    <Link href={item.href}>{item.label}</Link>
-                  </li>
-                ))}
-              </ul>
+              {section.id === "practice-management" ? (
+                <Link href="/practice">Praxisübersicht öffnen</Link>
+              ) : (
+                <ul style={{ display: "grid", gap: "0.5rem", margin: 0, paddingLeft: "1.25rem" }}>
+                  {section.items.map((item) => (
+                    <li key={item.id}>
+                      <Link href={item.href}>{item.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           ))}
         </div>

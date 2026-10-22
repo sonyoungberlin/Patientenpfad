@@ -167,3 +167,28 @@ describe("Dashboard — Kachel 'Officepfad'", () => {
     expect(html).not.toContain('data-testid="office-path-tile"');
   });
 });
+
+describe("Dashboard — Kachel 'Praxisverwaltung'", () => {
+  beforeEach(() => {
+    redirectMock.mockClear();
+    getCookies.mockReset();
+  });
+
+  it.each(["OWNER", "ADMIN"])("%s sieht den Einstieg zur Praxisübersicht", async (role) => {
+    getCookies.mockResolvedValue(makeAccount(role, true));
+
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).toContain('data-testid="practice-management-tile"');
+    expect(html).toContain('<a href="/practice">Praxisübersicht öffnen</a>');
+    expect(html).not.toContain('<a href="/practice/members">Mitglieder</a>');
+  });
+
+  it("zeigt den Einstieg ohne passende Praxisrolle nicht", async () => {
+    getCookies.mockResolvedValue(inboxOnlyAccount());
+
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).not.toContain('data-testid="practice-management-tile"');
+  });
+});

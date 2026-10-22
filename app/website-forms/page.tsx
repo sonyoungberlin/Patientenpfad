@@ -97,9 +97,9 @@ export default async function WebsiteFormsPage({
       <h1>Website-Formulare</h1>
       <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
         Öffentliche Fragebögen, die Sie auf Ihrer Praxis-Website verlinken
-        können. Hinweis: die öffentliche Aufruf-Seite wird in einer späteren
-        Phase aktiviert; angelegte Formulare sind aktuell noch nicht über den
-        Link erreichbar.
+        können. Nach dem Absenden erhält die absendende Person eine
+        Bestätigungs-E-Mail. Nach der Bestätigung werden die Angaben an die
+        Praxis übermittelt.
       </p>
 
       {errorMsg && (
