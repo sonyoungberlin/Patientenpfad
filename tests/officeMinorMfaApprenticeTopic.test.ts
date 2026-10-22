@@ -7,7 +7,8 @@ import { isAuthorityId } from "@/lib/office/authorities";
 import { isEvidenceId } from "@/lib/office/evidenceCatalog";
 
 describe("Office-Topic mfa-azubi-unter-18-einstellung: fachliche Anreicherung", () => {
-  const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING);
+  const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING, 1);
+  const v2Catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING, 2);
   const byId = new Map(catalog.map((cp) => [cp.id, cp]));
 
   it("enthaelt unveraendert die 6 MA-Checkpoints MA-01..MA-06", () => {
@@ -28,6 +29,19 @@ describe("Office-Topic mfa-azubi-unter-18-einstellung: fachliche Anreicherung", 
       for (const ref of cp.requiredEvidenceKeys ?? []) expect(isEvidenceId(ref)).toBe(true);
       for (const ref of cp.optionalEvidenceKeys ?? []) expect(isEvidenceId(ref)).toBe(true);
     }
+  });
+
+  it("erhält V1 und bietet neue Fälle als gruppierte V2 mit genau 14 Checkpoints an", () => {
+    expect(v2Catalog.map((cp) => cp.id)).toEqual([
+      "MA-01", "MA-02", "MA-03", "MA-04", "MA-05", "MA-06", "MA-07",
+      "MA-08", "MA-09", "MA-10", "MA-11", "MA-12", "MA-13", "MA-14",
+    ]);
+    expect(new Set(v2Catalog.map((cp) => cp.section)).size).toBe(4);
+    expect(v2Catalog.filter((cp) => cp.notRequiredAllowed)).toHaveLength(0);
+    expect(v2Catalog.find((cp) => cp.id === "MA-05")?.description).toContain("keine Vertragsunterschriften doppelt");
+    expect(v2Catalog.find((cp) => cp.id === "MA-06")?.description).toContain("separat in MA-10 und MA-13");
+    expect(v2Catalog.find((cp) => cp.id === "MA-10")?.description).toContain("separat in MA-06");
+    expect(v2Catalog.find((cp) => cp.id === "MA-13")?.description).toContain("gehören zu MA-06");
   });
 
   it("jeder MA-Checkpoint traegt mindestens eine LegalRef, einen AuthorityKey oder einen Evidence-Key", () => {

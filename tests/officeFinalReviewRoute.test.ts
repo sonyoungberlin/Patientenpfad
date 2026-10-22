@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/office-cases/[id]/final-review/route";
-import { OFFICE_TOPIC_HIRING_REPLACEMENT } from "@/lib/office/checkpointCatalog";
+import {
+  OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+} from "@/lib/office/checkpointCatalog";
 import { OfficeCheckpointKind, OfficeCheckpointState } from "@/lib/office/types";
 import { isFinalReviewOutdated } from "@/lib/office/finalReview";
 
@@ -139,6 +144,62 @@ describe("PATCH /api/office-cases/[id]/final-review", () => {
       params: Promise.resolve({ id: "case-1" }),
     });
     expect(forbidden.status).toBe(403);
+    expect(prismaMock.officeCaseSession.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    OFFICE_TOPIC_MFA_HIRING,
+    OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+    OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  ])("ermöglicht ADMIN die manuelle Freigabe für neue V2-Fälle (%s)", async (topicId) => {
+    getSessionAccountMock.mockResolvedValue(account("ADMIN"));
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "account-1",
+      owner_practice_id: "practice-1",
+      internal_saved_at: null,
+      checkpoint_snapshot: {
+        topicId,
+        templateVersion: 2,
+        decisionRevision: 0,
+        checkpoints: [],
+      },
+    });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
+
+    const response = await PATCH(request({ decision: "APPROVED" }), {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    const saved = prismaMock.officeCaseSession.update.mock.calls[0]?.[0]
+      .data?.checkpoint_snapshot as Record<string, unknown>;
+    expect(saved.final_review).toMatchObject({
+      decision: "APPROVED",
+      reviewer_role: "ADMIN",
+      reviewed_revision: 0,
+    });
+    expect(saved.final_review_history).toHaveLength(1);
+  });
+
+  it("lässt für bestehende V1-Personalfälle keine neue Abschlussfreigabe zu", async () => {
+    getSessionAccountMock.mockResolvedValue(account("OWNER"));
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "account-1",
+      owner_practice_id: "practice-1",
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_MFA_HIRING,
+        templateVersion: 1,
+        checkpoints: [],
+      },
+    });
+
+    const response = await PATCH(request({ decision: "APPROVED" }), {
+      params: Promise.resolve({ id: "case-1" }),
+    });
+
+    expect(response.status).toBe(400);
     expect(prismaMock.officeCaseSession.update).not.toHaveBeenCalled();
   });
 });

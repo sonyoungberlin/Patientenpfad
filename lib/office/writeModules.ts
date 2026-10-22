@@ -1351,7 +1351,8 @@ Gesprächspunkte:
 {{offene_punkte}}
 
 Nächste Schritte:
-- Unterlagen vollständig vorlegen lassen (Abschlusszeugnis, SV-Daten, Steuer-ID)
+- Im Einzelfall erforderliche Nachweise im vorgesehenen Personalprozess klären und anfordern
+- Keine Steuer-ID, Sozialversicherungsnummer oder Bankverbindung in dieser Arbeitsunterlage erfassen
 - Interne Entscheidung und ggf. Arbeitsvertrag vorbereiten
 
 Interne Arbeitsunterlage – keine Vertragszusage, keine Rechtsbewertung.`,
@@ -1403,7 +1404,7 @@ Interne Arbeitsunterlage – keine Vertragszusage, keine Rechtsbewertung.`,
         label: "Fehlende Unterlagen",
         kind: "multiline",
         required: true,
-        placeholder: "z. B. Steuer-ID, SV-Ausweis, Abschlusszeugnis",
+        placeholder: "z. B. im Einzelfall benötigte Nachweise",
       },
       {
         key: "rueckgabefrist",
@@ -1501,7 +1502,7 @@ Arbeitsentwurf – bitte vor Versand inhaltlich prüfen.`,
       },
       {
         key: "pflichtunterweisungen",
-        label: "Pflichtunterweisungen",
+        label: "Für die konkreten Aufgaben erforderliche Unterweisungen",
         kind: "multiline",
         required: true,
         placeholder: "z. B. Datenschutz, Schweigepflicht, Hygieneplan, Brandschutz",
@@ -1531,7 +1532,7 @@ Ansprechperson Einarbeitung: {{verantwortliche_person}}{{/if}}
 Systemzugriffe einrichten:
 {{systemzugriffe}}
 
-Pflichtunterweisungen durchführen:
+Nach Prüfung der konkreten Aufgaben erforderliche Unterweisungen:
 {{pflichtunterweisungen}}
 
 Erste Aufgaben / Einarbeitungsschwerpunkte:
@@ -1564,7 +1565,7 @@ Interne Arbeitsliste – vor dem ersten Arbeitstag abhaken.`,
       { key: "datum_schreiben", label: "Datum des Schreibens", kind: "date", required: true },
       { key: "praxisname", label: "Praxisname", kind: "text", required: true, placeholder: "z. B. Hausarztpraxis Dr. Müller" },
       { key: "azubi_name", label: "Name der Auszubildenden / des Auszubildenden", kind: "text", required: true, placeholder: "z. B. Lena Hoffmann" },
-      { key: "fehlende_unterlagen", label: "Fehlende Unterlagen", kind: "multiline", required: true, placeholder: "z. B. Erstuntersuchungsnachweis, Einwilligungserklärung der Erziehungsberechtigten" },
+      { key: "fehlende_unterlagen", label: "Nach Einzelfallprüfung benötigte Unterlagen", kind: "multiline", required: true, placeholder: "Nur Unterlagen eintragen, deren Erforderlichkeit für diesen Fall geprüft wurde" },
       { key: "rueckgabefrist", label: "Rückgabefrist (optional)", kind: "date", required: false },
       { key: "kontakt_rueckfragen", label: "Kontakt für Rückfragen (optional)", kind: "text", required: false, placeholder: "z. B. Tel. 030 / 12345-0 oder mail@praxis.de" },
     ],
@@ -1577,12 +1578,12 @@ Betreff: Vollständigkeit der Unterlagen zum Ausbildungsstart
 
 Guten Tag,
 
-für den Ausbildungsstart von {{azubi_name}} bei uns fehlen noch folgende Unterlagen:
+für die Vorbereitung des Ausbildungsstarts von {{azubi_name}} haben wir nach unserer bisherigen Einzelfallprüfung noch folgende Unterlagen zu klären:
 
 {{fehlende_unterlagen}}
 
-Wir bitten um Einreichung baldmöglichst.{{#if rueckgabefrist}}
-Bitte übermitteln Sie die Unterlagen bis spätestens {{rueckgabefrist}}.{{/if}}{{#if kontakt_rueckfragen}}
+Bitte teilen Sie uns mit, wenn eine Anforderung unklar ist.{{#if rueckgabefrist}}
+Bitte übermitteln Sie die aufgeführten Unterlagen bis spätestens zum intern gewünschten Termin {{rueckgabefrist}}. Dies ist keine behördliche Frist.{{/if}}{{#if kontakt_rueckfragen}}
 
 Bei Rückfragen stehen wir Ihnen gerne zur Verfügung: {{kontakt_rueckfragen}}{{/if}}
 
@@ -1634,16 +1635,16 @@ Gesprächspunkte:
 2. Aufgaben und Einsatzbereich: {{einsatzbereich}}
 3. Arbeitszeit und Wochenstunden: {{wochenstunden}} – Berufsschultage im Dienstplan berücksichtigen
 4. Ausbildungsplan, Probezeit, Urlaubsregelung
-5. Unterlagenstatus klären (Erstuntersuchungsnachweis, Ausbildungsvertrag)
-6. Einwilligung der Erziehungsberechtigten: Status und nächste Schritte
+5. Prüfen, welche Untersuchungs- und Vertragsnachweise für diesen Fall erforderlich sind
+6. Beteiligung der Sorgeberechtigten fallbezogen klären; Vertragsunterschriften separat prüfen
 
 Offene Punkte:
 {{offene_punkte}}
 
 Nächste Schritte:
 - Fehlende Unterlagen anfordern
-- Ausbildungsvertrag zur Registrierung vorbereiten
-- Erziehungsberechtigte einbeziehen
+- Kammerverfahren und eine gegebenenfalls erforderliche Eintragung prüfen
+- Erforderliche Beteiligung der Sorgeberechtigten klären
 
 Interne Arbeitsunterlage – keine Vertragszusage, keine Rechtsbewertung.`,
     smoothingEnabled: false,
@@ -1670,7 +1671,7 @@ Interne Arbeitsunterlage – keine Vertragszusage, keine Rechtsbewertung.`,
       { key: "einsatzbereich", label: "Einsatzbereich", kind: "text", required: true, placeholder: "z. B. Anmeldung, Prophylaxe" },
       { key: "berufsschultage", label: "Berufsschultage", kind: "text", required: true, placeholder: "z. B. Montag und Mittwoch" },
       { key: "systemzugriffe", label: "Einzurichtende Systemzugriffe", kind: "multiline", required: true, placeholder: "z. B. PVS-Zugang, Zeiterfassung" },
-      { key: "pflichtunterweisungen", label: "Pflichtunterweisungen", kind: "multiline", required: true, placeholder: "z. B. Datenschutz, Schweigepflicht, Hygieneplan, Brandschutz" },
+      { key: "pflichtunterweisungen", label: "Für die konkreten Aufgaben erforderliche Unterweisungen", kind: "multiline", required: true, placeholder: "Nach Prüfung des Einsatzes erforderliche Unterweisungen oder offenen Klärungsbedarf eintragen" },
       { key: "erste_aufgaben", label: "Erste Aufgaben / Einarbeitungsschwerpunkte", kind: "multiline", required: true, placeholder: "z. B. Begleitung Anmeldung Woche 1" },
       { key: "verantwortliche_person", label: "Verantwortliche Person für Einarbeitung (optional)", kind: "text", required: false, placeholder: "z. B. MFA Meyer (Patin)" },
       { key: "notfallkontakt", label: "Notfallkontakt Erziehungsberechtigte (optional)", kind: "text", required: false, placeholder: "z. B. Eltern Hoffmann, Tel. 040 / 12345" },
@@ -1688,7 +1689,7 @@ Notfallkontakt: {{notfallkontakt}}{{/if}}
 Systemzugriffe einrichten:
 {{systemzugriffe}}
 
-Pflichtunterweisungen durchführen:
+Nach Prüfung der konkreten Aufgaben erforderliche Unterweisungen:
 {{pflichtunterweisungen}}
 
 Erste Aufgaben / Einarbeitungsschwerpunkte:
@@ -2183,9 +2184,9 @@ Interne Arbeitsliste – vor Inkrafttreten der neuen Öffnungszeiten prüfen.`,
     ],
     bodyTemplate: `Liebe Patientinnen und Patienten,
 
-wir möchten Sie darüber informieren, dass {{arztname_austretend}} unsere Praxis {{praxisname}} zum {{letzter_praxistag}} verlassen wird.
+wir möchten Sie darüber informieren, dass {{arztname_austretend}} ab dem {{letzter_praxistag}} nicht mehr in unserer Praxis {{praxisname}} tätig sein wird.
 
-Wir sorgen für eine reibungslose Weiterbetreuung und werden Sie über alle weiteren Schritte informieren.{{#if nachfolge_info}}
+Bitte kontaktieren Sie uns, wenn Sie Fragen zur weiteren Betreuung Ihrer Behandlung haben.{{#if nachfolge_info}}
 
 {{nachfolge_info}}{{/if}}{{#if kontakt_fragen}}
 
@@ -2276,14 +2277,16 @@ Offene Befunde / ausstehende Ergebnisse:
 Interne Teamaufgaben:
 {{team_aufgaben}}{{/if}}
 
-Organisatorische Folgeaufgaben – Chef-Mitdenken-Liste:
+Organisatorische Folgeaufgaben – interne Arbeitshilfe:
 (Operative Übersicht, kein Anspruch auf Vollständigkeit)
 - Zuständigkeiten für laufende Aufgaben intern neu geregelt?
 - Externe Stellen intern auf Handlungsbedarf geprüft?
 - Dienstplan, Schichteinteilung und Erreichbarkeiten aktualisiert?
 - Praxisunterlagen und interne Zugänge übergeben oder gesichert?
 
-Interne Arbeitsunterlage – vor dem letzten Praxistag abarbeiten.`,
+Patientenbezogene Inhalte nur im vorgesehenen Behandlungssystem dokumentieren; keine identifizierbaren Patientendaten in dieser Office-Arbeitsunterlage festhalten.
+
+Interne Arbeitsunterlage – offene Punkte prüfen und zuständig zuordnen.`,
     smoothingEnabled: false,
     audience: "INTERN",
     estimatedLength: "MEDIUM",
@@ -2291,7 +2294,7 @@ Interne Arbeitsunterlage – vor dem letzten Praxistag abarbeiten.`,
 
   {
     id: "exit-zugriffscheckliste",
-    label: "Systemzugriffe abschalten – Checkliste",
+    label: "Systemzugänge zum Austritt prüfen",
     outputKind: OfficeWriteOutputKind.INTERNE_NOTIZ,
     writeKind: OfficeWriteKind.INTERNAL_NOTE,
     trigger: {
@@ -2323,7 +2326,7 @@ Interne Arbeitsunterlage – vor dem letzten Praxistag abarbeiten.`,
       },
       {
         key: "austrittsdatum",
-        label: "Letzter Zugriffstag",
+        label: "Geplanter Zeitpunkt für erforderliche Änderungen (intern)",
         kind: "date",
         required: true,
       },
@@ -2341,22 +2344,22 @@ Interne Arbeitsunterlage – vor dem letzten Praxistag abarbeiten.`,
         required: false,
       },
     ],
-    bodyTemplate: `Systemzugriffe abschalten: Arzt-Austritt
+    bodyTemplate: `Systemzugänge zum Arzt-Austritt prüfen
 Praxis: {{praxisname}}
 Ärztin / Arzt: {{arztname_austretend}}
 Letzter Zugriffstag: {{austrittsdatum}}{{#if verantwortliche_it}}
 Verantwortlich: {{verantwortliche_it}}{{/if}}{{#if erledigt_am}}
 Erledigt am: {{erledigt_am}}{{/if}}
 
-Zugänge zu deaktivieren / anzupassen:
-[ ] Praxisverwaltungssystem (PVS) – Konto gesperrt
-[ ] E-Mail-Konto – Weiterleitung oder Sperrung geregelt
-[ ] Telefonlisten und Erreichbarkeiten aktualisiert
-[ ] Schließsystem / Schlüssel / Zutrittskarte eingezogen
-[ ] Dienstplan / Terminkalender bereinigt
-[ ] Weitere interne Zugänge (z. B. Praxisportale)
+Für jedes System fallbezogen prüfen, ob ein Zugang anzupassen oder zu beenden ist:
+[ ] Praxisverwaltungssystem (PVS) – erforderliche Änderung festgelegt und nachverfolgt
+[ ] E-Mail-Konto – Weiterleitung, Anpassung oder Beendigung geprüft
+[ ] Telefonlisten und Erreichbarkeiten – erforderliche Aktualisierung geprüft
+[ ] Schließsystem / Schlüssel / Zutrittskarte – Rückgabe und Berechtigungsänderung geprüft
+[ ] Dienstplan / Terminkalender – erforderliche Anpassung geprüft
+[ ] Weitere interne Zugänge (z. B. Praxisportale) – Zuständigkeit festgelegt
 
-Interne Checkliste – vor oder am letzten Praxistag abarbeiten.`,
+Interne Checkliste – Ergebnis und Zuständigkeit dokumentieren; sie trifft keine rechtliche Entscheidung.`,
     smoothingEnabled: false,
     audience: "INTERN",
     estimatedLength: "SHORT",

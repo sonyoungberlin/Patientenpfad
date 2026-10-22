@@ -54,7 +54,8 @@ function findModule(id: string) {
 // ---------------------------------------------------------------------------
 
 describe("officePhysicianExitTopic – Checkpoint-Katalog", () => {
-  const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION);
+  const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION, 1);
+  const v2Catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION, 2);
   const byId = new Map(catalog.map((cp) => [cp.id, cp]));
 
   it("enthält genau die 7 AA-Checkpoints in der richtigen Reihenfolge", () => {
@@ -76,6 +77,15 @@ describe("officePhysicianExitTopic – Checkpoint-Katalog", () => {
       for (const ref of cp.requiredEvidenceKeys ?? []) expect(isEvidenceId(ref)).toBe(true);
       for (const ref of cp.optionalEvidenceKeys ?? []) expect(isEvidenceId(ref)).toBe(true);
     }
+  });
+
+  it("erhält V1 und bietet neue Fälle als gruppierte V2 mit genau 14 Checkpoints an", () => {
+    expect(v2Catalog.map((cp) => cp.id)).toEqual([
+      "AA-01", "AA-02", "AA-03", "AA-04", "AA-05", "AA-06", "AA-07",
+      "AA-08", "AA-09", "AA-10", "AA-11", "AA-12", "AA-13", "AA-14",
+    ]);
+    expect(new Set(v2Catalog.map((cp) => cp.section)).size).toBe(4);
+    expect(v2Catalog.filter((cp) => cp.notRequiredAllowed).map((cp) => cp.id)).toEqual(["AA-05", "AA-14"]);
   });
 
   it("AA-04 referenziert DSGVO_ART_32 und optional DS_TOM_DOKU", () => {
@@ -340,7 +350,7 @@ describe("exit-uebergabe-checkliste – Render", () => {
     });
     expect(result).toContain("Dr. med. Jana Richter");
     expect(result).toContain("Patient A: laufende Therapie");
-    expect(result).toContain("Chef-Mitdenken-Liste");
+    expect(result).toContain("interne Arbeitshilfe");
   });
 
   it("zeigt offene_befunde-Block an, wenn gesetzt", () => {
@@ -372,7 +382,7 @@ describe("exit-uebergabe-checkliste – Render", () => {
       austrittsdatum: "2025-03-31",
       offene_patientenfaelle: "Patient A",
     });
-    expect(result).toContain("Chef-Mitdenken-Liste");
+    expect(result).toContain("interne Arbeitshilfe");
     expect(result).toContain("Zuständigkeiten");
   });
 });

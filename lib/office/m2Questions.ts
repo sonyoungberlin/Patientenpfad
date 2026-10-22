@@ -808,12 +808,185 @@ const HIRING_V2_QUESTIONS: OfficeM2QuestionsByCheckpoint = {
   ],
 };
 
+const MFA_HIRING_V2_QUESTIONS: OfficeM2QuestionsByCheckpoint = {
+  ...M2_QUESTIONS_BY_TOPIC[OFFICE_TOPIC_MFA_HIRING],
+  "MF-01": [
+    { id: "M2-01", text: "Ist geklärt, welcher Qualifikationsnachweis für die vorgesehenen Aufgaben relevant ist?" },
+    { id: "M2-02", text: "Ist der erforderliche Nachweis geprüft und sind offene Punkte zugeordnet?" },
+  ],
+  "MF-02": [
+    { id: "M2-01", text: "Ist der Arbeitsvertrag mit den vereinbarten Bedingungen von den erforderlichen Personen unterschrieben?" },
+    { id: "M2-02", text: "Sind Beginn, Vergütung, Arbeitszeit, Urlaub und gegebenenfalls Probezeit geprüft?" },
+  ],
+  "MF-03": [
+    { id: "M2-01", text: "Ist der Bearbeitungsstand der benötigten Personal- und Lohnunterlagen außerhalb dieses Office-Snapshots geprüft?" },
+    { id: "M2-02", text: "Ist die Übergabe an die zuständige Lohnstelle im Bearbeitungsprozess nachverfolgt?" },
+  ],
+  "MF-04": [
+    { id: "M2-01", text: "Ist die Beschäftigungsart festgehalten und geprüft, welche Meldewege daraus folgen?" },
+    { id: "M2-02", text: "Ist der Bearbeitungsstand jeder daraus folgenden Meldung festgehalten?" },
+  ],
+  "MF-05": [
+    { id: "M2-01", text: "Sind die Systemberechtigungen auf die tatsächlichen Aufgaben begrenzt?" },
+    { id: "M2-02", text: "Sind Datenschutz, Schweigepflicht und notwendige Unterweisungen berücksichtigt?" },
+  ],
+  "MF-06": [
+    { id: "M2-01", text: "Sind Einarbeitungsplan und verantwortliche Ansprechperson festgelegt?" },
+    { id: "M2-02", text: "Sind für den Einsatz notwendige Unterweisungen nachverfolgt?" },
+  ],
+  "MF-07": [
+    { id: "M2-01", text: "Sind Beschäftigungsart, geplanter Eintritt und Wochenarbeitszeit festgehalten?" },
+    { id: "M2-02", text: "Sind Einsatzort und interne Zuständigkeit geklärt?" },
+  ],
+  "MF-08": [
+    { id: "M2-01", text: "Wurde der Versicherungsbedarf für die geplante Tätigkeit geprüft?" },
+    { id: "M2-02", text: "Ist festgehalten, ob ein zusätzlicher Nachweis benötigt wird?" },
+  ],
+  "MF-09": [
+    { id: "M2-01", text: "Ist geprüft, welche Praxisschlüssel und Zugangsmittel für den Einsatz benötigt werden?" },
+    { id: "M2-02", text: "Sind Ausgabe und Rückgabezuständigkeit für benötigte Mittel geklärt?" },
+  ],
+  "MF-10": [
+    { id: "M2-01", text: "Sind vor dem geplanten Eintritt offene Unterlagen, Meldungen und organisatorische Aufgaben geprüft?" },
+    { id: "M2-02", text: "Sind offene Punkte mit Verantwortlichen und internen Fälligkeiten versehen?" },
+  ],
+};
+
+const PHYSICIAN_EXIT_V2_QUESTIONS: OfficeM2QuestionsByCheckpoint = {
+  ...M2_QUESTIONS_BY_TOPIC[OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION],
+  "AA-01": [
+    { id: "M2-01", text: "Ist das für die Beendigung zugrunde gelegte Austrittsdatum dokumentiert?" },
+    { id: "M2-02", text: "Ist der Tätigkeitsumfang bis zum Austritt festgehalten?" },
+  ],
+  "AA-02": [
+    { id: "M2-01", text: "Sind die Zuständigkeiten für laufende Patientenbehandlungen in der Übergangszeit geklärt?" },
+    { id: "M2-02", text: "Sind mögliche Versorgungslücken und Vertretungsbedarfe geprüft?" },
+  ],
+  "AA-03": [
+    { id: "M2-01", text: "Sind offene Behandlungen und notwendige Übergaben identifiziert?" },
+    { id: "M2-02", text: "Ist die Dokumentationsübergabe datenschutzgerecht organisiert?" },
+  ],
+  "AA-04": [
+    { id: "M2-01", text: "Ist der Änderungsbedarf bei Systemzugängen für den Austritt geprüft?" },
+    { id: "M2-02", text: "Sind erforderliche Änderungen einer verantwortlichen Person zugeordnet?" },
+  ],
+  "AA-05": [
+    { id: "M2-01", text: "Ist die Notwendigkeit einer Patientenkommunikation fallbezogen geprüft?" },
+    { id: "M2-02", text: "Ist die Entscheidung und gegebenenfalls ihre Umsetzung mit Zuständigkeit dokumentiert?" },
+  ],
+  "AA-06": [
+    { id: "M2-01", text: "Ist geklärt, welche Teammitglieder über den Austritt informiert werden müssen?" },
+    { id: "M2-02", text: "Sind erforderliche Informationen und Zuständigkeiten nach dem Austritt abgestimmt?" },
+  ],
+  "AA-07": [
+    { id: "M2-01", text: "Sind organisatorische Folgeaufgaben mit Zuständigkeit erfasst?" },
+    { id: "M2-02", text: "Sind offene Punkte und individuelle Fristen nachverfolgt?" },
+  ],
+  "AA-08": [
+    { id: "M2-01", text: "Ist die Beendigungsart mit der zuständigen Personalstelle geklärt?" },
+    { id: "M2-02", text: "Sind die dafür maßgeblichen Vertragsunterlagen bearbeitet?" },
+  ],
+  "AA-09": [
+    { id: "M2-01", text: "Sind Resturlaub, Arbeitszeitkonto und Schlussabrechnung in der Personalverwaltung geprüft?" },
+    { id: "M2-02", text: "Sind Lohnbüro und Zeugnisprozess im Bearbeitungsstatus nachverfolgt?" },
+  ],
+  "AA-10": [
+    { id: "M2-01", text: "Wurde geprüft, welche externen Stellen im konkreten Fall zu informieren sind?" },
+    { id: "M2-02", text: "Ist der Bearbeitungsstand erforderlicher Meldungen dokumentiert und sind konkrete Fristen nur mit Quelle erfasst?" },
+  ],
+  "AA-11": [
+    { id: "M2-01", text: "Sind Auswirkungen auf Anstellungsgenehmigung, Arztstelle und Versorgungsumfang geklärt?" },
+    { id: "M2-02", text: "Wurde ein möglicher Nachbesetzungsbedarf im konkreten Fall geprüft?" },
+  ],
+  "AA-12": [
+    { id: "M2-01", text: "Sind LANR-/BSNR-Zuordnung und Abrechnungszeitraum geprüft?" },
+    { id: "M2-02", text: "Sind offene Abrechnungsfragen einer zuständigen Person zugeordnet?" },
+  ],
+  "AA-13": [
+    { id: "M2-01", text: "Ist der Anpassungsbedarf bestehender Qualitätssicherungs- und Zusatzgenehmigungen geprüft?" },
+    { id: "M2-02", text: "Sind einschlägige Versicherungsfragen für den Austritt geklärt?" },
+  ],
+  "AA-14": [
+    { id: "M2-01", text: "Ist geprüft, welche Praxismittel ausgegeben wurden?" },
+    { id: "M2-02", text: "Ist der Rückgabestatus ausgegebener Praxismittel dokumentiert?" },
+  ],
+};
+
+const MINOR_MFA_APPRENTICE_V2_QUESTIONS: OfficeM2QuestionsByCheckpoint = {
+  ...M2_QUESTIONS_BY_TOPIC[OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING],
+  "MA-01": [
+    { id: "M2-01", text: "Sind die für Arbeitsplatz und Ausbildung relevanten Jugendarbeitsschutzvorgaben geprüft?" },
+    { id: "M2-02", text: "Sind mögliche Tätigkeitsbeschränkungen für die vorgesehenen Aufgaben geprüft und offene Fragen zugeordnet?" },
+  ],
+  "MA-02": [
+    { id: "M2-01", text: "Ist geprüft, ob vor Ausbildungsbeginn eine ärztliche Untersuchung erforderlich ist?" },
+    { id: "M2-02", text: "Falls erforderlich: Sind Nachweisstatus und mögliche spätere Wiedervorlagen geklärt?" },
+  ],
+  "MA-03": [
+    { id: "M2-01", text: "Ist das Eintragungsverfahren bei der Ärztekammer Berlin fallbezogen geprüft?" },
+    { id: "M2-02", text: "Sind erforderliche Einreichungen, Rückfragen und Rückmeldungen nachverfolgt?" },
+  ],
+  "MA-04": [
+    { id: "M2-01", text: "Sind Arbeitszeit, Pausen und Ruhezeiten anhand der konkreten Vorgaben geprüft?" },
+    { id: "M2-02", text: "Sind Berufsschulzeiten im betrieblichen Plan berücksichtigt?" },
+  ],
+  "MA-05": [
+    { id: "M2-01", text: "Ist fallbezogen geklärt, ob und wie Sorgeberechtigte einzubeziehen sind?" },
+    { id: "M2-02", text: "Sind organisatorische Notfallkontakte getrennt im vorgesehenen Personalprozess bearbeitet?" },
+  ],
+  "MA-06": [
+    { id: "M2-01", text: "Ist geprüft, welche Unterweisungen für Arbeitsplatz und vorgesehene Tätigkeiten erforderlich sind?" },
+    { id: "M2-02", text: "Sind erforderliche Unterweisungen durchgeführt und ihr Nachweis gesichert, getrennt von MA-10 und MA-13?" },
+  ],
+  "MA-07": [
+    { id: "M2-01", text: "Sind erforderliche Angaben, Beginn und Dauer im Ausbildungsvertrag geprüft?" },
+    { id: "M2-02", text: "Sind die erforderlichen Vertragsunterschriften vollständig?" },
+  ],
+  "MA-08": [
+    { id: "M2-01", text: "Ist eine verantwortliche Ausbilderperson benannt?" },
+    { id: "M2-02", text: "Sind Ausbildungsplan und formale Eignungsanforderungen fallbezogen geprüft?" },
+  ],
+  "MA-09": [
+    { id: "M2-01", text: "Sind Berufsschulzeiten und betriebliche Ausbildungszeiten abgestimmt?" },
+    { id: "M2-02", text: "Sind Ansprechpersonen für Schule und Praxis benannt?" },
+  ],
+  "MA-10": [
+    { id: "M2-01", text: "Sind Gefährdungen am konkreten Arbeitsplatz und in den vorgesehenen Tätigkeiten bewertet?" },
+    { id: "M2-02", text: "Sind erforderliche Schutzmaßnahmen festgelegt, ohne die Durchführung von Unterweisungen doppelt abzuhaken?" },
+  ],
+  "MA-11": [
+    { id: "M2-01", text: "Sind Ausbildungsvergütung und erforderliche Personalunterlagen außerhalb dieses Snapshots bearbeitet?" },
+    { id: "M2-02", text: "Ist die Übergabe an die Lohnabrechnung im Bearbeitungsstatus bestätigt?" },
+  ],
+  "MA-12": [
+    { id: "M2-01", text: "Ist geprüft, welche Sozialversicherung und Arbeitgebermeldungen für die konkrete Situation gelten?" },
+    { id: "M2-02", text: "Ist der Bearbeitungsstand erforderlicher Meldungen dokumentiert, ohne unbestätigte Fristen einzutragen?" },
+  ],
+  "MA-13": [
+    { id: "M2-01", text: "Sind Datenschutz und Schweigepflicht erläutert, getrennt von Unterweisungsnachweisen?" },
+    { id: "M2-02", text: "Sind notwendige Systemzugänge auf Ausbildungsaufgaben begrenzt?" },
+  ],
+  "MA-14": [
+    { id: "M2-01", text: "Sind vor dem tatsächlichen Ausbildungsbeginn die einschlägigen Vertrags-, Schutz- und Personalpunkte geprüft?" },
+    { id: "M2-02", text: "Sind verbleibende Punkte, Verantwortliche und interne Kontrolltermine festgehalten?" },
+  ],
+};
+
 export function getM2QuestionsForTopic(
   topicId: OfficeTopicId,
   version = getCurrentOfficeTopicVersion(topicId),
 ): OfficeM2QuestionsByCheckpoint {
   if (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT && version === 2) {
     return HIRING_V2_QUESTIONS;
+  }
+  if (topicId === OFFICE_TOPIC_MFA_HIRING && version === 2) {
+    return MFA_HIRING_V2_QUESTIONS;
+  }
+  if (topicId === OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION && version === 2) {
+    return PHYSICIAN_EXIT_V2_QUESTIONS;
+  }
+  if (topicId === OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING && version === 2) {
+    return MINOR_MFA_APPRENTICE_V2_QUESTIONS;
   }
   return M2_QUESTIONS_BY_TOPIC[topicId] ?? {};
 }

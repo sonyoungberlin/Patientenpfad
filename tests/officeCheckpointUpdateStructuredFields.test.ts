@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/office-cases/[id]/checkpoint/update/route";
 import {
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_MFA_HIRING,
   OFFICE_TOPIC_REGRESS,
 } from "@/lib/office/checkpointCatalog";
 import { OfficeCheckpointKind, OfficeCheckpointState } from "@/lib/office/types";
@@ -314,6 +315,87 @@ describe("PATCH /api/office-cases/[id]/checkpoint/update structured fields", () 
       checkpoint_id: "NC-APPROBATION",
       state: OfficeCheckpointState.NOT_REQUIRED,
       not_required_reason: "Fehlt.",
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.officeCaseSession.update).not.toHaveBeenCalled();
+  });
+
+  it("speichert Falldatum und begründetes Nicht-erforderlich in MFA-V2 samt erneuter Prüfungsrevision", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    const finalReview = { decision: "APPROVED", reviewed_revision: 2 };
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      internal_saved_at: null,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_MFA_HIRING,
+        templateVersion: 2,
+        decisionRevision: 2,
+        planned_event_date: "",
+        final_review: finalReview,
+        final_review_history: [finalReview],
+        checkpoints: [{
+          id: "MF-08",
+          title: "Einsatzbezogene Versicherungsfragen geprüft",
+          kind: OfficeCheckpointKind.ASSESSMENT,
+          state: OfficeCheckpointState.OPEN,
+          not_required_allowed: true,
+        }],
+      },
+    });
+    prismaMock.officeCaseSession.update.mockResolvedValue({ id: "case-1" });
+
+    const response = await PATCH(makeRequest({
+      checkpoint_id: "MF-08",
+      state: OfficeCheckpointState.NOT_REQUIRED,
+      not_required_reason: "Nach fallbezogener Prüfung nicht einschlägig.",
+      planned_event_date: "2027-03-01",
+      responsible_role: "Praxisleitung",
+      deadline: "2027-02-01",
+      deadline_kind: "INTERNAL_CONTROL",
+    }), { params: Promise.resolve({ id: "case-1" }) });
+
+    expect(response.status).toBe(200);
+    const saved = prismaMock.officeCaseSession.update.mock.calls[0]?.[0]
+      .data?.checkpoint_snapshot as Record<string, unknown>;
+    expect(saved.planned_event_date).toBe("2027-03-01");
+    expect(saved.decisionRevision).toBe(3);
+    expect(saved.final_review).toEqual(finalReview);
+    const checkpoint = (saved.checkpoints as Array<Record<string, unknown>>)[0];
+    expect(checkpoint).toMatchObject({
+      state: OfficeCheckpointState.NOT_REQUIRED,
+      not_required_reason: "Nach fallbezogener Prüfung nicht einschlägig.",
+      responsible_role: "Praxisleitung",
+      deadline: "2027-02-01",
+      deadline_kind: "INTERNAL_CONTROL",
+    });
+  });
+
+  it("verbietet Notizen zu status-only Personalpunkten in den neuen V2-Themen", async () => {
+    getSessionAccountMock.mockResolvedValue(ACCOUNT);
+    prismaMock.officeCaseSession.findUnique.mockResolvedValue({
+      id: "case-1",
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      internal_saved_at: null,
+      checkpoint_snapshot: {
+        topicId: OFFICE_TOPIC_MFA_HIRING,
+        templateVersion: 2,
+        checkpoints: [{
+          id: "MF-03",
+          title: "Personalunterlagen vorbereitet",
+          kind: OfficeCheckpointKind.DEPENDENCY,
+          state: OfficeCheckpointState.OPEN,
+        }],
+      },
+    });
+
+    const response = await PATCH(makeRequest({
+      checkpoint_id: "MF-03",
+      state: OfficeCheckpointState.YES,
+      known_note: "IBAN 12345678901234567890",
     }), { params: Promise.resolve({ id: "case-1" }) });
 
     expect(response.status).toBe(400);

@@ -2145,12 +2145,373 @@ const HIRING_REPLACEMENT_V2_CHECKPOINTS: readonly OfficeCheckpointTemplate[] = [
   },
 ];
 
+const VERSIONED_PERSONNEL_TOPICS = new Set<OfficeTopicId>([
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+]);
+
+export function supportsOfficeCaseFinalReview(
+  topicId: OfficeTopicId,
+  version: number,
+): boolean {
+  return (
+    (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT && version === 2) ||
+    (VERSIONED_PERSONNEL_TOPICS.has(topicId) && version === 2)
+  );
+}
+
+const MFA_HIRING_V2_CHECKPOINTS: readonly OfficeCheckpointTemplate[] = [
+  ...CHECKPOINTS_BY_TOPIC[OFFICE_TOPIC_MFA_HIRING].map((checkpoint) => {
+    const sections: Record<string, string> = {
+      "MF-01": "Eintritt und Vertrag",
+      "MF-02": "Eintritt und Vertrag",
+      "MF-07": "Eintritt und Vertrag",
+      "MF-03": "Personal und Meldungen",
+      "MF-04": "Personal und Meldungen",
+      "MF-08": "Personal und Meldungen",
+      "MF-05": "Praxiszugang und Einarbeitung",
+      "MF-06": "Praxiszugang und Einarbeitung",
+      "MF-09": "Praxiszugang und Einarbeitung",
+    };
+    const descriptions: Record<string, string> = {
+      "MF-01": "Prüfen, welche Qualifikations- und Tätigkeitsnachweise für die vorgesehenen Aufgaben relevant sind und ob sie vorliegen. Keine zusätzlichen Nachweise für jede Rolle voraussetzen.",
+      "MF-02": "Arbeitsvertrag und vereinbarte Bedingungen zu Beginn, Vergütung, Arbeitszeit, Urlaub und gegebenenfalls Probezeit prüfen. Erforderliche Unterschriften und noch offene Vertragsfragen festhalten.",
+      "MF-03": "Vollständigkeit der Personal- und Lohnunterlagen sowie Übergabe an Lohnbüro oder Steuerbüro bestätigen. Nur Bearbeitungsstatus dokumentieren; keine Steuer-ID, Sozialversicherungsnummer, Bankverbindung oder konkreten Personalwerte im Snapshot speichern.",
+      "MF-04": "Prüfen, welche Sozialversicherungs- oder sonstigen Beschäftigungsmeldungen sich aus der konkreten Beschäftigungsart ergeben. Falls Meldungen erforderlich sind, zuständige Stelle, Bearbeitungsstand und Nachweis nachverfolgen.",
+      "MF-05": "Zugriffsrechte für die vorgesehenen Aufgaben abstimmen und erforderliche Datenschutz- und Schweigepflichtinformationen sowie Unterweisungen berücksichtigen.",
+      "MF-06": "Einarbeitungsplan und Ansprechperson festlegen. Für die konkreten Aufgaben erforderliche Unterweisungen nach fallbezogener Prüfung nachverfolgen.",
+    };
+    const titles: Record<string, string> = {
+      "MF-01": "Qualifikationsnachweise für die Tätigkeit geprüft",
+      "MF-02": "Arbeitsvertrag und Bedingungen geprüft",
+      "MF-03": "Personal- und Lohnunterlagen bearbeitet",
+      "MF-04": "Beschäftigungsmeldungen fallbezogen geprüft",
+      "MF-05": "Zugriffsrechte und Datenschutz abgestimmt",
+      "MF-06": "Einarbeitung und Unterweisungen geplant",
+    };
+    return {
+      ...checkpoint,
+      title: titles[checkpoint.id] ?? checkpoint.title,
+      section: sections[checkpoint.id],
+      description: descriptions[checkpoint.id],
+      approvalRelevant: true,
+    };
+  }),
+  {
+    id: "MF-07",
+    title: "Beschäftigungsart und Eintrittsdaten dokumentiert",
+    section: "Eintritt und Vertrag",
+    description: "Beschäftigungsart, geplanten Eintritt, Wochenarbeitszeit, Einsatzort und interne Zuständigkeit festhalten. Diese Angaben dienen der fallbezogenen Prüfung der folgenden Schritte.",
+    kind: OfficeCheckpointKind.FACT,
+    checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "MF-08",
+    title: "Einsatzbezogene Versicherungsfragen geprüft",
+    section: "Personal und Meldungen",
+    description: "Prüfen, ob für die konkrete Tätigkeit zusätzliche Versicherungs- oder Deckungsnachweise erforderlich sind. Keine persönliche Berufshaftpflicht für jede MFA voraussetzen; die Anwendbarkeit im Einzelfall klären.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    notRequiredAllowed: true,
+    optionalEvidenceKeys: ["BERUFSHAFTPFLICHT_NACHWEIS"],
+    approvalRelevant: true,
+  },
+  {
+    id: "MF-09",
+    title: "Ausgabe und Rückgabe von Zugangsmitteln geklärt",
+    section: "Praxiszugang und Einarbeitung",
+    description: "Ausgabe von Schlüsseln, Karten und sonstigen Zugangsmitteln sowie Rückgabezuständigkeit intern dokumentieren. Keine Zugangsdaten im Office-Snapshot speichern.",
+    kind: OfficeCheckpointKind.RULE,
+    checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "MF-10",
+    title: "Startorganisation und offene Punkte geprüft",
+    section: "Fristen und Abschluss",
+    description: "Vor dem geplanten Eintritt offene Unterlagen, Meldungsstatus, Zugänge und organisatorische Hindernisse nachverfolgen. Dies ist ein interner Kontrollpunkt, keine rechtliche Freigabe.",
+    kind: OfficeCheckpointKind.DECISION,
+    checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    deadlineKind: "INTERNAL_CONTROL",
+    approvalRelevant: true,
+  },
+];
+
+const PHYSICIAN_EXIT_V2_CHECKPOINTS: readonly OfficeCheckpointTemplate[] = [
+  ...CHECKPOINTS_BY_TOPIC[OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION].map((checkpoint) => {
+    const sections: Record<string, string> = {
+      "AA-01": "Beendigung und Personalabschluss",
+      "AA-02": "Versorgung und Dokumentation",
+      "AA-03": "Versorgung und Dokumentation",
+      "AA-04": "Zugänge und Abschluss",
+      "AA-05": "Versorgung und Dokumentation",
+      "AA-06": "Versorgung und Dokumentation",
+      "AA-07": "Zugänge und Abschluss",
+    };
+    const descriptions: Record<string, string> = {
+      "AA-01": "Das im Arbeitsverhältnis zugrunde gelegte Austrittsdatum und den bisherigen Tätigkeitsumfang dokumentieren.",
+      "AA-02": "Versorgung und Zuständigkeiten für die Übergangszeit organisieren und mögliche Lücken nachverfolgen.",
+      "AA-03": "Übergabe offener Behandlungen und erforderlicher Dokumentation datenschutzgerecht koordinieren. Keine unnötigen Patientendaten in Office-Notizen speichern.",
+      "AA-04": "Prüfen, welche Systemzugänge zum Austritt angepasst oder beendet werden müssen, und erforderliche Änderungen nachverfolgen.",
+      "AA-05": "Prüfen, ob Patientenkommunikation im konkreten Fall erforderlich oder angemessen ist. Falls vorgesehen, Inhalt, Zuständigkeit und Umsetzung planen.",
+      "AA-06": "Team über den Austritt und die nachfolgenden Zuständigkeiten informieren.",
+      "AA-07": "Organisatorische Folgeaufgaben, Zuständigkeiten und verbleibende Punkte intern erfassen und nachverfolgen.",
+    };
+    const titles: Record<string, string> = {
+      "AA-01": "Austrittsdatum und Tätigkeitsumfang dokumentiert",
+      "AA-02": "Versorgung im Übergang organisiert",
+      "AA-03": "Übergabe offener Behandlungen koordiniert",
+      "AA-04": "Systemzugänge für den Austritt geprüft",
+      "AA-05": "Patientenkommunikation fallbezogen geprüft",
+      "AA-06": "Teamkommunikation und Zuständigkeiten abgestimmt",
+      "AA-07": "Organisatorische Folgeaufgaben erfasst",
+    };
+    return {
+      ...checkpoint,
+      title: titles[checkpoint.id] ?? checkpoint.title,
+      section: sections[checkpoint.id],
+      description: descriptions[checkpoint.id],
+      ...(checkpoint.id === "AA-05" ? { notRequiredAllowed: true } : {}),
+      ...(checkpoint.id === "AA-02" ? { deadlineKind: "INTERNAL_CONTROL" as const } : {}),
+      approvalRelevant: true,
+    };
+  }),
+  {
+    id: "AA-08",
+    title: "Beendigungsart und Vertragsgrundlage geklärt",
+    section: "Beendigung und Personalabschluss",
+    description: "Beendigungsart und maßgebliche Unterlagen, etwa Kündigung, Aufhebungsvertrag oder Befristungsende, mit der zuständigen Personalstelle prüfen. Die Checkliste ersetzt keine arbeitsrechtliche Prüfung.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "AA-09",
+    title: "Personalabschluss und Schlussabrechnung nachverfolgt",
+    section: "Beendigung und Personalabschluss",
+    description: "Resturlaub, Arbeitszeitkonto, Zeugniswunsch, Schlussabrechnung und Übergabe an Lohnbüro/Personalverwaltung bearbeiten. Nur Status dokumentieren, keine konkreten Personal- oder Abrechnungswerte speichern.",
+    kind: OfficeCheckpointKind.DEPENDENCY,
+    checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "AA-10",
+    title: "Erforderliche externe Meldungen geprüft",
+    section: "KV, Genehmigungen und Abrechnung",
+    description: "Fallbezogen prüfen, ob KV Berlin, Zulassungsausschuss, Ärztekammer oder weitere Stellen zu informieren sind. Erforderliche Meldungen und Rückmeldungen nachverfolgen; keine pauschale Meldepflicht oder Frist voraussetzen.",
+    kind: OfficeCheckpointKind.DECISION,
+    checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "AA-11",
+    title: "Auswirkungen auf Arztstelle und Genehmigungen geklärt",
+    section: "KV, Genehmigungen und Abrechnung",
+    description: "Auswirkungen auf Anstellungsgenehmigung, Arztstelle, Versorgungsumfang und mögliche Nachbesetzung fallbezogen prüfen. Das Ende eines Arbeitsverhältnisses ist nicht automatisch eine Zulassungsabgabe oder Sitzübertragung.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    optionalEvidenceKeys: ["ANSTELLUNGSGENEHMIGUNG_ZA", "ZULASSUNGSBESCHEID_ZA"],
+    approvalRelevant: true,
+  },
+  {
+    id: "AA-12",
+    title: "LANR-/BSNR-Zuordnung und Abrechnung geprüft",
+    section: "KV, Genehmigungen und Abrechnung",
+    description: "Auswirkungen auf LANR-/BSNR-Zuordnung, Abrechnungszeitraum und offene Abrechnung prüfen und zuständige Bearbeitung festlegen. Konkrete KV-Vorgaben fallbezogen verifizieren.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    optionalEvidenceKeys: ["LANR_BSNR_BESTAETIGUNG"],
+    approvalRelevant: true,
+  },
+  {
+    id: "AA-13",
+    title: "Zusatzgenehmigungen und Versicherungsfragen geprüft",
+    section: "KV, Genehmigungen und Abrechnung",
+    description: "Prüfen, ob genehmigte Leistungen, Qualitätssicherungs-/Zusatzgenehmigungen oder einsatzbezogene Versicherungen angepasst werden müssen. Nur für den konkreten Fall erforderliche Schritte veranlassen.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    optionalEvidenceKeys: ["GENEHMIGUNG_LEISTUNG_KV", "BERUFSHAFTPFLICHT_NACHWEIS"],
+    approvalRelevant: true,
+  },
+  {
+    id: "AA-14",
+    title: "Rückgabe von Praxiseigentum geprüft",
+    section: "Zugänge und Abschluss",
+    description: "Rückgabe von Schlüsseln, Karten, Geräten und sonstigem ausgegebenem Praxiseigentum nachverfolgen.",
+    kind: OfficeCheckpointKind.RULE,
+    checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.BACKOFFICE],
+    notRequiredAllowed: true,
+    approvalRelevant: true,
+  },
+];
+
+const MINOR_MFA_APPRENTICE_V2_CHECKPOINTS: readonly OfficeCheckpointTemplate[] = [
+  ...CHECKPOINTS_BY_TOPIC[OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING].map((checkpoint) => {
+    const sections: Record<string, string> = {
+      "MA-01": "Jugendschutz und Gesundheit",
+      "MA-02": "Jugendschutz und Gesundheit",
+      "MA-03": "Vertrag und Ausbildung",
+      "MA-04": "Jugendschutz und Gesundheit",
+      "MA-05": "Vertrag und Ausbildung",
+      "MA-06": "Jugendschutz und Gesundheit",
+      "MA-11": "Personal, Meldungen und Praxiszugang",
+      "MA-12": "Personal, Meldungen und Praxiszugang",
+      "MA-13": "Personal, Meldungen und Praxiszugang",
+    };
+    const descriptions: Record<string, string> = {
+      "MA-01": "Jugendarbeitsschutz und Tätigkeitsbeschränkungen für die vorgesehenen Aufgaben prüfen. Anwendbarkeit und mögliche Ausnahmen fallbezogen klären.",
+      "MA-02": "Prüfen, ob vor Ausbildungsbeginn oder später eine ärztliche Untersuchung erforderlich ist. Falls ja, den Nachweisstatus und mögliche Wiedervorlagen nachverfolgen. Keine Befunde im Snapshot speichern.",
+      "MA-03": "Prüfen, welches Eintragungs- oder Registrierungsverfahren für das Ausbildungsverhältnis bei der Ärztekammer Berlin gilt, und den Bearbeitungsstand nachverfolgen.",
+      "MA-04": "Arbeits-, Pausen-, Ruhe- und Berufsschulzeiten für den konkreten Plan anhand der geltenden Vorgaben prüfen. Keine Zahlen oder Fristen ohne aktuelle Quelle als verbindlich annehmen.",
+      "MA-05": "Erforderliche Einbeziehung der Sorgeberechtigten fallbezogen prüfen. Organisatorische Notfallkontakte getrennt und nur im dafür vorgesehenen Personalprozess bearbeiten; keine Vertragsunterschriften doppelt abhaken.",
+      "MA-06": "Prüfen, welche Unterweisungen für Arbeitsplatz und Tätigkeiten erforderlich sind, und deren tatsächliche Durchführung nachverfolgen. Gefährdungsbeurteilung und Datenschutz/Systemberechtigungen sind separat in MA-10 und MA-13 geregelt.",
+    };
+    const titles: Record<string, string> = {
+      "MA-01": "Jugendarbeitsschutz für die Aufgaben geprüft",
+      "MA-02": "Erfordernis ärztlicher Untersuchungen geprüft",
+      "MA-03": "Kammerverfahren zur Eintragung geprüft",
+      "MA-04": "Arbeits- und Berufsschulzeiten geprüft",
+      "MA-05": "Beteiligung der Sorgeberechtigten geprüft",
+      "MA-06": "Unterweisungsbedarf und Durchführung dokumentiert",
+    };
+    return {
+      ...checkpoint,
+      title: titles[checkpoint.id] ?? checkpoint.title,
+      section: sections[checkpoint.id],
+      description: descriptions[checkpoint.id],
+      ...(checkpoint.id === "MA-03" ? { requiredEvidenceKeys: [], optionalEvidenceKeys: ["AUSBILDUNGSVERTRAG_MFA"] } : {}),
+      approvalRelevant: true,
+    };
+  }),
+  {
+    id: "MA-07",
+    title: "Ausbildungsvertrag und Formalien geprüft",
+    section: "Vertrag und Ausbildung",
+    description: "Ausbildungsvertrag, erforderliche Angaben, Vertragsbeginn und notwendige Unterschriften prüfen. Sorgeberechtigtenbeteiligung separat in MA-05 klären, nicht doppelt abhaken.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    requiredEvidenceKeys: ["AUSBILDUNGSVERTRAG_MFA"],
+    approvalRelevant: true,
+  },
+  {
+    id: "MA-08",
+    title: "Ausbilder und Ausbildungsplan festgelegt",
+    section: "Vertrag und Ausbildung",
+    description: "Verantwortliche Ausbilderperson, Zuständigkeiten und individuellen Ausbildungsplan festlegen. Formale Eignungs- und Kammeranforderungen fallbezogen verifizieren.",
+    kind: OfficeCheckpointKind.DEPENDENCY,
+    checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "MA-09",
+    title: "Berufsschule und Ausbildungszeiten abgestimmt",
+    section: "Vertrag und Ausbildung",
+    description: "Berufsschulzeiten, betriebliche Ausbildungszeiten und zuständige Ansprechpersonen in der Einsatzplanung berücksichtigen.",
+    kind: OfficeCheckpointKind.DEPENDENCY,
+    checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "MA-10",
+    title: "Gefährdungsbeurteilung und Schutzmaßnahmen geprüft",
+    section: "Jugendschutz und Gesundheit",
+    description: "Gefährdungen am konkreten Arbeitsplatz und bei vorgesehenen Ausbildungstätigkeiten prüfen, geeignete Schutzmaßnahmen festlegen und Tätigkeitsbeschränkungen berücksichtigen. Anwendbare Vorgaben verifizieren; Durchführung von Unterweisungen separat in MA-06 dokumentieren.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.REGEL_PARAMETER,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "MA-11",
+    title: "Vergütung und Personalabrechnung vorbereitet",
+    section: "Personal, Meldungen und Praxiszugang",
+    description: "Ausbildungsvergütung, erforderliche Personalunterlagen und Lohnabrechnung vorbereiten. Nur Bearbeitungsstatus dokumentieren; keine Steuer-ID, Sozialversicherungsnummer, Bankverbindung oder konkreten Personalwerte im Snapshot speichern.",
+    kind: OfficeCheckpointKind.DEPENDENCY,
+    checkpointType: OfficeCheckpointType.NACHWEIS_PFLICHT,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    approvalRelevant: true,
+  },
+  {
+    id: "MA-12",
+    title: "Sozialversicherung und erforderliche Meldungen geprüft",
+    section: "Personal, Meldungen und Praxiszugang",
+    description: "Erforderliche Sozialversicherung und Arbeitgebermeldungen anhand der konkreten Ausbildungs- und Beschäftigungssituation prüfen, bearbeiten und nachverfolgen. Keine unbestätigten Fristen voraussetzen.",
+    kind: OfficeCheckpointKind.DECISION,
+    checkpointType: OfficeCheckpointType.EXTERNE_BESTAETIGUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    optionalEvidenceKeys: ["SV_ANMELDUNG"],
+    approvalRelevant: true,
+  },
+  {
+    id: "MA-13",
+    title: "Datenschutz und Systemberechtigungen vorbereitet",
+    section: "Personal, Meldungen und Praxiszugang",
+    description: "Datenschutz und Schweigepflicht erläutern sowie erforderliche Systemzugänge auf Ausbildungsaufgaben begrenzen. Keine Unterweisungsnachweise doppelt erfassen; diese gehören zu MA-06.",
+    kind: OfficeCheckpointKind.ASSESSMENT,
+    checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    optionalEvidenceKeys: ["DS_TOM_DOKU"],
+    approvalRelevant: true,
+  },
+  {
+    id: "MA-14",
+    title: "Ausbildungsbeginn und offene Punkte geprüft",
+    section: "Fristen und Abschluss",
+    description: "Vor dem tatsächlichen Ausbildungsbeginn Vertrags-, Kammer-, Untersuchungs-, Schutz-, Personal- und Zugangspunkte prüfen und offene Punkte mit ihrer Bedeutung für den Einsatz festhalten. Dies ist eine interne Kontrolle, keine rechtliche Freigabe.",
+    kind: OfficeCheckpointKind.DECISION,
+    checkpointType: OfficeCheckpointType.INTERNE_ENTSCHEIDUNG,
+    failureEffect: OfficeFailureEffect.RISK,
+    outcomeAudience: [OfficeOutcomeAudience.CHEF, OfficeOutcomeAudience.BACKOFFICE],
+    deadlineKind: "INTERNAL_CONTROL",
+    approvalRelevant: true,
+  },
+];
+
 export function getCurrentOfficeTopicVersion(topicId: OfficeTopicId): number {
-  return topicId === OFFICE_TOPIC_HIRING_REPLACEMENT ? 2 : 1;
+  return topicId === OFFICE_TOPIC_HIRING_REPLACEMENT || VERSIONED_PERSONNEL_TOPICS.has(topicId)
+    ? 2
+    : 1;
 }
 
 export function getOfficeTopicVersion(topicId: OfficeTopicId, value: unknown): number {
-  return topicId === OFFICE_TOPIC_HIRING_REPLACEMENT && value === 2 ? 2 : 1;
+  return (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT || VERSIONED_PERSONNEL_TOPICS.has(topicId)) &&
+    value === 2
+    ? 2
+    : 1;
 }
 
 // Temporary additive fallback only.
@@ -2247,6 +2608,15 @@ export function getOfficeCheckpointCatalog(
 ): readonly OfficeCheckpointTemplate[] {
   if (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT && version === 2) {
     return HIRING_REPLACEMENT_V2_CHECKPOINTS;
+  }
+  if (topicId === OFFICE_TOPIC_MFA_HIRING && version === 2) {
+    return MFA_HIRING_V2_CHECKPOINTS;
+  }
+  if (topicId === OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION && version === 2) {
+    return PHYSICIAN_EXIT_V2_CHECKPOINTS;
+  }
+  if (topicId === OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING && version === 2) {
+    return MINOR_MFA_APPRENTICE_V2_CHECKPOINTS;
   }
   return CHECKPOINTS_BY_TOPIC[topicId] ?? [];
 }

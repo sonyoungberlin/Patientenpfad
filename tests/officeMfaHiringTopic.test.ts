@@ -7,7 +7,8 @@ import { isAuthorityId } from "@/lib/office/authorities";
 import { isEvidenceId } from "@/lib/office/evidenceCatalog";
 
 describe("Office-Topic mfa-einstellung: fachliche Anreicherung", () => {
-  const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_MFA_HIRING);
+  const catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_MFA_HIRING, 1);
+  const v2Catalog = getOfficeCheckpointCatalog(OFFICE_TOPIC_MFA_HIRING, 2);
   const byId = new Map(catalog.map((cp) => [cp.id, cp]));
 
   it("enthaelt unveraendert die 6 MF-Checkpoints MF-01..MF-06", () => {
@@ -39,6 +40,15 @@ describe("Office-Topic mfa-einstellung: fachliche Anreicherung", () => {
       for (const ref of cp.requiredEvidenceKeys ?? []) expect(isEvidenceId(ref)).toBe(true);
       for (const ref of cp.optionalEvidenceKeys ?? []) expect(isEvidenceId(ref)).toBe(true);
     }
+  });
+
+  it("stellt neue Fälle auf eine gruppierte V2 mit genau 10 Checkpoints um", () => {
+    expect(v2Catalog.map((cp) => cp.id)).toEqual([
+      "MF-01", "MF-02", "MF-03", "MF-04", "MF-05",
+      "MF-06", "MF-07", "MF-08", "MF-09", "MF-10",
+    ]);
+    expect(new Set(v2Catalog.map((cp) => cp.section)).size).toBe(4);
+    expect(v2Catalog.filter((cp) => cp.notRequiredAllowed).map((cp) => cp.id)).toEqual(["MF-08"]);
   });
 
   it("MF-01 Berufsabschluss verweist auf BBiG § 37, Aerztekammer Berlin als zustaendige Stelle und das MFA-Berufsabschlusszeugnis", () => {

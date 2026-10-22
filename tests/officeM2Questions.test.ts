@@ -4,6 +4,9 @@ import {
   OFFICE_TOPIC_CONTINUING_EDUCATION,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
   OFFICE_TOPIC_KV_BILLING,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_REPORTING_DUTIES,
   OFFICE_TOPIC_SEAT_APPROVAL,
@@ -140,6 +143,33 @@ describe("office M2 questions", () => {
         .sort();
 
       expect(questionCheckpointIds).toEqual(catalogCheckpointIds);
+    }
+  });
+
+  it("liefert getrennte V1- und vollständige V2-Fragen für die drei Personalthemen", () => {
+    const versionedTopics = [
+      OFFICE_TOPIC_MFA_HIRING,
+      OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+      OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+    ] as const;
+
+    for (const topicId of versionedTopics) {
+      const legacyQuestions = getM2QuestionsForTopic(topicId, 1);
+      const legacyCheckpointIds = getOfficeCheckpointCatalog(topicId, 1)
+        .map((checkpoint) => checkpoint.id)
+        .sort();
+      expect(Object.keys(legacyQuestions).sort()).toEqual(legacyCheckpointIds);
+
+      const currentQuestions = getM2QuestionsForTopic(topicId, 2);
+      const currentCheckpointIds = getOfficeCheckpointCatalog(topicId, 2)
+        .map((checkpoint) => checkpoint.id)
+        .sort();
+      expect(Object.keys(currentQuestions).sort()).toEqual(currentCheckpointIds);
+      for (const checkpointId of currentCheckpointIds) {
+        const questions = getM2QuestionsForCheckpoint(topicId, checkpointId, 2);
+        expect(questions.length).toBeGreaterThan(0);
+        expect(questions.every((question) => question.text.trim().length > 0)).toBe(true);
+      }
     }
   });
 

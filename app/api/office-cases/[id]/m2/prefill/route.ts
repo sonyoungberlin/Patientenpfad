@@ -6,11 +6,17 @@ import {
   getOfficeTopicVersion,
   isOfficeTopicId,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
 } from "@/lib/office/checkpointCatalog";
 import { ownsOfficeCase } from "@/lib/office/scope";
 import type { M2AnswerValue, OfficeCheckpointSnapshot } from "@/lib/office/types";
 import { requireOfficeCasesManagementAccess } from "@/lib/authz";
-import { containsSensitivePersonalIdentifier } from "@/lib/office/privacy";
+import {
+  containsSensitivePersonalIdentifier,
+  isOfficePersonalStatusOnlyCheckpoint,
+} from "@/lib/office/privacy";
 
 type OfficeCaseSnapshotRecord = {
   topicId?: unknown;
@@ -141,7 +147,13 @@ export async function PATCH(
   const templateById = new Map(
     getOfficeCheckpointCatalog(topicId, templateVersion).map((checkpoint) => [checkpoint.id, checkpoint]),
   );
-  if (templateVersion === 2 && topicId === OFFICE_TOPIC_HIRING_REPLACEMENT) {
+  const privacyProtectedV2 =
+    templateVersion === 2 &&
+    (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT ||
+      topicId === OFFICE_TOPIC_MFA_HIRING ||
+      topicId === OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION ||
+      topicId === OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING);
+  if (privacyProtectedV2) {
     for (const update of updates) {
       const freeTextValues = [
         update.known_note,
@@ -149,6 +161,7 @@ export async function PATCH(
         update.answer_source,
         update.authority,
         update.responsible_role,
+        ...(isStringArray(update.required_documents) ? update.required_documents : []),
       ];
       if (freeTextValues.some(
         (value) => isString(value) && containsSensitivePersonalIdentifier(value),
@@ -159,7 +172,8 @@ export async function PATCH(
         );
       }
       if (
-        update.id === "NC-PERSONALDATEN_LOHNABRECHNUNG" &&
+        isString(update.id) &&
+        isOfficePersonalStatusOnlyCheckpoint(update.id) &&
         freeTextValues.some((value) => isString(value) && value.trim().length > 0)
       ) {
         return NextResponse.json(

@@ -14,6 +14,10 @@ import {
   isOfficeTopicId,
   inferOfficeTopicIdFromCheckpoints,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  supportsOfficeCaseFinalReview,
 } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
 import type { CheckpointComplianceView } from "@/lib/office/checkpointCompliance";
@@ -27,6 +31,7 @@ import {
   type M2AnswerValue,
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
+import { isOfficePersonalStatusOnlyCheckpoint } from "@/lib/office/privacy";
 
 type OfficeCaseData = {
   id: string;
@@ -38,6 +43,7 @@ type OfficeCaseData = {
     topicId: string | null;
     templateVersion?: number;
     plannedStartDate?: string;
+    plannedEventDate?: string;
     decisionRevision?: number;
     finalReview?: Record<string, unknown> | null;
     finalReviewHistory?: Record<string, unknown>[];
@@ -135,6 +141,46 @@ function statusLabel(status: DerivedActionStatus | OfficeCheckpointState): strin
   return "nicht vollstaendig";
 }
 
+const FINAL_REVIEW_GUIDANCE: Record<string, { title: string; items: string[] }> = {
+  [OFFICE_TOPIC_HIRING_REPLACEMENT]: {
+    title: "Vor dem ärztlichen Einsatz fallbezogen bewerten",
+    items: [
+      "Approbation und erforderliche Qualifikation",
+      "Arztregisterstatus und wirksame Anstellungsgenehmigung",
+      "Berufshaftpflicht und einschlägige Zusatzgenehmigungen",
+      "LANR-/BSNR-Zuordnung sowie eHBA und technische Vorbereitung",
+      "Personalverwaltung und Bedeutung aller offenen Punkte für den Arbeitsbeginn",
+    ],
+  },
+  [OFFICE_TOPIC_MFA_HIRING]: {
+    title: "Bearbeitungsstand vor dem Eintritt organisatorisch einordnen",
+    items: [
+      "Arbeitsvertrag und Beschäftigungsart prüfen; klären, ob daraus Meldungen folgen",
+      "Qualifikations- und Versicherungsfragen für die vorgesehenen Aufgaben einordnen",
+      "Datenschutz, Zugänge und erforderliche Einarbeitung nachverfolgen",
+      "Offene Punkte und ihre Auswirkungen auf den geplanten Ablauf festhalten",
+    ],
+  },
+  [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION]: {
+    title: "Bearbeitungsstand zum Austritt organisatorisch einordnen",
+    items: [
+      "Vertragsbeendigung und Personalabschluss nachverfolgen",
+      "Prüfen, ob Meldungen oder Anpassungen bei externen Stellen erforderlich sind",
+      "Mögliche Auswirkungen auf Arztstelle, Abrechnung und Versorgung klären",
+      "Systemzugänge, Praxiseigentum und offene Aufgaben organisatorisch bearbeiten",
+    ],
+  },
+  [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING]: {
+    title: "Bearbeitungsstand vor Ausbildungsbeginn organisatorisch einordnen",
+    items: [
+      "Ausbildungsvertrag, Kammerverfahren und Ausbilderzuständigkeit nachverfolgen",
+      "Prüfen, ob Untersuchungen oder Schutzmaßnahmen für die vorgesehenen Aufgaben erforderlich sind",
+      "Berufsschule, Personalabrechnung und mögliche Meldungen organisatorisch klären",
+      "Datenschutz, Systemzugänge und offene Punkte für den Ausbildungsstart einordnen",
+    ],
+  },
+};
+
 export default function OfficeCaseEditorClient({
   officeCase,
   mode,
@@ -147,6 +193,9 @@ export default function OfficeCaseEditorClient({
   const templateVersion = officeCase.checkpoint_snapshot.templateVersion ?? 1;
   const [plannedStartDate, setPlannedStartDate] = useState(
     officeCase.checkpoint_snapshot.plannedStartDate ?? "",
+  );
+  const [plannedEventDate, setPlannedEventDate] = useState(
+    officeCase.checkpoint_snapshot.plannedEventDate ?? "",
   );
   const [finalReview, setFinalReview] = useState(officeCase.checkpoint_snapshot.finalReview ?? null);
   const [finalReviewHistory, setFinalReviewHistory] = useState(
@@ -164,6 +213,16 @@ export default function OfficeCaseEditorClient({
   const isHiringV2 =
     effectiveTopicId === OFFICE_TOPIC_HIRING_REPLACEMENT &&
     templateVersion === 2;
+  const isPersonnelV2 =
+    templateVersion === 2 &&
+    (effectiveTopicId === OFFICE_TOPIC_MFA_HIRING ||
+      effectiveTopicId === OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION ||
+      effectiveTopicId === OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING);
+  const hasVersionedFields = isHiringV2 || isPersonnelV2;
+  const hasFinalReview =
+    effectiveTopicId !== null &&
+    isOfficeTopicId(effectiveTopicId) &&
+    supportsOfficeCaseFinalReview(effectiveTopicId, templateVersion);
   const approvalIsStale = isFinalReviewOutdated(finalReview, decisionRevision);
   const overdueCount = checkpoints.filter(
     (checkpoint) => getCheckpointDueStatus(checkpoint) === "overdue",
@@ -171,6 +230,28 @@ export default function OfficeCaseEditorClient({
   const dueSoonCount = checkpoints.filter(
     (checkpoint) => getCheckpointDueStatus(checkpoint) === "due_soon",
   ).length;
+  const m2Sections = useMemo(() => {
+    if (!hasVersionedFields) {
+      return [{ title: null as string | null, checkpoints }];
+    }
+    const sections = new Map<string, OfficeCheckpointSnapshot[]>();
+    for (const checkpoint of checkpoints) {
+      const title = checkpoint.section ?? "Weitere Prüfpunkte";
+      sections.set(title, [...(sections.get(title) ?? []), checkpoint]);
+    }
+    return Array.from(sections, ([title, items]) => ({ title, checkpoints: items }));
+  }, [checkpoints, hasVersionedFields]);
+  const finalReviewGuidance =
+    effectiveTopicId ? FINAL_REVIEW_GUIDANCE[effectiveTopicId] : undefined;
+
+  function finalReviewDecisionLabel(decision: unknown) {
+    if (isPersonnelV2) {
+      return decision === "APPROVED"
+        ? "Organisatorischer Abschluss dokumentiert"
+        : "Organisatorischer Abschluss nicht bestätigt";
+    }
+    return decision === "APPROVED" ? "Manuell freigegeben" : "Nicht freigegeben";
+  }
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -236,6 +317,10 @@ export default function OfficeCaseEditorClient({
     );
   }
 
+  function updatePlannedEventDate(value: string) {
+    setPlannedEventDate(value);
+  }
+
   async function handleFinalReview(decision: "APPROVED" | "NOT_APPROVED") {
     setSaving(true);
     setError(null);
@@ -248,7 +333,12 @@ export default function OfficeCaseEditorClient({
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) {
-        setError(data.error ?? "Freigabe konnte nicht gespeichert werden.");
+        setError(
+          data.error ??
+            (isPersonnelV2
+              ? "Organisatorischer Abschluss konnte nicht gespeichert werden."
+              : "Freigabe konnte nicht gespeichert werden."),
+        );
         return;
       }
       setFinalReview(data.checkpoint_snapshot.final_review);
@@ -315,7 +405,7 @@ export default function OfficeCaseEditorClient({
               checkpoint_id: checkpoint.id,
               state: checkpoint.state,
               known_note: checkpoint.known_note ?? "",
-              ...(isHiringV2
+              ...(hasVersionedFields
                 ? {
                     missing_note: checkpoint.missing_note ?? "",
                     answer_source: checkpoint.answer_source ?? "",
@@ -325,7 +415,8 @@ export default function OfficeCaseEditorClient({
                     responsible_role: checkpoint.responsible_role ?? "",
                     authority: checkpoint.authority ?? "",
                     not_required_reason: checkpoint.not_required_reason ?? "",
-                    planned_start_date: plannedStartDate,
+                    ...(isHiringV2 ? { planned_start_date: plannedStartDate } : {}),
+                    ...(isPersonnelV2 ? { planned_event_date: plannedEventDate } : {}),
                   }
                 : {}),
             }),
@@ -359,42 +450,45 @@ export default function OfficeCaseEditorClient({
       </header>
 
       {mode === "m3" ? (
-        isHiringV2 ? (
+        hasFinalReview ? (
           <section className="card" style={{ display: "grid", gap: "0.75rem" }}>
-            <h2 style={{ marginTop: 0 }}>Abschlusskontrolle der Praxisleitung</h2>
+            <h2 style={{ marginTop: 0 }}>
+              {isPersonnelV2 ? "Organisatorischer Abschluss" : "Abschlusskontrolle der Praxisleitung"}
+            </h2>
             <p className="text-small text-muted" style={{ margin: 0 }}>
-              Die Häkchen ersetzen keine rechtliche Prüfung. OWNER oder ADMIN entscheidet manuell und dokumentiert
-              die eigene Einschätzung. KV- und Behördenanforderungen sind für den Einzelfall anhand aktueller
-              offizieller Informationen zu prüfen.
+              {isPersonnelV2
+                ? "Mit dem organisatorischen Abschluss dokumentiert die Praxisleitung den Bearbeitungsstand dieses Falls. Dies ist keine rechtliche Genehmigung und keine Bestätigung, dass sämtliche gesetzlichen Anforderungen erfüllt sind. Dokumentieren können den Abschluss nur Praxis-OWNER und Praxis-ADMIN."
+                : "Checkpoint-Status ersetzen keine rechtliche oder fachliche Einzelfallprüfung. OWNER oder ADMIN entscheidet manuell und dokumentiert die eigene Einschätzung. Nicht verifizierte Behörden- und Kammeranforderungen sind fallbezogen zu prüfen."}
             </p>
-            <div>
-              <strong>Vor dem Einsatz fallbezogen zu bewerten:</strong>
+            {finalReviewGuidance ? (
+              <div>
+              <strong>{finalReviewGuidance.title}:</strong>
               <ul className="text-small">
-                <li>Approbation und erforderliche Qualifikation</li>
-                <li>Arztregisterstatus und wirksame Anstellungsgenehmigung</li>
-                <li>Berufshaftpflicht und einschlägige Zusatzgenehmigungen</li>
-                <li>LANR-/BSNR-Zuordnung sowie eHBA und technische Vorbereitung</li>
-                <li>Personalverwaltung und Bedeutung aller offenen Punkte für den Arbeitsbeginn</li>
+                {finalReviewGuidance.items.map((item) => <li key={item}>{item}</li>)}
               </ul>
               <p className="text-small text-muted">
-                Erforderliche Voraussetzungen, interne organisatorische Aufgaben und begründet nicht erforderliche
-                Nachweise sind getrennt zu beurteilen. Eine KV-Frist ist nur verbindlich, wenn sie aus einer
-                konkreten offiziellen Mitteilung hervorgeht.
+                Interne Aufgaben, bedingte Schritte und tatsächliche Voraussetzungen getrennt bewerten. Eine
+                Behördenfrist gilt nur, wenn sie aus einer konkreten, verifizierten Quelle hervorgeht.
               </p>
             </div>
+            ) : null}
             {approvalIsStale ? (
-              <strong role="status" style={{ color: "#a15c00" }}>Erneute Prüfung erforderlich</strong>
+              <strong role="status" style={{ color: "#a15c00" }}>
+                {isPersonnelV2
+                  ? "Erneute organisatorische Prüfung erforderlich"
+                  : "Erneute Prüfung erforderlich"}
+              </strong>
             ) : null}
             {finalReviewHistory.length > 0 ? (
               <div style={{ display: "grid", gap: "0.4rem" }}>
-                <strong>Freigabehistorie</strong>
+                <strong>{isPersonnelV2 ? "Abschlusshistorie" : "Freigabehistorie"}</strong>
                 {[...finalReviewHistory].reverse().map((review, index) => (
                   <div
                     key={`${String(review.reviewed_at ?? "review")}-${index}`}
                     className="text-small"
                     style={{ borderLeft: "3px solid #d8e0ea", paddingLeft: "0.6rem" }}
                   >
-                    <strong>{review.decision === "APPROVED" ? "Manuell freigegeben" : "Nicht freigegeben"}</strong>
+                    <strong>{finalReviewDecisionLabel(review.decision)}</strong>
                     {typeof review.reviewer_email === "string" ? ` von ${review.reviewer_email}` : ""}
                     {typeof review.reviewer_role === "string" ? ` (${review.reviewer_role})` : ""}
                     {typeof review.reviewed_at === "string"
@@ -408,17 +502,23 @@ export default function OfficeCaseEditorClient({
               </div>
             ) : finalReview ? (
               <div className="text-small">
-                <strong>{finalReview.decision === "APPROVED" ? "Manuell freigegeben" : "Nicht freigegeben"}</strong>
+                <strong>{finalReviewDecisionLabel(finalReview.decision)}</strong>
                 {typeof finalReview.reviewer_email === "string" ? ` von ${finalReview.reviewer_email}` : ""}
                 {typeof finalReview.reviewed_at === "string"
                   ? ` am ${new Date(finalReview.reviewed_at).toLocaleString("de-DE")}`
                   : ""}
               </div>
             ) : (
-              <p className="text-small text-muted" style={{ margin: 0 }}>Noch keine manuelle Abschlussentscheidung dokumentiert.</p>
+              <p className="text-small text-muted" style={{ margin: 0 }}>
+                {isPersonnelV2
+                  ? "Noch kein organisatorischer Abschluss dokumentiert."
+                  : "Noch keine manuelle Abschlussentscheidung dokumentiert."}
+              </p>
             )}
             <label style={{ display: "grid", gap: "0.25rem" }}>
-              Begründung oder Einordnung offener Punkte
+              {isPersonnelV2
+                ? "Notiz zum Bearbeitungsstand oder zu offenen Punkten"
+                : "Begründung oder Einordnung offener Punkte"}
               <textarea
                 value={reviewNote}
                 maxLength={1000}
@@ -427,10 +527,10 @@ export default function OfficeCaseEditorClient({
             </label>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               <button type="button" disabled={saving} onClick={() => void handleFinalReview("APPROVED")}>
-                Manuell freigeben
+                {isPersonnelV2 ? "Organisatorischen Abschluss dokumentieren" : "Manuell freigeben"}
               </button>
               <button type="button" disabled={saving} onClick={() => void handleFinalReview("NOT_APPROVED")}>
-                Nicht freigeben
+                {isPersonnelV2 ? "Keinen organisatorischen Abschluss dokumentieren" : "Nicht freigeben"}
               </button>
             </div>
           </section>
@@ -439,26 +539,50 @@ export default function OfficeCaseEditorClient({
 
       {mode === "m3" ? (
         <section className="card" style={{ display: "grid", gap: "0.75rem" }}>
-          <h2 style={{ marginTop: 0 }}>Klärungsstand je Bereich</h2>
-          {isHiringV2 ? (
+          <h2 style={{ marginTop: 0 }}>
+            {isPersonnelV2 ? "Organisatorischer Bearbeitungsstand" : "Klärungsstand je Bereich"}
+          </h2>
+          {hasVersionedFields ? (
             <div style={{ display: "grid", gap: "0.6rem" }}>
-              <label style={{ display: "grid", gap: "0.25rem", maxWidth: "24rem" }}>
-                Geplanter Arbeitsbeginn
-                <input
-                  type="date"
-                  value={plannedStartDate}
-                  onChange={(event) => updatePlannedStartDate(event.target.value)}
-                />
-              </label>
+              {isHiringV2 ? (
+                <label style={{ display: "grid", gap: "0.25rem", maxWidth: "24rem" }}>
+                  Geplanter Arbeitsbeginn
+                  <input
+                    type="date"
+                    value={plannedStartDate}
+                    onChange={(event) => updatePlannedStartDate(event.target.value)}
+                  />
+                </label>
+              ) : isPersonnelV2 ? (
+                <label style={{ display: "grid", gap: "0.25rem", maxWidth: "24rem" }}>
+                  {effectiveTopicId === OFFICE_TOPIC_MFA_HIRING
+                    ? "Geplanter Eintritt"
+                    : effectiveTopicId === OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION
+                      ? "Geplantes Austrittsdatum"
+                      : "Geplanter Ausbildungsbeginn"}
+                  <input
+                    type="date"
+                    value={plannedEventDate}
+                    onChange={(event) => updatePlannedEventDate(event.target.value)}
+                  />
+                </label>
+              ) : null}
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <strong>Fristenübersicht:</strong>
                 <span>{overdueCount} überfällig</span>
                 <span>{dueSoonCount} innerhalb von 30 Tagen fällig</span>
               </div>
-              <p className="text-small text-muted" style={{ margin: 0 }}>
-                Interne Kontrolltermine werden zunächst ungefähr vier Monate und vier Wochen vor dem Arbeitsbeginn berechnet.
-                Diese Werte sind keine KV- oder Behördenfristen und können pro Aufgabe angepasst werden.
-              </p>
+              {isHiringV2 ? (
+                <p className="text-small text-muted" style={{ margin: 0 }}>
+                  Interne Kontrolltermine werden ungefähr vier Monate und vier Wochen vor dem Arbeitsbeginn vorgeschlagen.
+                  Sie sind keine KV- oder Behördenfristen und können pro Aufgabe angepasst werden.
+                </p>
+              ) : (
+                <p className="text-small text-muted" style={{ margin: 0 }}>
+                  Aufgabenfristen werden individuell gepflegt. Behördenfristen nicht aus dem Falldatum ableiten;
+                  nur mit konkreter Quelle dokumentieren.
+                </p>
+              )}
             </div>
           ) : null}
           {blocks.length > 0 ? (
@@ -480,24 +604,44 @@ export default function OfficeCaseEditorClient({
                     <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                       <strong>{block.title}</strong>
                       <span className="text-small" style={{ fontWeight: 600 }}>
-                        {block.status === "offen"
-                          ? "Offen"
-                          : block.status === "nicht_erforderlich"
-                            ? "Nicht erforderlich"
-                            : block.status === "mit_nicht_erforderlich"
-                              ? "Geklärt, teilweise nicht erforderlich"
-                              : "Geklärt"}
+                        {isPersonnelV2
+                          ? block.status === "offen"
+                            ? "Offene Bearbeitung"
+                            : block.status === "nicht_erforderlich"
+                              ? "Als nicht erforderlich dokumentiert"
+                              : block.status === "mit_nicht_erforderlich"
+                                ? "Bearbeitung dokumentiert, teilweise nicht erforderlich"
+                                : "Bearbeitung dokumentiert"
+                          : block.status === "offen"
+                            ? "Offen"
+                            : block.status === "nicht_erforderlich"
+                              ? "Nicht erforderlich"
+                              : block.status === "mit_nicht_erforderlich"
+                                ? "Geklärt, teilweise nicht erforderlich"
+                                : "Geklärt"}
                       </span>
                     </div>
                     {primaryText ? (
                       <div className="text-small text-muted">Offen: {primaryText}</div>
                     ) : (
-                      <div className="text-small text-muted">Bereich ist geklärt.</div>
+                      <div className="text-small text-muted">
+                        {isPersonnelV2
+                          ? "Für diesen Bereich sind keine offenen Bearbeitungspunkte markiert."
+                          : "Bereich ist geklärt."}
+                      </div>
                     )}
                     <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.2rem" }}>
                       {block.checkpoints.map((checkpoint) => {
                         const checkpointActions = actionsByCheckpoint.get(checkpoint.id) ?? [];
-                        const shortStatus = checkpointActions[0]?.text ?? statusLabel(checkpoint.state);
+                        const shortStatus = isPersonnelV2
+                          ? checkpoint.state === OfficeCheckpointState.YES
+                            ? "Bearbeitung als erledigt markiert"
+                            : checkpoint.state === OfficeCheckpointState.NO
+                              ? "Nicht vollständig bearbeitet"
+                              : checkpoint.state === OfficeCheckpointState.NOT_REQUIRED
+                                ? "Mit Begründung als nicht erforderlich markiert"
+                                : checkpointActions[0]?.text ?? "Offen"
+                          : checkpointActions[0]?.text ?? statusLabel(checkpoint.state);
                         const compactPrefill = getCompactPrefillItems(
                           officeCase.topicId,
                           checkpoint,
@@ -563,7 +707,7 @@ export default function OfficeCaseEditorClient({
                                       : undefined,
                                 }}
                               >
-                                Geklärt
+                                {isPersonnelV2 ? "Bearbeitet" : "Geklärt"}
                               </button>
                               <button
                                 type="button"
@@ -580,7 +724,7 @@ export default function OfficeCaseEditorClient({
                                       : undefined,
                                 }}
                               >
-                                Nicht vollständig
+                                {isPersonnelV2 ? "Nicht vollständig bearbeitet" : "Nicht vollständig"}
                               </button>
                               <button
                                 type="button"
@@ -633,7 +777,7 @@ export default function OfficeCaseEditorClient({
                                 />
                               </label>
                             ) : null}
-                            {isHiringV2 ? (
+                            {hasVersionedFields ? (
                               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(12rem, 1fr))", gap: "0.5rem" }}>
                               <label style={{ display: "grid", gap: "0.2rem" }}>
                                 Verantwortlich
@@ -682,7 +826,7 @@ export default function OfficeCaseEditorClient({
                               </label>
                               </div>
                             ) : null}
-                            {isHiringV2 && checkpoint.deadline_kind === "AUTHORITY" ? (
+                            {hasVersionedFields && checkpoint.deadline_kind === "AUTHORITY" ? (
                               <label style={{ display: "grid", gap: "0.2rem" }}>
                                 Quelle der verbindlichen Frist (z. B. Bescheid oder offizielle Mitteilung)
                                 <input
@@ -695,7 +839,10 @@ export default function OfficeCaseEditorClient({
                                 />
                               </label>
                             ) : null}
-                            {checkpoint.id !== "NC-PERSONALDATEN_LOHNABRECHNUNG" ? (
+                            {!(
+                              hasVersionedFields &&
+                              isOfficePersonalStatusOnlyCheckpoint(checkpoint.id)
+                            ) ? (
                               <label style={{ display: "grid", gap: "0.2rem" }}>
                                 Notiz / offener Punkt
                                 <textarea
@@ -707,7 +854,8 @@ export default function OfficeCaseEditorClient({
                               </label>
                             ) : (
                               <p className="text-small text-muted" style={{ margin: 0 }}>
-                                Hier nur den Bearbeitungsstatus dokumentieren, keine Personalnummern oder Bankdaten.
+                                Hier nur den Bearbeitungsstatus dokumentieren, keine persönlichen Identifikations-
+                                oder Abrechnungsdaten.
                               </p>
                             )}
                             {complianceByCheckpointId?.[checkpoint.id] ? (
@@ -774,7 +922,9 @@ export default function OfficeCaseEditorClient({
             </ul>
           ) : (
             <p className="text-small text-muted" style={{ margin: 0 }}>
-              Keine offenen Schritte erkennbar.
+              {isPersonnelV2
+                ? "Keine offenen Bearbeitungsschritte markiert."
+                : "Keine offenen Schritte erkennbar."}
             </p>
           )}
         </section>
@@ -789,15 +939,18 @@ export default function OfficeCaseEditorClient({
 
       {mode !== "m3" ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
-          {checkpoints.map((checkpoint) => {
-            const questions = getQuestionsForCheckpoint(
-              officeCase.topicId,
-              checkpoint.id,
-              templateVersion,
-            );
+          {m2Sections.map((section) => (
+            <section key={section.title ?? "unsectioned"} style={{ display: "grid", gap: "0.75rem" }}>
+              {section.title ? <h2 style={{ margin: 0 }}>{section.title}</h2> : null}
+              {section.checkpoints.map((checkpoint) => {
+                const questions = getQuestionsForCheckpoint(
+                  officeCase.topicId,
+                  checkpoint.id,
+                  templateVersion,
+                );
 
-            return (
-              <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
+                return (
+                  <article key={checkpoint.id} className="card" style={{ display: "grid", gap: "0.75rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                   <div>
                     <strong>{checkpoint.title}</strong>
@@ -842,9 +995,11 @@ export default function OfficeCaseEditorClient({
                     ) : null;
                   })()}
                 </>
-              </article>
-            );
-          })}
+                  </article>
+                );
+              })}
+            </section>
+          ))}
         </div>
       ) : null}
 

@@ -5,6 +5,9 @@ import {
   OFFICE_TOPIC_CLOSURE_COVERAGE,
   OFFICE_TOPIC_CONTINUING_EDUCATION,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
   OFFICE_TOPIC_REGRESS,
   OFFICE_TOPIC_REPORTING_DUTIES,
   OFFICE_TOPIC_SEAT_APPROVAL,
@@ -178,5 +181,36 @@ describe("POST /api/office-cases/create topic validation", () => {
     expect(snapshot.decisionRevision).toBe(0);
     expect(snapshot.planned_start_date).toBe("");
     expect(snapshot.checkpoints).toHaveLength(25);
+  });
+
+  it.each([
+    [OFFICE_TOPIC_MFA_HIRING, 10],
+    [OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION, 14],
+    [OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING, 14],
+  ] as const)("erstellt %s als V2 mit Falldatum und erwarteter Checkpointzahl", async (topicId, count) => {
+    getSessionAccountMock.mockResolvedValue(APPROVED_ACCOUNT);
+    prismaMock.officeCaseSession.create.mockResolvedValue({
+      id: `office-${topicId}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      title: null,
+      trigger_note: null,
+      owner_account_id: "acc-1",
+      owner_practice_id: "p-1",
+      checkpoint_snapshot: {},
+    });
+
+    const response = await POST(makeRequest({ topicId }));
+
+    expect(response.status).toBe(201);
+    const snapshot = prismaMock.officeCaseSession.create.mock.calls.at(-1)?.[0]
+      .data?.checkpoint_snapshot as {
+        templateVersion?: number;
+        planned_event_date?: string;
+        checkpoints?: unknown[];
+      };
+    expect(snapshot.templateVersion).toBe(2);
+    expect(snapshot.planned_event_date).toBe("");
+    expect(snapshot.checkpoints).toHaveLength(count);
   });
 });

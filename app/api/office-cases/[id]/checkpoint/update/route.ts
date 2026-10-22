@@ -6,6 +6,9 @@ import {
   getOfficeTopicVersion,
   isOfficeTopicId,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
 } from "@/lib/office/checkpointCatalog";
 import { ownsOfficeCase } from "@/lib/office/scope";
 import {
@@ -13,7 +16,10 @@ import {
   type OfficeCheckpointSnapshot,
 } from "@/lib/office/types";
 import { requireOfficeCasesManagementAccess } from "@/lib/authz";
-import { containsSensitivePersonalIdentifier } from "@/lib/office/privacy";
+import {
+  containsSensitivePersonalIdentifier,
+  isOfficePersonalStatusOnlyCheckpoint,
+} from "@/lib/office/privacy";
 
 type OfficeCaseSnapshotRecord = {
   topicId?: unknown;
@@ -21,6 +27,7 @@ type OfficeCaseSnapshotRecord = {
   templateVersion?: unknown;
   decisionRevision?: unknown;
   planned_start_date?: unknown;
+  planned_event_date?: unknown;
   final_review?: unknown;
   checkpoints?: unknown;
 };
@@ -40,6 +47,7 @@ type CheckpointUpdateBody = {
   deadline_kind?: unknown;
   deadline_is_manual?: unknown;
   planned_start_date?: unknown;
+  planned_event_date?: unknown;
 };
 
 function readSnapshot(value: unknown): OfficeCaseSnapshotRecord | null {
@@ -115,6 +123,7 @@ export async function PATCH(
     !isOptionalString(body.deadline_kind) ||
     !isOptionalBoolean(body.deadline_is_manual) ||
     !isOptionalString(body.planned_start_date) ||
+    !isOptionalString(body.planned_event_date) ||
     !isOptionalStringArray(body.required_documents) ||
     !isOptionalBoolean(body.escalation_needed)
   ) {
@@ -161,6 +170,11 @@ export async function PATCH(
 
   const target = snapshot.checkpoints[targetIndex];
   const templateVersion = getOfficeTopicVersion(topicId, snapshot.templateVersion);
+  const isPersonnelV2 =
+    templateVersion === 2 &&
+    (topicId === OFFICE_TOPIC_MFA_HIRING ||
+      topicId === OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION ||
+      topicId === OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING);
   const template = getOfficeCheckpointCatalog(topicId, templateVersion).find(
     (checkpoint) => checkpoint.id === target.id,
   );
@@ -204,6 +218,16 @@ export async function PATCH(
   ) {
     return NextResponse.json({ ok: false, error: "Ungültiger geplanter Arbeitsbeginn." }, { status: 400 });
   }
+  if (body.planned_event_date !== undefined && !isPersonnelV2) {
+    return NextResponse.json({ ok: false, error: "Falldatum ist für dieses Thema nicht verfügbar." }, { status: 400 });
+  }
+  if (
+    body.planned_event_date !== undefined &&
+    body.planned_event_date !== "" &&
+    !isValidDateOnly(body.planned_event_date)
+  ) {
+    return NextResponse.json({ ok: false, error: "Ungültiges Falldatum." }, { status: 400 });
+  }
   if (body.responsible_role !== undefined && body.responsible_role.length > 120) {
     return NextResponse.json({ ok: false, error: "Die Zuständigkeit darf höchstens 120 Zeichen enthalten." }, { status: 400 });
   }
@@ -218,9 +242,11 @@ export async function PATCH(
     ? body.responsible_role
     : target.responsible_role;
   const nextAuthority = isString(body.authority) ? body.authority : target.authority;
-  if (
+  const privacyProtectedV2 =
     templateVersion === 2 &&
-    topicId === OFFICE_TOPIC_HIRING_REPLACEMENT &&
+    (topicId === OFFICE_TOPIC_HIRING_REPLACEMENT || isPersonnelV2);
+  if (
+    privacyProtectedV2 &&
     [
       nextKnownNote,
       nextMissingNote,
@@ -228,6 +254,7 @@ export async function PATCH(
       nextAuthority,
       nextResponsibleRole,
       body.not_required_reason,
+      ...(isStringArray(body.required_documents) ? body.required_documents : []),
     ]
       .some((value) => isString(value) && containsSensitivePersonalIdentifier(value))
   ) {
@@ -237,9 +264,15 @@ export async function PATCH(
     );
   }
   if (
-    templateVersion === 2 &&
-    target.id === "NC-PERSONALDATEN_LOHNABRECHNUNG" &&
-    [nextKnownNote, nextMissingNote, nextAnswerSource].some((value) => Boolean(value?.trim()))
+    privacyProtectedV2 &&
+    isOfficePersonalStatusOnlyCheckpoint(target.id) &&
+    [
+      nextKnownNote,
+      nextMissingNote,
+      nextAnswerSource,
+      body.not_required_reason,
+      ...(isStringArray(body.required_documents) ? body.required_documents : []),
+    ].some((value) => isString(value) && Boolean(value.trim()))
   ) {
     return NextResponse.json(
       { ok: false, error: "Zu Personal- und Abrechnungsdaten darf nur der Bearbeitungsstatus dokumentiert werden." },
@@ -271,6 +304,9 @@ export async function PATCH(
   const nextPlannedStartDate = isString(body.planned_start_date)
     ? body.planned_start_date
     : snapshot.planned_start_date;
+  const nextPlannedEventDate = isString(body.planned_event_date)
+    ? body.planned_event_date
+    : snapshot.planned_event_date;
 
   const nextCheckpoints = snapshot.checkpoints.map((checkpoint, index) => {
     if (index !== targetIndex) return checkpoint;
@@ -307,8 +343,13 @@ export async function PATCH(
     target.escalation_needed !== nextEscalationNeeded
   ) || (
     templateVersion === 2 &&
-    isString(body.planned_start_date) &&
-    body.planned_start_date !== snapshot.planned_start_date
+    (
+      (isString(body.planned_start_date) &&
+        body.planned_start_date !== snapshot.planned_start_date) ||
+      (isPersonnelV2 &&
+        isString(body.planned_event_date) &&
+        body.planned_event_date !== snapshot.planned_event_date)
+    )
   );
   const updatedSnapshot = {
     ...snapshot,
@@ -318,6 +359,9 @@ export async function PATCH(
       ? { decisionRevision: (typeof snapshot.decisionRevision === "number" ? snapshot.decisionRevision : 0) + (decisionChanged ? 1 : 0) }
       : {}),
     ...(nextPlannedStartDate !== undefined ? { planned_start_date: nextPlannedStartDate } : {}),
+    ...(isPersonnelV2 && nextPlannedEventDate !== undefined
+      ? { planned_event_date: nextPlannedEventDate }
+      : {}),
     checkpoints: nextCheckpoints,
   } as Prisma.InputJsonValue;
 

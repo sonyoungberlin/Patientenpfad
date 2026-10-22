@@ -6,6 +6,9 @@ import {
   getCurrentOfficeTopicVersion,
   getOfficeTopic,
   isOfficeTopicId,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
 } from "@/lib/office/checkpointCatalog";
 import { getOfficeCreateOwnershipData } from "@/lib/office/scope";
 import { requireOfficeCasesManagementAccess } from "@/lib/authz";
@@ -61,6 +64,13 @@ export async function POST(req: NextRequest) {
     templateVersion: getCurrentOfficeTopicVersion(topic.id),
     decisionRevision: 0,
     planned_start_date: "",
+    ...(
+      topic.id === OFFICE_TOPIC_MFA_HIRING ||
+      topic.id === OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION ||
+      topic.id === OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING
+        ? { planned_event_date: "" }
+        : {}
+    ),
     checkpoints: buildInitialSnapshotForTopic(topic.id),
   } as Prisma.InputJsonValue;
 

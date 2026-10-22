@@ -65,6 +65,16 @@ const BLOCK_TITLE_BY_ID = new Map([
   ["hiring-v2-Anträge und Genehmigungen", "Anträge und Genehmigungen"],
   ["hiring-v2-Personal und technische Vorbereitung", "Personal und technische Vorbereitung"],
   ["hiring-v2-Fristen und Abschluss", "Fristen und Abschluss"],
+  ["hiring-v2-Eintritt und Vertrag", "Eintritt und Vertrag"],
+  ["hiring-v2-Personal und Meldungen", "Personal und Meldungen"],
+  ["hiring-v2-Praxiszugang und Einarbeitung", "Praxiszugang und Einarbeitung"],
+  ["hiring-v2-Beendigung und Personalabschluss", "Beendigung und Personalabschluss"],
+  ["hiring-v2-Versorgung und Dokumentation", "Versorgung und Dokumentation"],
+  ["hiring-v2-KV, Genehmigungen und Abrechnung", "KV, Genehmigungen und Abrechnung"],
+  ["hiring-v2-Zugänge und Abschluss", "Zugänge und Abschluss"],
+  ["hiring-v2-Vertrag und Ausbildung", "Vertrag und Ausbildung"],
+  ["hiring-v2-Jugendschutz und Gesundheit", "Jugendschutz und Gesundheit"],
+  ["hiring-v2-Personal, Meldungen und Praxiszugang", "Personal, Meldungen und Praxiszugang"],
 ]);
 
 const CHECKPOINT_ID_TO_BLOCK_ID: Record<string, string> = {

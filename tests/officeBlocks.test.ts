@@ -8,10 +8,36 @@ import {
   OFFICE_TOPIC_CLOSURE_COVERAGE,
   OFFICE_TOPIC_CME_GENERAL_MEDICINE,
   OFFICE_TOPIC_HIRING_REPLACEMENT,
+  OFFICE_TOPIC_MFA_HIRING,
+  OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+  OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  buildInitialSnapshotForTopic,
+  type OfficeTopicId,
 } from "@/lib/office/checkpointCatalog";
 import { OfficeCheckpointKind, OfficeCheckpointState, OfficeCheckpointType, type M2AnswerValue } from "@/lib/office/types";
 
 describe("office blocks", () => {
+  it("zeigt die vier V2-Fachabschnitte in der M3-Übersicht", () => {
+    const targetTopics: OfficeTopicId[] = [
+    OFFICE_TOPIC_MFA_HIRING,
+    OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+    OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
+    ];
+
+    for (const topicId of targetTopics) {
+      const checkpoints = buildInitialSnapshotForTopic(topicId, 2);
+      const expectedSections = [...new Set(checkpoints.map((checkpoint) => checkpoint.section))];
+      const blocks = buildOfficeBlocks({
+        topicId,
+        templateVersion: 2,
+        checkpoints,
+      });
+
+      expect(expectedSections).toHaveLength(4);
+      expect(blocks.map((block) => block.title)).toEqual(expectedSections);
+    }
+  });
+
   it("ordnet Hiring-Checkpoints in deklarierte Bloecke ein", () => {
     const blocks = buildOfficeBlocks({
       topicId: OFFICE_TOPIC_HIRING_REPLACEMENT,

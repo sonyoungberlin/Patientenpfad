@@ -2,7 +2,11 @@ import { Prisma, PracticeRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ownsOfficeCase } from "@/lib/office/scope";
-import { getOfficeTopicVersion, OFFICE_TOPIC_HIRING_REPLACEMENT } from "@/lib/office/checkpointCatalog";
+import {
+  getOfficeTopicVersion,
+  isOfficeTopicId,
+  supportsOfficeCaseFinalReview,
+} from "@/lib/office/checkpointCatalog";
 import { requireOfficeCasesManagementAccess } from "@/lib/authz";
 import { containsSensitivePersonalIdentifier } from "@/lib/office/privacy";
 
@@ -69,8 +73,12 @@ export async function PATCH(
 
   const snapshot = readSnapshot(officeCase.checkpoint_snapshot);
   if (
-    snapshot?.topicId !== OFFICE_TOPIC_HIRING_REPLACEMENT ||
-    getOfficeTopicVersion(OFFICE_TOPIC_HIRING_REPLACEMENT, snapshot.templateVersion) !== 2 ||
+    typeof snapshot?.topicId !== "string" ||
+    !isOfficeTopicId(snapshot.topicId) ||
+    !supportsOfficeCaseFinalReview(
+      snapshot.topicId,
+      getOfficeTopicVersion(snapshot.topicId, snapshot.templateVersion),
+    ) ||
     !Array.isArray(snapshot.checkpoints)
   ) {
     return NextResponse.json({ ok: false, error: "Für diesen Officefall ist keine Abschlussfreigabe verfügbar." }, { status: 400 });

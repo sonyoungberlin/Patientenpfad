@@ -46,6 +46,7 @@ export default async function OfficeCaseM3Page({
           topicTitle?: unknown;
           templateVersion?: unknown;
           planned_start_date?: unknown;
+          planned_event_date?: unknown;
           decisionRevision?: unknown;
           final_review?: unknown;
           final_review_history?: unknown;
@@ -95,6 +96,8 @@ export default async function OfficeCaseM3Page({
             templateVersion,
             plannedStartDate:
               typeof snapshot?.planned_start_date === "string" ? snapshot.planned_start_date : "",
+            plannedEventDate:
+              typeof snapshot?.planned_event_date === "string" ? snapshot.planned_event_date : "",
             decisionRevision:
               typeof snapshot?.decisionRevision === "number" ? snapshot.decisionRevision : 0,
             finalReview: isRecord(snapshot?.final_review) ? snapshot.final_review : null,
