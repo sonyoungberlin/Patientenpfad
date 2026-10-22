@@ -102,7 +102,7 @@ export default async function AdminHomePage() {
     {
       title: "Website-Formulare",
       description:
-        "Legen Sie Formulare an und bearbeiten Sie deren Fragebogenblöcke und Aktivstatus. Die öffentliche Formularseite ist derzeit noch nicht aktiviert.",
+        "Legen Sie Formulare an und bearbeiten Sie deren Fragebogenblöcke und Aktivstatus. Patientinnen und Patienten können aktive Formulare öffentlich ausfüllen und ihre Angaben per E-Mail bestätigen.",
       actions: [{ label: "Formulare ansehen und bearbeiten", href: "/website-forms" }],
       requires: "/website-forms",
     },
