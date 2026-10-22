@@ -146,6 +146,32 @@ describe("zentrale Bereichsdefinition", () => {
     expect(getVisibleNavigationSections(account("KIOSK"))).toEqual([]);
   });
 
+  it("zeigt den Administrationslink nur freigeschalteten Plattform-Admins", () => {
+    mockedPathname = "/admin";
+    const adminHtml = renderToStaticMarkup(
+      <AppShell account={account("OWNER", { is_admin: true })} />,
+    );
+    expect(adminHtml).toContain('data-testid="admin-navigation-link"');
+    expect(adminHtml).toContain('href="/admin"');
+    expect(adminHtml).toContain('aria-current="page"');
+
+    const ownerHtml = renderToStaticMarkup(<AppShell account={account()} />);
+    expect(ownerHtml).not.toContain('data-testid="admin-navigation-link"');
+
+    const unapprovedAdminHtml = renderToStaticMarkup(
+      <AppShell account={account("OWNER", { is_admin: true, is_approved: false })} />,
+    );
+    expect(unapprovedAdminHtml).not.toContain('data-testid="admin-navigation-link"');
+  });
+
+  it("zeigt Plattform-Admins den Einstieg auch bei einer Kiosk-Mitgliedschaft", () => {
+    const html = renderToStaticMarkup(
+      <AppShell account={account("KIOSK", { is_admin: true })} />,
+    );
+    expect(html).toContain('data-testid="admin-navigation-link"');
+    expect(html).not.toContain('data-testid="app-shell-section-nav"');
+  });
+
   it("filtert Feature-abhängige Eingänge und Verwaltungsseiten", () => {
     const sections = getVisibleNavigationSections(
       account("OWNER", {

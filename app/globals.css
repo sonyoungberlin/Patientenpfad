@@ -422,6 +422,25 @@ body:has(main.m3-page) {
   background: var(--background);
 }
 
+.admin-practice-shortcut {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-practice-shortcut nav {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .admin-practice-shortcut {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ----- Account bar ----- */
 .account-bar {
   display: flex;

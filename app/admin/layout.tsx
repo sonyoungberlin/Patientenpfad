@@ -5,6 +5,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <nav className="app-nav">
+        <Link href="/admin">Administration</Link>
         <Link href="/cases">← Zur Fallübersicht</Link>
         <Link href="/">Neuer Fall</Link>
         <Link href="/admin/practices">Admin: Praxen</Link>

@@ -252,7 +252,7 @@ export default async function AdminPracticeDetailPage({
         </dl>
       </section>
 
-      <section style={{ marginBottom: "2rem" }} data-section="legal-profile">
+      <section id="legal-profile" style={{ marginBottom: "2rem" }} data-section="legal-profile">
         <h2>Offizielles Praxis- und Vertragsprofil</h2>
         <p className="text-muted">
           Zentrale Quelle für Vertrag, öffentliche Praxisdarstellung und praxisbezogenes Impressum.
@@ -333,7 +333,7 @@ export default async function AdminPracticeDetailPage({
         </table>
       </section>
 
-      <section style={{ marginBottom: "2rem" }} data-section="mail-config">
+      <section id="mail-config" style={{ marginBottom: "2rem" }} data-section="mail-config">
         <h2>Mail-Konfiguration (SMTP)</h2>
         <p className="text-muted" style={{ fontSize: "0.85em" }}>
           Wird für die Bestätigungs-E-Mails der Website-Formulare dieser
@@ -540,7 +540,7 @@ export default async function AdminPracticeDetailPage({
         )}
       </section>
 
-      <section style={{ marginBottom: "2rem" }} data-section="inquiry-config">
+      <section id="inquiry-config" style={{ marginBottom: "2rem" }} data-section="inquiry-config">
         <h2>Anfrage-Konfiguration</h2>
         <p className="text-muted" style={{ fontSize: "0.85em" }}>
           Diese Felder steuern praxisspezifische Texte im Anfrage-Assistenten.
@@ -805,7 +805,7 @@ export default async function AdminPracticeDetailPage({
         </form>
       </section>
 
-      <section style={{ marginBottom: "2rem" }} data-section="case-quota">
+      <section id="case-quota" style={{ marginBottom: "2rem" }} data-section="case-quota">
         <h2>Patientenpfad-Kontingent</h2>
         <p className="text-muted" style={{ fontSize: "0.85em" }}>
           Begrenzt die Anzahl der Patientenpfad-Fälle (CaseSession), die diese Praxis anlegen darf.
@@ -855,7 +855,7 @@ export default async function AdminPracticeDetailPage({
         </form>
       </section>
 
-      <section style={{ marginBottom: "2rem" }}>
+      <section id="members" style={{ marginBottom: "2rem" }}>
         <h2>Mitglieder</h2>
         <p className="text-muted" style={{ marginBottom: "0.5rem" }}>
           {practice.memberships.length} Mitglied

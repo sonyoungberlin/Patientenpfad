@@ -82,7 +82,7 @@ export default function AppShell({
   if (!account || !account.is_approved) {
     return null;
   }
-  if (getCurrentNavigationRole(account) === "KIOSK") return null;
+  if (getCurrentNavigationRole(account) === "KIOSK" && !account.is_admin) return null;
 
   const handleLogoutClick = onLogout ?? handleLogoutDefault;
 
@@ -103,6 +103,15 @@ export default function AppShell({
     <nav className="app-nav">
       <div className="app-shell-topline" data-testid="app-shell-topline">
         <Link href={homeHref}>Hauptmenü</Link>
+        {account.is_admin && (
+          <Link
+            href="/admin"
+            aria-current={pathname === "/admin" ? "page" : undefined}
+            data-testid="admin-navigation-link"
+          >
+            Administration
+          </Link>
+        )}
         <div className="app-shell-account-group" data-testid="app-shell-account-group">
           <span className="account-email">{account.email}</span>
           <button
