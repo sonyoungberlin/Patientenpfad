@@ -68,6 +68,7 @@ describe("Workflowpfad ohne doppelte Alltags-Shortcuts", () => {
     const html = renderToStaticMarkup(await WorkflowCasesPage());
 
     expect(html).toContain("Arbeitsprozesse");
+    expect(html).toContain("Übersicht als PDF");
     expect(html).not.toContain("Neue Sitzung starten");
     expect(html).toContain("Noch keine Sitzungen gespeichert.");
   });

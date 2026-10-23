@@ -178,6 +178,7 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
       );
     });
 
+    expect(container.textContent).toContain("Übersicht als PDF");
     await clickEdit(container, "Bearbeiten");
 
     expect(Array.from(container.querySelectorAll("h2")).some((heading) => heading.textContent === "Baustein bearbeiten")).toBe(true);

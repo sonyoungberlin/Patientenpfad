@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { canAccessWorkflowCases, getCurrentPracticeRole } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
@@ -152,6 +153,9 @@ export default async function WorkflowCasesPage() {
         <p className="text-muted">
           Musterprozesse strukturiert dokumentieren.
         </p>
+        <Link href="/api/workflow-cases/internal-protocol/pdf">
+          <button type="button">Übersicht als PDF</button>
+        </Link>
       </section>
 
       {items.length === 0 ? (

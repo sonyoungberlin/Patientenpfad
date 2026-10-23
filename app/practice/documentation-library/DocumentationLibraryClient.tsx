@@ -392,6 +392,11 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
 
   return (
     <>
+      <div>
+        <button type="button" onClick={() => window.location.assign("/api/practice/documentation-library/pdf")}>
+          Übersicht als PDF
+        </button>
+      </div>
       <section>
         <h2>Vorlagen</h2>
         {initialTemplates.length === 0 ? <p className="text-muted">Noch keine aktiven Vorlagen angelegt.</p> : (
