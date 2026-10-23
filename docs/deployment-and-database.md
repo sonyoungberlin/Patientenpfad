@@ -10,7 +10,9 @@ current state.
 1. Develop and test in the GitHub Codespace.
 2. Check the working tree and branch, fetch and compare with `origin/main`, and
    confirm the release contains the intended changes.
-3. After the release is approved, push it to GitHub `main`.
+3. Do not commit, push, or trigger a Production deployment without the user's
+   explicit approval. After approval, push the approved release to GitHub
+   `main`.
 4. The existing GitHub-to-Vercel integration starts a Production deployment
    automatically. Confirm the deployment is `Ready` and its commit SHA matches
    the release. Do not assume that a successful push means deployment succeeded.
@@ -19,6 +21,20 @@ The repository's Vercel build command is `next build` (`vercel-build` in
 `package.json`). It does **not** run Prisma migrations. The repository has
 manual migration scripts, but their presence does not cause migrations to run
 automatically.
+
+## Infrastructure boundaries
+
+Use the existing GitHub repository, Vercel project, and Neon PostgreSQL
+database. Do not independently create another database, Vercel project, or
+development environment. Do not run `vercel link` or `vercel env pull`, or
+independently modify `.env` files, credentials, or deployment configuration.
+Explain proposed infrastructure changes and obtain the user's approval before
+making them.
+
+Do not run database migrations or resets, or change authentication or database
+connections, unless explicitly requested. Production migration work additionally
+requires the exact-target checks and approval described below. Never print
+credentials in command output, logs, chat, or Git.
 
 ## Neon and Prisma connections
 
