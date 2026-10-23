@@ -446,6 +446,15 @@ export default function OfficeCaseEditorClient({
       <header style={{ display: "grid", gap: "0.25rem" }}>
         <div className="text-small text-muted">{officeCase.topicTitle ?? "Officefall"}</div>
         <h1 style={{ margin: 0 }}>{officeCase.title ?? officeCase.topicTitle ?? "Officefall"}</h1>
+        {mode === "m2" ? (
+          <button
+            type="button"
+            onClick={() => window.open(`/api/office-cases/${officeCase.id}/m2/pdf`, "_blank", "noopener,noreferrer")}
+            style={{ justifySelf: "start", marginTop: "0.5rem" }}
+          >
+            Druckversion
+          </button>
+        ) : null}
         {officeCase.trigger_note ? <p style={{ margin: 0 }}>{officeCase.trigger_note}</p> : null}
       </header>
 
