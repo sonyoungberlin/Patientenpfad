@@ -1,5 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import M2Page from "@/app/cases/[id]/m2/page";
+import { M2PrefillClient } from "@/app/cases/[id]/m2/M2PrefillClient";
+import { M2MfaModeClient } from "@/app/cases/[id]/m2/M2MfaModeClient";
+import { M2PatientConversationClient } from "@/app/cases/[id]/m2/M2PatientConversationClient";
+import { selectM2Questionnaire } from "@/lib/logic/m2QuestionnaireSelection";
 import {
   CheckpointCategory,
   CheckpointMode,
@@ -83,6 +87,14 @@ const k12Checkpoint: ActiveCheckpoint = {
   m4: { type: "NOTICE", text: "M4" },
 };
 
+const k13Checkpoint: ActiveCheckpoint = {
+  ...k12Checkpoint,
+  id: "K13",
+  title: "Geriatrische Zusatzfragen",
+  mode: CheckpointMode.ASSESSMENT,
+  enabled: true,
+};
+
 /** K09 – Mitwirkung (nur MFA-Perspektive, keine Patientenfragen) */
 const k09Checkpoint: ActiveCheckpoint = {
   id: "K09",
@@ -160,6 +172,45 @@ describe("M2 Seite", () => {
     prismaMock.prefillRun.findMany.mockResolvedValue([]);
   });
 
+  it("wählt MFA- und Gesprächsfragen samt dynamischen Checkpoints aus dem Fallkontext", () => {
+    const mfa = selectM2Questionnaire([k01Checkpoint, k12Checkpoint, k11RehaCheckpoint], "mfa");
+    const conversation = selectM2Questionnaire(
+      [k01Checkpoint, k12Checkpoint, k13Checkpoint, k11RehaCheckpoint],
+      "conversation",
+    );
+
+    expect(mfa.questionsByCheckpoint.K01?.map((question) => question.id)).toEqual([
+      "MFA-K01-01",
+      "MFA-K01-02",
+      "MFA-K01-03",
+    ]);
+    expect(mfa.visibleCheckpoints.map((checkpoint) => checkpoint.id)).toContain("K14");
+    expect(mfa.visibleCheckpoints.map((checkpoint) => checkpoint.id)).toContain("K15");
+    expect(conversation.visibleCheckpoints.map((checkpoint) => checkpoint.id)).not.toContain("K11");
+    expect(conversation.k13EmbeddedInK12).toBe(true);
+    expect(conversation.k12K13Groups.map((group) => group.title)).toContain("Mobilität & Sturz");
+    expect(conversation.questionsByCheckpoint.K12?.[0]?.text).toBe(
+      "Wirkt die Fortbewegung im Alltag sicher?",
+    );
+  });
+
+  it("schließt deaktivierte Assessments aus und ergänzt bei alten Fällen Perspektiven", () => {
+    const legacyAssessment = {
+      ...k12Checkpoint,
+      mode: CheckpointMode.ASSESSMENT,
+      perspectives: undefined,
+      enabled: false,
+    } as unknown as ActiveCheckpoint;
+    const selected = selectM2Questionnaire([legacyAssessment], "conversation");
+    expect(selected.visibleCheckpoints).toHaveLength(0);
+
+    const enabled = selectM2Questionnaire(
+      [{ ...k12Checkpoint, mode: CheckpointMode.ASSESSMENT, enabled: true }],
+      "conversation",
+    );
+    expect(enabled.questionsByCheckpoint.K12?.length).toBeGreaterThan(0);
+  });
+
   it("rendert pro aktivem Checkpoint die M2-Fragen aus dem Katalog", async () => {
     prismaMock.caseSession.findUnique.mockResolvedValue({
       owner_account_id: "acc-test",
@@ -182,6 +233,7 @@ describe("M2 Seite", () => {
     expect(markup).toContain(
       "Ist die Begründung der Medikation durch Diagnosen nachvollziehbar dokumentiert?",
     );
+    expect(markup).toContain('data-m2-print-button="mfa"');
   });
 
   it("rendert pro Frage Ja-, Nein- und Unklar-Buttons", async () => {
@@ -254,6 +306,7 @@ describe("M2 Seite", () => {
     expect(markup).toContain(
       "Wirkt die Fortbewegung im Alltag sicher?",
     );
+    expect(markup).toContain('data-m2-print-button="conversation"');
   });
 
   it("vorgespeicherte Antworten werden per data-Attribut auf Buttons reflektiert", async () => {

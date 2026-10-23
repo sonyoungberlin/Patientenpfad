@@ -32,6 +32,13 @@ export type OfficeM2PrintInput = {
   printedAt?: Date;
 };
 
+export type M2PrintPdfInput = {
+  title: string;
+  headerLines?: string[];
+  sections: OfficeM2PrintSection[];
+  printedAt?: Date;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -118,6 +125,15 @@ function wrapText(
 }
 
 export async function buildOfficeM2PrintPdf(input: OfficeM2PrintInput): Promise<Uint8Array> {
+  return buildM2PrintPdf({
+    title: "M2-Druckversion",
+    headerLines: [`Fall: ${input.caseTitle}`, `Office-Thema: ${input.topicTitle}`],
+    sections: input.sections,
+    printedAt: input.printedAt,
+  });
+}
+
+export async function buildM2PrintPdf(input: M2PrintPdfInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -135,7 +151,7 @@ export async function buildOfficeM2PrintPdf(input: OfficeM2PrintInput): Promise<
 
   const drawPageHeader = () => {
     const headerTop = pageHeight - 42;
-    page.drawText("M2-Druckversion", {
+    page.drawText(input.title, {
       x: marginLeft,
       y: headerTop,
       size: 11,
@@ -153,10 +169,9 @@ export async function buildOfficeM2PrintPdf(input: OfficeM2PrintInput): Promise<
     });
 
     let headerY = headerTop - 17;
-    for (const headerLine of [
-      ...wrapText(`Fall: ${input.caseTitle}`, 9, contentWidth, textWidth),
-      ...wrapText(`Office-Thema: ${input.topicTitle}`, 9, contentWidth, textWidth),
-    ]) {
+    for (const headerLine of (input.headerLines ?? []).flatMap((line) =>
+      wrapText(line, 9, contentWidth, textWidth),
+    )) {
       page.drawText(headerLine, {
         x: marginLeft,
         y: headerY,
@@ -208,19 +223,21 @@ export async function buildOfficeM2PrintPdf(input: OfficeM2PrintInput): Promise<
     }
 
     for (const checkpoint of section.checkpoints) {
-      const firstQuestion = checkpoint.questions[0];
-      const firstQuestionHeight = firstQuestion
-        ? questionHeight(getQuestionLines(questionNumber + 1, firstQuestion.text).length)
-        : 0;
-      if (y - (18 + firstQuestionHeight) < marginBottom) addPage();
-      page.drawText(checkpoint.title, {
-        x: marginLeft,
-        y,
-        size: 10.5,
-        font: bold,
-        color: rgb(0, 0, 0),
-      });
-      y -= 18;
+      if (checkpoint.title) {
+        const firstQuestion = checkpoint.questions[0];
+        const firstQuestionHeight = firstQuestion
+          ? questionHeight(getQuestionLines(questionNumber + 1, firstQuestion.text).length)
+          : 0;
+        if (y - (18 + firstQuestionHeight) < marginBottom) addPage();
+        page.drawText(checkpoint.title, {
+          x: marginLeft,
+          y,
+          size: 10.5,
+          font: bold,
+          color: rgb(0, 0, 0),
+        });
+        y -= 18;
+      }
 
       for (const question of checkpoint.questions) {
         questionNumber += 1;

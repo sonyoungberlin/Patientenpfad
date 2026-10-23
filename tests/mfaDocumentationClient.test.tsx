@@ -3,6 +3,8 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { M2PrefillClient } from "@/app/cases/[id]/m2/M2PrefillClient";
+import { M2MfaModeClient } from "@/app/cases/[id]/m2/M2MfaModeClient";
+import { M2PatientConversationClient } from "@/app/cases/[id]/m2/M2PatientConversationClient";
 import {
   CheckpointCategory,
   CheckpointPerspective,
@@ -84,6 +86,46 @@ async function toggleCheckbox(selector: string) {
 }
 
 describe("M2 MFA-Kurzdokumentation – Momentaufnahme", () => {
+  it("wechselt Druckbutton und PDF-Ziel mit dem aktiven M2-Modus", async () => {
+    const open = jest.spyOn(window, "open").mockImplementation(() => null);
+    await act(async () => {
+      root.render(
+        <>
+          <M2PatientConversationClient />
+          <M2MfaModeClient />
+          <M2PrefillClient {...initialProps} />
+        </>,
+      );
+    });
+
+    expect(container.querySelector('[data-m2-print-button="mfa"]')).not.toBeNull();
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-m2-patient-conversation-button]")?.click();
+    });
+    expect(container.querySelector('[data-m2-print-button="conversation"]')).not.toBeNull();
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-m2-print-button="conversation"]')?.click();
+    });
+    expect(open).toHaveBeenLastCalledWith(
+      "/api/cases/case-123/m2/pdf?mode=conversation",
+      "_blank",
+      "noopener,noreferrer",
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-m2-mfa-mode-button]")?.click();
+    });
+    expect(container.querySelector('[data-m2-print-button="mfa"]')).not.toBeNull();
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-m2-print-button="mfa"]')?.click();
+    });
+    expect(open).toHaveBeenLastCalledWith(
+      "/api/cases/case-123/m2/pdf?mode=mfa",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
   it("bietet zwei Hauptauswahlen, kopiert den Text und lässt M2-Antworten unberührt", async () => {
     const writeText = jest.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
