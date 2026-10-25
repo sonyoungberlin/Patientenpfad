@@ -5,7 +5,7 @@ import { getPatientWithoutAppointmentSections } from "./patientWithoutAppointmen
 
 export type InternalProtocolPrintEntry = {
   title: string | null;
-  createdAt: Date;
+  createdAt: Date | null;
   snapshot: InternalProtocolWorkflowSnapshot;
 };
 
@@ -32,12 +32,6 @@ const BINDING_LABELS = {
   ORIENTATION: "Orientierung",
 } as const;
 
-function answerText(value: unknown): string {
-  if (value === null || value === undefined) return "–";
-  if (Array.isArray(value)) return value.map((item) => String(item)).join(", ");
-  return String(value);
-}
-
 export function buildInternalProtocolPrintBlocks(
   entries: readonly InternalProtocolPrintEntry[],
 ): PrintPdfBlock[] {
@@ -48,17 +42,18 @@ export function buildInternalProtocolPrintBlocks(
   for (const [entryIndex, entry] of entries.entries()) {
     if (blocks.length > 0) blocks.push({ kind: "separator" });
     const { snapshot } = entry;
-    blocks.push(
-      { kind: "heading", text: entry.title?.trim() || `Internes Protokoll ${entryIndex + 1}` },
-      { kind: "paragraph", text: `Erstellt: ${entry.createdAt.toLocaleDateString("de-DE")}` },
-      { kind: "paragraph", text: `Art: ${MODE_LABELS[snapshot.processMode ?? "CURRENT_STATE"]}` },
-    );
+    blocks.push({ kind: "heading", text: entry.title?.trim() || `Internes Protokoll ${entryIndex + 1}` });
+    if (entry.createdAt) {
+      blocks.push({ kind: "paragraph", text: `Erstellt: ${entry.createdAt.toLocaleDateString("de-DE")}` });
+    }
+    blocks.push({ kind: "paragraph", text: `Art: ${MODE_LABELS[snapshot.processMode ?? "CURRENT_STATE"]}` });
 
     for (const checkpoint of snapshot.checkpoints) {
       const section = sectionById.get(checkpoint.id);
+      const checkpointTitle = section?.title ?? "Weitere Klärung";
       blocks.push({
         kind: "subheading",
-        text: `${checkpoint.title} | Status: ${STATUS_LABELS[checkpoint.status]} | Klärung: ${JUDGEMENT_LABELS[checkpoint.clarificationJudgement ?? "OPEN"]}`,
+        text: `${checkpointTitle} | Status: ${STATUS_LABELS[checkpoint.status]} | Klärung: ${JUDGEMENT_LABELS[checkpoint.clarificationJudgement ?? "OPEN"]}`,
       });
 
       if (section?.officialRules.length) {
@@ -99,8 +94,8 @@ export function buildInternalProtocolPrintBlocks(
       }
 
       const extraAnswers = Object.entries(checkpoint.answers).filter(([questionId]) => !knownQuestionIds.has(questionId));
-      for (const [questionId, answer] of extraAnswers) {
-        blocks.push({ kind: "paragraph", text: `Weitere gespeicherte Antwort (${questionId}): ${answerText(answer)}` });
+      for (const [, answer] of extraAnswers) {
+        blocks.push({ kind: "paragraph", text: `Weitere gespeicherte Antwort: ${resolveAnswerLabel(undefined, answer)}` });
       }
     }
 
@@ -110,8 +105,12 @@ export function buildInternalProtocolPrintBlocks(
       const questionById = new Map(sections.flatMap((section) => section.questions.map((question) => [question.id, question] as const)));
       for (const [questionId, value] of templateAnswers) {
         const question = questionById.get(questionId);
-        blocks.push({ kind: "paragraph", text: question?.text ?? questionId });
-        blocks.push({ kind: "paragraph", text: `Vorschlag: ${question ? resolveAnswerLabel(question, value) : answerText(value)}` });
+        if (question) {
+          blocks.push({ kind: "paragraph", text: question.text });
+          blocks.push({ kind: "paragraph", text: `Vorschlag: ${resolveAnswerLabel(question, value)}` });
+        } else {
+          blocks.push({ kind: "paragraph", text: `Weiterer gespeicherter Ausgangsvorschlag: ${resolveAnswerLabel(undefined, value)}` });
+        }
       }
     }
   }

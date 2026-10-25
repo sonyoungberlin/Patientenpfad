@@ -5,12 +5,13 @@ import { canAccessWorkflowCases, getCurrentPracticeRole } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getWorkflowOwnershipFilter } from "@/lib/workflow/scope";
 import { getWorkflowTopic, isWorkflowTopicId } from "@/lib/workflow/processCatalog";
-import { isValidProcessSnapshot } from "@/lib/workflow/types";
+import { isProcessPointStatus, isValidProcessSnapshot, type ProcessPointStatus } from "@/lib/workflow/types";
 import { isPracticeWorkflowSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import { isPracticeWorkflowDraftSnapshot } from "@/lib/practiceProcesses/workflowSnapshot";
 import { listCaseProfilesFromLib } from "@/lib/practiceProcesses/caseProfileLibrary";
 import { listActiveCatalogEntries } from "@/lib/practiceCatalog/query";
 import { isInternalProtocolWorkflowSnapshot } from "@/lib/workflow/internalProtocol/workflowAdapter";
+import type { WorkflowCasesExportReference } from "@/lib/workflow/workflowCasesExportTypes";
 import {
   deriveSessionStatus,
   sessionStatusLabel,
@@ -66,10 +67,15 @@ export default async function WorkflowCasesPage() {
     const workingSession = sessionByProfile.get(profile.id);
     const catalogEntry = catalogByProfile.get(profile.id);
     const latestDate = workingSession?.updatedAt ?? catalogEntry?.updatedAt ?? new Date(0);
+    const exportRef: WorkflowCasesExportReference = workingSession
+      ? { type: "practice-case-session", id: workingSession.id, profileId: profile.id }
+      : catalogEntry
+        ? { type: "catalog-entry", id: catalogEntry.id, profileId: profile.id }
+        : { type: "practice-profile", id: profile.id };
     return {
       id: profile.id,
-      createdAt: latestDate.toISOString().slice(0, 10),
-      updatedAt: latestDate.toISOString().slice(0, 10),
+      createdAt: latestDate.getTime() === 0 ? null : latestDate.toISOString().slice(0, 10),
+      updatedAt: latestDate.getTime() === 0 ? null : latestDate.toISOString().slice(0, 10),
       title: profile.title,
       topicTitle: profile.title,
       role: null,
@@ -81,6 +87,7 @@ export default async function WorkflowCasesPage() {
       sessionStatus: workingSession ? "In Bearbeitung" : catalogEntry ? "Veröffentlicht" : "Noch nicht begonnen",
       profileId: profile.id,
       workingSessionId: workingSession?.id ?? null,
+      exportRef,
     };
   });
 
@@ -104,7 +111,7 @@ export default async function WorkflowCasesPage() {
         href: null,
         kind: "practice-workflow" as const,
         sessionStatus: sessionStatusLabel(status),
-        snapshotJson: JSON.stringify(s.process_snapshot),
+        exportRef: { type: "session" as const, id: s.id, kind: "practice-workflow" as const },
       };
     }
     // Älteres InternalProtocol (explizite Typerkennung)
@@ -121,7 +128,7 @@ export default async function WorkflowCasesPage() {
         href: `/workflow-cases/${s.id}/protocol` as string | null,
         kind: "internal-protocol" as const,
         sessionStatus: internalProtocolSessionStatusLabel(ipStatus),
-        snapshotJson: JSON.stringify(s.process_snapshot),
+        exportRef: { type: "session" as const, id: s.id, kind: "internal-protocol" as const },
       };
     }
     // Klinischer Workflow
@@ -142,6 +149,15 @@ export default async function WorkflowCasesPage() {
       pointCount,
       href: `/workflow-cases/${s.id}` as string | null,
       kind: "clinical" as const,
+      ...(snapshot
+        ? {
+            exportRef: { type: "session" as const, id: s.id, kind: "clinical" as const },
+            clinicalPointStatuses: Array.from(new Set<ProcessPointStatus>([
+              ...snapshot.processPoints.map((point) => point.status),
+              ...(snapshot.m3Checkpoints ?? []).map((checkpoint) => checkpoint.status),
+            ].filter(isProcessPointStatus))),
+          }
+        : {}),
     };
     }),
   ];
@@ -153,9 +169,6 @@ export default async function WorkflowCasesPage() {
         <p className="text-muted">
           Musterprozesse strukturiert dokumentieren.
         </p>
-        <Link href="/api/workflow-cases/internal-protocol/pdf">
-          <button type="button">Übersicht als PDF</button>
-        </Link>
       </section>
 
       {items.length === 0 ? (

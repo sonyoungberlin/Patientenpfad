@@ -32,7 +32,8 @@ describe("Internal-Protocol-Gesamtexport-Inhalte", () => {
       { title: "Altprotokoll", createdAt: new Date("2026-10-20T12:00:00Z"), snapshot },
     ]).map((block) => block.kind === "separator" ? "---" : block.text).join("\n");
 
-    expect(text).toContain("Weitere gespeicherte Antwort (unbekannteFrage): Gespeicherter Freitext");
+    expect(text).toContain("Weitere gespeicherte Antwort: Gespeicherter Freitext");
+    expect(text).not.toContain("unbekannteFrage");
   });
 
   it("rendert lange Protokollinhalte mehrseitig im A4-Hochformat", async () => {
