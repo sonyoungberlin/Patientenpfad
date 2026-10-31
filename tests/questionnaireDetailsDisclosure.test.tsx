@@ -95,6 +95,58 @@ it("lädt beim ersten Aufklappen genau einmal und verwendet danach den Cache", a
   await act(async () => root.unmount());
 });
 
+it("zeigt nur angebotene Ausgaben mit eigener Vorschau, Kopieren und XML-Export", async () => {
+  fetchMock.mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      ok: true,
+      detail: {
+        ...detail,
+        outputVariants: [
+          {
+            id: "patientenbrief",
+            label: "Patientenbrief",
+            noteText: "Patiententext",
+            semanticDocument: { sections: [
+              { slot: 1, items: [{ type: "bodyText", text: "Patiententext" }] },
+              { slot: 2, items: [] },
+              { slot: 3, items: [] },
+            ] },
+          },
+          {
+            id: "krankenblatt",
+            label: "Krankenblatt",
+            noteText: "Krankenblatttext",
+            semanticDocument: { sections: [
+              { slot: 1, items: [{ type: "bodyText", text: "Krankenblatttext" }] },
+              { slot: 2, items: [] },
+              { slot: 3, items: [] },
+            ] },
+          },
+        ],
+      },
+    }),
+  });
+  const { container, root } = await renderDisclosure();
+  await toggle(container.querySelector("details")!, true);
+
+  const selector = container.querySelector<HTMLSelectElement>('[data-q-output-variant-select="session-1"]')!;
+  expect(Array.from(selector.options).map((option) => option.value)).toEqual(["patientenbrief", "krankenblatt"]);
+  expect(container.querySelector('[data-q-output-preview="patientenbrief"]')?.textContent).toBe("Patiententext");
+  expect(container.querySelector('[data-q-copy-note="session-1-patientenbrief"]')).not.toBeNull();
+  expect(container.querySelector('[data-q-download-xml="session-1-patientenbrief"]')).not.toBeNull();
+  expect(container.querySelector('[data-q-download-xml-v2="session-1-patientenbrief"]')).not.toBeNull();
+
+  await act(async () => {
+    selector.value = "krankenblatt";
+    selector.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(container.querySelector('[data-q-output-preview="krankenblatt"]')?.textContent).toBe("Krankenblatttext");
+  expect(container.querySelector('[data-q-copy-note="session-1-krankenblatt"]')).not.toBeNull();
+
+  await act(async () => root.unmount());
+});
+
 it("zeigt während des Abrufs einen kleinen Ladezustand in derselben Karte", async () => {
   let resolveFetch!: (value: unknown) => void;
   fetchMock.mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));

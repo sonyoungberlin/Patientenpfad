@@ -22,6 +22,7 @@
 import {
   BLOCK_CATALOG,
   QUESTION_CATALOG,
+  type DocumentationSegment,
   resolveQuestionIdsForBlocks,
   type BlockDocumentationPresentation,
   type QuestionDefinition,
@@ -70,6 +71,14 @@ export type FrozenBlock = {
   structuredHeadingLevel?: QuestionnaireBlock["structuredHeadingLevel"];
   /** Eingefrorene geplante Sichtbarkeit der strukturierten Überschrift. */
   structuredHeadingVisibility?: QuestionnaireBlock["structuredHeadingVisibility"];
+  /** Praxisformulierungen pro Ausgabeart, eingefroren beim Start der Sitzung. */
+  documentationOutputVariants?: Record<string, {
+    documentationText?: string;
+    documentationSegments?: DocumentationSegment[];
+    sharedDocumentationText?: string;
+    fieldTexts?: Record<string, { documentationText?: string; documentationSegments?: DocumentationSegment[] }>;
+    optionTexts?: Record<string, Record<string, { documentationText?: string; documentationSegments?: DocumentationSegment[] }>>;
+  }>;
 };
 
 export type InternalDocumentationSnapshot = {
@@ -79,6 +88,7 @@ export type InternalDocumentationSnapshot = {
     outputFormat?: "informell" | "formell";
     patientSignatureRequired?: boolean;
     patientSignatureCity?: string;
+    outputVariantIds?: string[];
   };
   blocks: FrozenBlock[];
 };
@@ -86,6 +96,13 @@ export type InternalDocumentationSnapshot = {
 export function getInternalDocumentKind(raw: unknown): "documentation" | "profile" {
   if (!isInternalDocumentationSnapshot(raw)) return "documentation";
   return raw.metadata.documentKind === "profile" ? "profile" : "documentation";
+}
+
+export function getInternalDocumentOutputVariantIds(raw: unknown): string[] {
+  if (!isInternalDocumentationSnapshot(raw)) return [];
+  const ids = raw.metadata?.outputVariantIds;
+  if (!Array.isArray(ids)) return [];
+  return [...new Set(ids.filter((id): id is string => typeof id === "string" && id.length > 0))];
 }
 
 export function buildInternalDocumentationSnapshot(

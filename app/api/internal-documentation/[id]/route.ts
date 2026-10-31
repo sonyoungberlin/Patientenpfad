@@ -19,7 +19,7 @@ export async function POST(
   const { id } = await params;
   const body = await req.json().catch(() => null) as { answers?: unknown } | null;
   try {
-    await submitInternalDocumentationSession({
+    const result = await submitInternalDocumentationSession({
       sessionId: id,
       answers: body?.answers,
       context: {
@@ -28,7 +28,10 @@ export async function POST(
         accountId: account.id,
       },
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      ...(result?.outputVariants?.length ? { outputVariants: result.outputVariants, xmlFilename: result.xmlFilename } : {}),
+    });
   } catch (cause) {
     if (cause instanceof InternalDocumentationError) {
       const invalidQuestionIds = (cause as InternalDocumentationError & {

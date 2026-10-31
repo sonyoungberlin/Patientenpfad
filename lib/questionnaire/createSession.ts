@@ -117,6 +117,7 @@ export type CreateSessionInput = {
   internalDocumentTitle?: InternalDocumentTitleMetadata;
   internalDocumentKind?: "documentation" | "profile";
   internalOutputFormat?: "informell" | "formell";
+  internalOutputVariantIds?: string[];
   internalPatientSignatureRequired?: boolean;
   internalPatientSignatureCity?: string | null;
   internalFrozenBlocks?: FrozenBlock[];
@@ -171,6 +172,7 @@ export async function createQuestionnaireSession(
     internalDocumentTitle,
     internalDocumentKind = "documentation",
     internalOutputFormat,
+    internalOutputVariantIds,
     internalPatientSignatureRequired,
     internalPatientSignatureCity,
     internalFrozenBlocks,
@@ -273,6 +275,9 @@ export async function createQuestionnaireSession(
         ...internalDocumentTitle,
         documentKind: internalDocumentKind,
         ...(internalOutputFormat ? { outputFormat: internalOutputFormat } : {}),
+        ...(internalOutputVariantIds && internalOutputVariantIds.length > 0
+          ? { outputVariantIds: [...internalOutputVariantIds] }
+          : {}),
         ...(internalPatientSignatureRequired ? { patientSignatureRequired: true } : {}),
         ...(internalPatientSignatureCity ? { patientSignatureCity: internalPatientSignatureCity } : {}),
       })

@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { removePracticeDocumentationOption } from "@/lib/practice/documentationBlocks";
+import { PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS } from "@/lib/practice/documentationBlocks";
 import type {
   PracticeDocumentationBlockDefinition,
   PracticeDocumentationBlockType,
   PracticeDocumentationAdditionalFieldInput,
   PracticeDocumentationFieldOptionInput,
   PracticeDocumentationOptionInput,
+  PracticeDocumentationOutputVariantInput,
+  PracticeDocumentationVariantOutputTextInput,
   PracticeDocumentationSegmentInput,
   PracticeDocumentationTemplateCategory,
 } from "@/lib/practice/documentationBlocks";
@@ -40,7 +43,150 @@ type Draft = {
   options: PracticeDocumentationOptionInput[];
   additionalFields: PracticeDocumentationAdditionalFieldInput[];
   allowedTemplateCategories: PracticeDocumentationTemplateCategory[];
+  outputVariants: Record<string, PracticeDocumentationOutputVariantInput>;
 };
+
+type SegmentSource = {
+  id: string;
+  label: string;
+  options: Array<{ value: string; label: string }>;
+};
+
+function DocumentationVariantOutputEditor({
+  label,
+  value,
+  sources,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: PracticeDocumentationVariantOutputTextInput;
+  sources: SegmentSource[];
+  disabled: boolean;
+  onChange: (value: PracticeDocumentationVariantOutputTextInput) => void;
+}) {
+  const segments = value.documentationSegments ?? [];
+  const updateSegment = (index: number, update: Partial<PracticeDocumentationSegmentInput>) => {
+    onChange({
+      ...value,
+      documentationSegments: segments.map((segment, segmentIndex) => segmentIndex === index
+        ? { ...segment, ...update } as PracticeDocumentationSegmentInput
+        : segment),
+    });
+  };
+  const addSegment = () => onChange({
+    ...value,
+    documentationSegments: [...segments, { kind: "text", text: "" }],
+  });
+  const removeSegment = (index: number) => onChange({
+    ...value,
+    documentationSegments: segments.filter((_, segmentIndex) => segmentIndex !== index),
+  });
+
+  return (
+    <div style={{ display: "grid", gap: "0.35rem" }}>
+      <label>{label}<textarea
+        value={value.documentationText ?? ""}
+        onChange={(event) => onChange({ ...value, documentationText: event.target.value })}
+        rows={3}
+        disabled={disabled}
+      /></label>
+      <details>
+        <summary style={{ cursor: "pointer" }}>Zusammengesetzten Ausgabetext bearbeiten</summary>
+        <div style={{ display: "grid", gap: "0.4rem", marginTop: "0.4rem" }}>
+          {segments.map((segment, index) => {
+            const conditionalSource = segment.kind === "conditional"
+              ? sources.find((source) => source.id === segment.fieldId)
+              : undefined;
+            return <div key={index} style={{ display: "grid", gap: "0.35rem", borderBottom: "1px solid #ddd", paddingBottom: "0.4rem" }}>
+              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                <select
+                  aria-label={`${label} Segmentart ${index + 1}`}
+                  value={segment.kind}
+                  onChange={(event) => {
+                    const kind = event.target.value;
+                    if (kind === "text") updateSegment(index, { kind: "text", text: "" });
+                    else if (kind === "answerRef") updateSegment(index, { kind: "answerRef", fieldId: "__primary" });
+                    else {
+                      const source = sources.find((candidate) => candidate.options.length > 0);
+                      updateSegment(index, {
+                        kind: "conditional",
+                        fieldId: source?.id ?? "__primary",
+                        optionValue: source?.options[0]?.value ?? "",
+                        segments: [{ kind: "text", text: "" }],
+                      });
+                    }
+                  }}
+                  disabled={disabled}
+                >
+                  <option value="text">Fester Text</option>
+                  <option value="answerRef">Antwortreferenz</option>
+                  {sources.some((source) => source.options.length > 0) && <option value="conditional">Bedingung</option>}
+                </select>
+                {segment.kind === "text" && <input
+                  aria-label={`${label} Textsegment ${index + 1}`}
+                  value={segment.text}
+                  onChange={(event) => updateSegment(index, { text: event.target.value })}
+                  disabled={disabled}
+                />}
+                {segment.kind === "answerRef" && <select
+                  aria-label={`${label} Referenzfeld ${index + 1}`}
+                  value={segment.fieldId}
+                  onChange={(event) => updateSegment(index, { fieldId: event.target.value })}
+                  disabled={disabled}
+                >{sources.map((source) => <option key={source.id} value={source.id}>{source.label}</option>)}</select>}
+                {segment.kind === "conditional" && <>
+                  <select
+                    aria-label={`${label} Bedingungsfeld ${index + 1}`}
+                    value={segment.fieldId}
+                    onChange={(event) => {
+                      const source = sources.find((candidate) => candidate.id === event.target.value);
+                      updateSegment(index, { fieldId: event.target.value, optionValue: source?.options[0]?.value ?? "" });
+                    }}
+                    disabled={disabled}
+                  >{sources.filter((source) => source.options.length > 0).map((source) => <option key={source.id} value={source.id}>{source.label}</option>)}</select>
+                  <select
+                    aria-label={`${label} Bedingungswert ${index + 1}`}
+                    value={segment.optionValue}
+                    onChange={(event) => updateSegment(index, { optionValue: event.target.value })}
+                    disabled={disabled}
+                  >{(conditionalSource?.options ?? []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+                  {segment.segments.map((nested, nestedIndex) => <span key={nestedIndex} style={{ display: "inline-flex", gap: "0.25rem" }}>
+                    <select
+                      aria-label={`${label} Bedingungssegmentart ${index + 1}.${nestedIndex + 1}`}
+                      value={nested.kind}
+                      onChange={(event) => updateSegment(index, {
+                        segments: segment.segments.map((current, currentIndex) => currentIndex !== nestedIndex ? current : event.target.value === "text"
+                          ? { kind: "text", text: "" }
+                          : { kind: "answerRef", fieldId: "__primary" }),
+                      })}
+                      disabled={disabled}
+                    ><option value="text">Fester Text</option><option value="answerRef">Antwortreferenz</option></select>
+                    {nested.kind === "text" ? <input
+                      aria-label={`${label} Bedingungstext ${index + 1}.${nestedIndex + 1}`}
+                      value={nested.text}
+                      onChange={(event) => updateSegment(index, { segments: segment.segments.map((current, currentIndex) => currentIndex === nestedIndex ? { ...current, text: event.target.value } as PracticeDocumentationSegmentInput : current) })}
+                      disabled={disabled}
+                    /> : <select
+                      aria-label={`${label} Bedingungsreferenz ${index + 1}.${nestedIndex + 1}`}
+                      value={nested.fieldId}
+                      onChange={(event) => updateSegment(index, { segments: segment.segments.map((current, currentIndex) => currentIndex === nestedIndex ? { ...current, fieldId: event.target.value } as PracticeDocumentationSegmentInput : current) })}
+                      disabled={disabled}
+                    >{sources.map((source) => <option key={source.id} value={source.id}>{source.label}</option>)}</select>}
+                    <button type="button" onClick={() => updateSegment(index, { segments: segment.segments.filter((_, currentIndex) => currentIndex !== nestedIndex) })} disabled={disabled}>Entfernen</button>
+                  </span>)}
+                  <button type="button" onClick={() => updateSegment(index, { segments: [...segment.segments, { kind: "text", text: "" }] })} disabled={disabled}>Bedingungssegment hinzufügen</button>
+                </>}
+                <button type="button" onClick={() => removeSegment(index)} disabled={disabled}>Segment entfernen</button>
+              </div>
+            </div>;
+          })}
+          <button type="button" onClick={addSegment} disabled={disabled}>Segment hinzufügen</button>
+        </div>
+      </details>
+    </div>
+  );
+}
 
 const TYPE_LABELS: Record<PracticeDocumentationBlockType, string> = {
   text: "Freitext",
@@ -95,13 +241,15 @@ const emptyDraft = (): Draft => ({
   required: false,
   sharedDocumentationText: "",
   documentationSegments: [],
-  options: [
-    { label: "", documentationText: "" },
-    { label: "", documentationText: "" },
-  ],
+  options: [newDocumentationOption(), newDocumentationOption()],
   additionalFields: [],
   allowedTemplateCategories: ["documentation"],
+  outputVariants: {},
 });
+
+function newDocumentationOption(): PracticeDocumentationOptionInput {
+  return { value: `option_${crypto.randomUUID()}`, label: "", documentationText: "" };
+}
 
 function newAdditionalField(): PracticeDocumentationAdditionalFieldInput {
   return {
@@ -205,6 +353,7 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
         };
       }),
       allowedTemplateCategories: row.definition.allowedTemplateCategories ?? ["documentation"],
+      outputVariants: row.definition.outputVariants ?? {},
     });
     setError(null);
   }
@@ -213,6 +362,18 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
   const blockById = new Map(initialBlocks.map((block) => [block.id, block]));
   const referencedBlockIds = new Set(initialTemplates.flatMap((template) => template.placements.map((placement) => placement.blockId)));
   const additionalBlocks = initialBlocks.filter((block) => block.isActive && !referencedBlockIds.has(block.id));
+  const variantSegmentSources: SegmentSource[] = [
+    {
+      id: "__primary",
+      label: "Primäre Frage",
+      options: draft.options.map((option) => ({ value: option.value ?? option.label, label: option.label })),
+    },
+    ...draft.additionalFields.map((field, index) => ({
+      id: field.id ?? `__new_${index}`,
+      label: field.label || "Unbenannte Zusatzangabe",
+      options: field.options ?? [],
+    })),
+  ];
 
   function renderBlock(block: BlockRow, key: string) {
     const usages = block.usedInTemplates ?? [];
@@ -272,6 +433,60 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
       ...current,
       additionalFields: current.additionalFields.map((field, fieldIndex) => fieldIndex === index ? { ...field, ...update } : field),
     }));
+  }
+
+  function setVariantEnabled(variantId: string, enabled: boolean) {
+    setDraft((current) => {
+      const outputVariants = { ...current.outputVariants };
+      if (enabled) outputVariants[variantId] ??= {};
+      else delete outputVariants[variantId];
+      return { ...current, outputVariants };
+    });
+  }
+
+  function updateVariant(variantId: string, update: Partial<PracticeDocumentationOutputVariantInput>) {
+    setDraft((current) => ({
+      ...current,
+      outputVariants: {
+        ...current.outputVariants,
+        [variantId]: { ...(current.outputVariants[variantId] ?? {}), ...update },
+      },
+    }));
+  }
+
+  function updateVariantField(
+    variantId: string,
+    mapName: "fieldTexts" | "optionTexts",
+    fieldId: string,
+    optionValue: string | null,
+    output: PracticeDocumentationVariantOutputTextInput,
+  ) {
+    setDraft((current) => {
+      const variant = current.outputVariants[variantId] ?? {};
+      if (mapName === "fieldTexts") {
+        return {
+          ...current,
+          outputVariants: {
+            ...current.outputVariants,
+            [variantId]: { ...variant, fieldTexts: { ...variant.fieldTexts, [fieldId]: output } },
+          },
+        };
+      }
+      const fieldOptions = variant.optionTexts?.[fieldId] ?? {};
+      return {
+        ...current,
+        outputVariants: {
+          ...current.outputVariants,
+          [variantId]: {
+            ...variant,
+            optionTexts: {
+              ...variant.optionTexts,
+              [fieldId]: { ...fieldOptions, [optionValue ?? ""]: output },
+            },
+          },
+        },
+      };
+    });
   }
 
   function updateOptionSegment(optionIndex: number, segmentIndex: number, update: Partial<PracticeDocumentationSegmentInput>) {
@@ -560,6 +775,67 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
           </div>)}
           <button type="button" onClick={() => setDraft((current) => ({ ...current, additionalFields: [...current.additionalFields, newAdditionalField()] }))} disabled={busy}>Zusatzangabe hinzufügen</button>
         </fieldset>}
+        <details>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>Ausgabevarianten (optional)</summary>
+          <p className="text-muted text-small">Nicht konfigurierte Texte werden in der jeweiligen Ausgabe später ausgelassen. Die bisherige Standardausgabe bleibt unverändert.</p>
+          <div style={{ display: "grid", gap: "0.75rem" }}>
+            {PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS.map(({ id, label }) => {
+              const variant = draft.outputVariants[id];
+              return <section key={id} data-output-variant={id} style={{ borderTop: "1px solid #ddd", paddingTop: "0.65rem" }}>
+                <label style={{ display: "flex", gap: "0.5rem", fontWeight: 600 }}>
+                  <input type="checkbox" checked={Boolean(variant)} onChange={(event) => setVariantEnabled(id, event.target.checked)} disabled={busy} />
+                  {label}
+                </label>
+                {variant && <div style={{ display: "grid", gap: "0.6rem", marginTop: "0.5rem" }}>
+                  <DocumentationVariantOutputEditor
+                    label="Ausgabetext des Bausteins"
+                    value={{ documentationText: variant.documentationText, documentationSegments: variant.documentationSegments }}
+                    sources={variantSegmentSources}
+                    disabled={busy}
+                    onChange={(output) => updateVariant(id, output)}
+                  />
+                  {draft.blockType === "list" && <label>Gemeinsamer Ausgabetext<textarea
+                    value={variant.sharedDocumentationText ?? ""}
+                    onChange={(event) => updateVariant(id, { sharedDocumentationText: event.target.value })}
+                    rows={2}
+                    disabled={busy}
+                  /></label>}
+                  {(draft.blockType === "selection" || draft.blockType === "list") && draft.options.map((option, index) => {
+                    const optionValue = option.value ?? option.label;
+                    return <DocumentationVariantOutputEditor
+                      key={option.value ?? `new-${index}`}
+                      label={`Ausgabe für Option: ${option.label || `Option ${index + 1}`}`}
+                      value={variant.optionTexts?.__primary?.[optionValue] ?? {}}
+                      sources={variantSegmentSources}
+                      disabled={busy}
+                      onChange={(output) => updateVariantField(id, "optionTexts", "__primary", optionValue, output)}
+                    />;
+                  })}
+                  {draft.additionalFields.map((field, index) => {
+                    const fieldId = field.id ?? `__new_${index}`;
+                    return <div key={fieldId} style={{ display: "grid", gap: "0.5rem" }}>
+                      <DocumentationVariantOutputEditor
+                        label={`Ausgabe für Zusatzangabe: ${field.label || `Feld ${index + 1}`}`}
+                        value={variant.fieldTexts?.[fieldId] ?? {}}
+                        sources={variantSegmentSources}
+                        disabled={busy}
+                        onChange={(output) => updateVariantField(id, "fieldTexts", fieldId, null, output)}
+                      />
+                      {(field.type === "select" || field.type === "multi_select") && (field.options ?? []).map((option) => <DocumentationVariantOutputEditor
+                        key={`${fieldId}-${option.value}`}
+                        label={`Ausgabe für ${field.label}: ${option.label}`}
+                        value={variant.optionTexts?.[fieldId]?.[option.value] ?? {}}
+                        sources={variantSegmentSources}
+                        disabled={busy}
+                        onChange={(output) => updateVariantField(id, "optionTexts", fieldId, option.value, output)}
+                      />)}
+                    </div>;
+                  })}
+                </div>}
+              </section>;
+            })}
+          </div>
+        </details>
         {draft.blockType !== "hint" && <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={draft.required} onChange={(event) => setDraft((current) => ({ ...current, required: event.target.checked }))} disabled={busy} />Pflichtfeld</label>}
         {error && <p role="alert" className="text-error">{error}</p>}
         <div style={{ display: "flex", gap: "0.5rem" }}>

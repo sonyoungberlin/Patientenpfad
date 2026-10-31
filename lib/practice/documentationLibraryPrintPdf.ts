@@ -1,6 +1,7 @@
 import type { PracticeDocumentationBlockDefinition } from "@/lib/practice/documentationBlocks";
 import type { PrintPdfBlock } from "@/lib/pdf/printPdf";
 import { INTERNAL_DOCUMENT_TITLE_OPTIONS } from "@/lib/questionnaire/internalDocumentTitle";
+import { getInternalTemplatePlacements } from "@/lib/questionnaire/internalBlockLayout";
 
 type PrintBlock = {
   id: string;
@@ -123,8 +124,7 @@ function resolveOptionLabel(fieldId: string, value: unknown, context: PrintLabel
 }
 
 function getPlacements(value: unknown): Array<{ blockId: string; section: number; order: number }> {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => {
+  return getInternalTemplatePlacements(value).flatMap((item) => {
     if (!isRecord(item) || typeof item.blockId !== "string" ||
       typeof item.section !== "number" || typeof item.order !== "number") return [];
     return [{ blockId: item.blockId, section: item.section, order: item.order }];

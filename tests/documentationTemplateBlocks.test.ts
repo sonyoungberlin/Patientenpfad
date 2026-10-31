@@ -3,11 +3,13 @@ import { inflateSync } from "node:zlib";
 import type { PracticeDocumentationBlockDefinition } from "@/lib/practice/documentationBlocks";
 import {
   buildPracticeDocumentationBlockDefinition,
+  getPracticeDocumentationConfiguredOutputVariantIds,
   parsePracticeDocumentationBlockDefinition,
   resolvePracticeDocumentationBlocks,
   validatePracticeDocumentationBlock,
 } from "@/lib/practice/documentationBlocks";
 import { buildStructuredAppXml } from "@/lib/questionnaire/appTextXml";
+import { buildPracticeOutputProjection } from "@/lib/questionnaire/practiceOutputProjection";
 import { buildSemanticMedicalRecordDocument } from "@/lib/questionnaire/buildMedicalRecordNote";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { evaluateCondition } from "@/lib/questionnaire/conditionalLogic";
@@ -881,6 +883,243 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
       questions: [{ id: "practice_question_legacy", text: "Legacy", type: "textarea", required: false }],
     });
     expect(legacy.questions[0]?.type).toBe("textarea");
+    expect(legacy.outputVariants).toBeUndefined();
+  });
+
+  it("speichert Ausgabevarianten je Auswahlwert mit Freitext- und Bedingungsreferenzen", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Vorstellungszweck",
+      blockType: "selection",
+      options: [
+        { value: "followup", label: "Verlaufskontrolle", documentationText: "Standardtext Verlauf." },
+        { value: "review", label: "Befundabgleich", documentationText: "Standardtext Abgleich." },
+      ],
+      additionalFields: [
+        { id: "zeitmodus", label: "Zeitpunkt", type: "select", options: [{ value: "date", label: "Termin" }, { value: "open", label: "Noch offen" }], showForOptionValues: ["followup"] },
+        { id: "termin", label: "Terminangabe", type: "text", showForFieldId: "zeitmodus", showForOptionValues: ["date"] },
+        { id: "frage", label: "Fragestellung", type: "textarea", showForOptionValues: ["review"] },
+      ],
+      outputVariants: {
+        facharztbrief: {
+          optionTexts: {
+            __primary: {
+              followup: {
+                documentationText: "",
+                documentationSegments: [
+                  { kind: "text", text: "Wir bitten um Beurteilung des Verlaufs" },
+                  { kind: "conditional", fieldId: "zeitmodus", optionValue: "date", segments: [
+                    { kind: "text", text: " zum " },
+                    { kind: "answerRef", fieldId: "termin" },
+                  ] },
+                  { kind: "text", text: "." },
+                ],
+              },
+              review: { documentationText: "Wir bitten um Befundabgleich." },
+            },
+          },
+          fieldTexts: {
+            frage: {
+              documentationSegments: [
+                { kind: "text", text: "Fragestellung: " },
+                { kind: "answerRef", fieldId: "frage" },
+              ],
+            },
+          },
+        },
+        patientenbrief: {
+          optionTexts: {
+            __primary: {
+              followup: { documentationText: "Bitte vereinbaren Sie den besprochenen Kontrolltermin." },
+            },
+          },
+        },
+        krankenblatt: {},
+      },
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const reopened = parsePracticeDocumentationBlockDefinition(definition);
+
+    expect(reopened.outputVariants).toEqual(validation.value.outputVariants);
+    expect(reopened.questions[0]?.options?.map((option) => typeof option === "string" ? option : option.documentationText))
+      .toEqual(["Standardtext Verlauf.", "Standardtext Abgleich."]);
+    expect(reopened.outputVariants?.facharztbrief?.optionTexts?.__primary?.followup?.documentationSegments)
+      .toEqual(validation.value.outputVariants?.facharztbrief?.optionTexts?.__primary?.followup?.documentationSegments);
+    expect(reopened.outputVariants?.krankenblatt).toEqual({});
+    expect(reopened.outputVariants?.patientenbrief?.optionTexts?.__primary?.review).toBeUndefined();
+  });
+
+  it("lehnt unbekannte Auswahl- und Feldreferenzen in Ausgabevarianten ab", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Ausgabe",
+      blockType: "selection",
+      options: [{ value: "known", label: "Bekannt", documentationText: "Standard" }],
+      outputVariants: {
+        facharztbrief: {
+          optionTexts: { __primary: { unknown: { documentationText: "Nicht zugeordnet" } } },
+          fieldTexts: { missing: { documentationText: "Fremdes Feld" } },
+        },
+      },
+    });
+
+    expect(validation.ok).toBe(false);
+  });
+
+  it("wertet leere Ausgabevarianten nicht als vorhandene Formulierung", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Hinweis",
+      blockType: "hint",
+      text: "Festtext",
+      outputVariants: {
+        patientenbrief: {},
+        krankenblatt: { documentationText: "" },
+        facharztbrief: { documentationText: "Praxisformulierter Text" },
+      },
+    });
+
+    expect(getPracticeDocumentationConfiguredOutputVariantIds(definition)).toEqual(["facharztbrief"]);
+  });
+
+  it("friert Ausgabeformulierungen samt stabilen Fragenreferenzen im Sitzungsblock ein", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Kontrolltermin",
+      blockType: "selection",
+      options: [{ value: "control", label: "Kontrolle", documentationText: "Standard" }],
+      additionalFields: [{ id: "visit_date", label: "Termin", type: "text", showForOptionValues: ["control"] }],
+      outputVariants: {
+        patientenbrief: {
+          optionTexts: {
+            __primary: {
+              control: {
+                documentationSegments: [
+                  { kind: "text", text: "Bitte kommen Sie am " },
+                  { kind: "answerRef", fieldId: "visit_date" },
+                ],
+              },
+            },
+          },
+        },
+      },
+    });
+    const frozen = resolvePracticeDocumentationBlocks([{ definition }])[0];
+
+    expect(frozen.documentationOutputVariants?.patientenbrief?.optionTexts?.[frozen.questions[0]!.id]?.control?.documentationSegments)
+      .toEqual([
+        { kind: "text", text: "Bitte kommen Sie am " },
+        { kind: "answerRef", questionId: "visit_date" },
+      ]);
+    definition.outputVariants!.patientenbrief!.optionTexts!.__primary!.control!.documentationSegments![0] = {
+      kind: "text",
+      text: "Später geänderter Text",
+    };
+    expect(frozen.documentationOutputVariants?.patientenbrief?.optionTexts?.[frozen.questions[0]!.id]?.control?.documentationSegments?.[0])
+      .toEqual({ kind: "text", text: "Bitte kommen Sie am " });
+  });
+
+  it("projiziert dieselben Antworten in unterschiedliche Varianten und lässt fehlende Optionen weg", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Kontrolltermin",
+      blockType: "selection",
+      options: [
+        { value: "yes", label: "Ja", documentationText: "Standard Ja" },
+        { value: "no", label: "Nein", documentationText: "Standard Nein" },
+      ],
+      additionalFields: [{ id: "termin", label: "Termin", type: "text", showForOptionValues: ["yes"] }],
+      outputVariants: {
+        facharztbrief: {
+          optionTexts: {
+            __primary: {
+              yes: { documentationSegments: [
+                { kind: "text", text: "Kontrolle am " },
+                { kind: "conditional", fieldId: "__primary", optionValue: "yes", segments: [
+                  { kind: "answerRef", fieldId: "termin" },
+                ] },
+              ] },
+              no: {},
+            },
+          },
+          fieldTexts: { termin: { documentationText: "Termin separat" } },
+        },
+        patientenbrief: {
+          optionTexts: { __primary: { yes: { documentationText: "Bitte kommen Sie zum vereinbarten Termin." } } },
+        },
+        krankenblatt: {},
+      },
+    });
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const primaryQuestionId = frozenBlocks[0]!.questions[0]!.id;
+    const answers = { [primaryQuestionId]: "yes", termin: "10.04." };
+
+    const specialist = buildPracticeOutputProjection({ answers, frozenBlocks, outputVariantId: "facharztbrief" });
+    const patient = buildPracticeOutputProjection({ answers, frozenBlocks, outputVariantId: "patientenbrief" });
+    const emptyOption = buildPracticeOutputProjection({
+      answers: { [primaryQuestionId]: "no" },
+      frozenBlocks,
+      outputVariantId: "facharztbrief",
+    });
+    const emptyVariant = buildPracticeOutputProjection({ answers, frozenBlocks, outputVariantId: "krankenblatt" });
+
+    expect(specialist.noteText).toContain("Kontrolle am 10.04.");
+    expect(specialist.noteText).not.toContain("Termin separat");
+    expect(specialist.noteText).not.toContain("Standard Ja");
+    expect(patient.noteText).toContain("Bitte kommen Sie zum vereinbarten Termin.");
+    expect(patient.noteText).not.toContain("Kontrolle am");
+    expect(emptyOption.noteText).not.toContain("Standard Nein");
+    expect(emptyOption.semanticDocument.sections.flatMap((section) => section.items)).toHaveLength(0);
+    expect(emptyVariant.semanticDocument.sections.flatMap((section) => section.items)).toHaveLength(0);
+  });
+
+  it("behält Varianten-Options-IDs beim Ergänzen eines bestehenden Bausteins", () => {
+    const existing = buildPracticeDocumentationBlockDefinition({
+      title: "Vorstellungszweck",
+      blockType: "selection",
+      options: [{ value: "followup", label: "Verlaufskontrolle", documentationText: "Standard Verlauf" }],
+    });
+    const validation = validatePracticeDocumentationBlock({
+      title: "Vorstellungszweck",
+      blockType: "selection",
+      options: [
+        { value: "followup", label: "Verlaufskontrolle", documentationText: "Standard Verlauf" },
+        { value: "review", label: "Befundabgleich", documentationText: "Standard Abgleich" },
+      ],
+      outputVariants: {
+        facharztbrief: {
+          optionTexts: { __primary: { review: { documentationText: "Bitte um Befundabgleich." } } },
+        },
+      },
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const updated = buildPracticeDocumentationBlockDefinition(validation.value, existing);
+    expect(updated.questions[0]?.options?.map((option) => typeof option === "string" ? option : option.value))
+      .toEqual(["followup", "review"]);
+    expect(parsePracticeDocumentationBlockDefinition(updated).outputVariants?.facharztbrief?.optionTexts?.__primary?.review)
+      .toEqual({ documentationText: "Bitte um Befundabgleich." });
+  });
+
+  it.each([
+    ["text", { blockType: "text", text: "Eingabe" }],
+    ["paragraph", { blockType: "paragraph", text: "Festtext" }],
+    ["selection", { blockType: "selection", options: [{ label: "Ja", documentationText: "Standard Ja" }] }],
+    ["measurement", { blockType: "measurement", unit: "kg" }],
+    ["month", { blockType: "month" }],
+    ["list", { blockType: "list", options: [{ label: "Punkt", documentationText: "Standard Punkt" }] }],
+    ["hint", { blockType: "hint", text: "Hinweis" }],
+    ["repeatable", { blockType: "repeatable", additionalFields: [{ id: "notiz", label: "Notiz", type: "text" }] }],
+  ] as const)("unterstützt optionale Ausgabevarianten für Bausteintyp %s", (_label, blockInput) => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Variantenbaustein",
+      ...blockInput,
+      outputVariants: { patientenbrief: { documentationText: "Praxisdefinierter Text" } },
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    expect(buildPracticeDocumentationBlockDefinition(validation.value).outputVariants)
+      .toEqual({ patientenbrief: { documentationText: "Praxisdefinierter Text" } });
   });
 
   it("speichert frageeigene Segmente auch für eigenständige Textbausteine", () => {

@@ -24,6 +24,7 @@ const practiceTemplate: PracticeDocumentationTemplate = {
   name: "Praxisvorlage",
   category: "documentation",
   outputFormat: "formell",
+  outputVariantIds: ["facharztbrief", "patientenbrief"],
   documentTitleOption: "stellungnahme",
   blockLayout: [
     { blockId: "practice_block_anamnese", section: 2, order: 0 },
@@ -35,6 +36,7 @@ const profileTemplate: PracticeDocumentationTemplate = {
   name: "Versorgungsstelle",
   category: "profile",
   outputFormat: "informell",
+  outputVariantIds: [],
   documentTitleOption: "steckbrief",
   blockLayout: [{ blockId: "practice_block_hinweis", section: 1, order: 0 }],
 };
@@ -92,6 +94,7 @@ describe("InternalDocumentationLauncherForm", () => {
       patientReference: "81426",
       documentKind: "documentation",
       outputFormat: "formell",
+      outputVariantIds: ["facharztbrief", "patientenbrief"],
       documentTitleOption: "stellungnahme",
     });
 

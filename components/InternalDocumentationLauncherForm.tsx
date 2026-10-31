@@ -35,6 +35,7 @@ export default function InternalDocumentationLauncherForm({
   const [documentTitleOption, setDocumentTitleOption] = useState<InternalDocumentTitleOption | "">("");
   const [customDocumentTitle, setCustomDocumentTitle] = useState("");
   const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
+  const [outputVariantIds, setOutputVariantIds] = useState<string[]>([]);
   const [patientSignatureRequired, setPatientSignatureRequired] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +43,12 @@ export default function InternalDocumentationLauncherForm({
   function applyTemplate(template: PracticeDocumentationTemplate | null) {
     if (!template) {
       setBlockLayout([]);
+      setOutputVariantIds([]);
       setPatientSignatureRequired(false);
       return;
     }
     setBlockLayout(template.blockLayout.map((placement) => ({ ...placement })));
+    setOutputVariantIds(template.outputVariantIds ?? []);
     setOutputFormat(template.outputFormat);
     setDocumentTitleOption(template.documentTitleOption as InternalDocumentTitleOption);
     setCustomDocumentTitle("");
@@ -56,6 +59,7 @@ export default function InternalDocumentationLauncherForm({
     setDocumentKind(nextKind);
     setPatientReference("");
     setBlockLayout([]);
+    setOutputVariantIds([]);
     setPatientSignatureRequired(false);
     setDocumentTitleOption(nextKind === "profile" ? "steckbrief" : "");
     setCustomDocumentTitle("");
@@ -109,6 +113,7 @@ export default function InternalDocumentationLauncherForm({
           patientReference: patientReference.trim(),
           documentKind,
           outputFormat,
+          outputVariantIds,
           documentTitleOption,
           ...(patientSignatureRequired ? { patientSignatureRequired: true } : {}),
           ...(documentTitleOption === "andere" ? { customDocumentTitle } : {}),

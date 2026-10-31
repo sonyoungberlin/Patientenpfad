@@ -9,6 +9,7 @@ import DocumentationLibraryClient from "@/app/practice/documentation-library/Doc
 import { QuestionnaireFormClient } from "@/app/q/[token]/QuestionnaireFormClient";
 import {
   buildPracticeDocumentationBlockDefinition,
+  parsePracticeDocumentationBlockDefinition,
   resolvePracticeDocumentationBlocks,
   type PracticeDocumentationBlockDefinition,
 } from "@/lib/practice/documentationBlocks";
@@ -145,6 +146,49 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
     await act(async () => root.unmount());
   });
 
+  it("lädt, bearbeitet und speichert Ausgabearten samt Hinweis auf fehlende Bausteinformulierungen", async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    global.fetch = fetchMock as jest.Mock;
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<DocumentationTemplatesClient
+        initialTemplates={[{
+          id: "template-1",
+          name: "Kontrolltermin",
+          isActive: true,
+          blockLayout: [{ blockId: "block-1", section: 1, order: 0 }],
+          outputVariantIds: ["patientenbrief", "krankenblatt"],
+        }]}
+        availableBlocks={[{
+          id: "block-1",
+          title: "Kontrolltermin",
+          outputVariantIds: ["patientenbrief"],
+        }]}
+      />);
+    });
+
+    await clickEdit(container, "Bearbeiten");
+    const outputCheckbox = (labelText: string) => Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
+      .find((label) => label.textContent?.includes(labelText))?.querySelector<HTMLInputElement>("input[type=checkbox]");
+    expect(outputCheckbox("Patientenbrief")?.checked).toBe(true);
+    expect(outputCheckbox("Krankenblatt")?.checked).toBe(true);
+    expect(container.textContent).toContain("Krankenblatt: Kontrolltermin");
+    expect(container.textContent).toContain("Fehlende Formulierungen werden nicht durch Ersatztexte ergänzt.");
+
+    await act(async () => outputCheckbox("Facharztbrief")?.click());
+    await act(async () => {
+      Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Speichern")?.click();
+      await Promise.resolve();
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/practice/documentation-templates/template-1", expect.objectContaining({
+      method: "PATCH",
+      body: expect.stringContaining('"outputVariantIds":["patientenbrief","krankenblatt","facharztbrief"]'),
+    }));
+    await act(async () => root.unmount());
+  });
+
   it("öffnet Bausteine inline, scrollt zum Editor und fokussiert den Titel", async () => {
     const container = createContainer();
     const root = createRoot(container);
@@ -192,6 +236,75 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
     });
     expect(Array.from(container.querySelectorAll("h2")).some((heading) => heading.textContent === "Baustein anlegen")).toBe(true);
 
+    await act(async () => root.unmount());
+  });
+
+  it("speichert Ausgabevarianten im Bausteineditor und lädt sie beim erneuten Öffnen", async () => {
+    const originalFetch = global.fetch;
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    global.fetch = fetchMock as jest.Mock;
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Vorstellungszweck",
+      blockType: "selection",
+      options: [{ value: "followup", label: "Verlaufskontrolle", documentationText: "Standardausgabe" }],
+    });
+    const container = createContainer();
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(<DocumentationLibraryClient initialBlocks={[{
+        id: definition.block.id,
+        title: definition.block.label,
+        definition,
+        isActive: true,
+      }]} />);
+    });
+
+    await clickEdit(container, "Bearbeiten");
+    const variantCheckbox = Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
+      .find((label) => label.textContent?.includes("Facharztbrief"))?.querySelector<HTMLInputElement>("input");
+    expect(variantCheckbox).not.toBeNull();
+    await act(async () => variantCheckbox!.click());
+
+    const findTextarea = (text: string) => Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
+      .find((label) => label.textContent?.includes(text))?.querySelector<HTMLTextAreaElement>("textarea");
+    const blockOutput = findTextarea("Ausgabetext des Bausteins");
+    const optionOutput = findTextarea("Ausgabe für Option: Verlaufskontrolle");
+    expect(blockOutput).not.toBeNull();
+    expect(optionOutput).not.toBeNull();
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+      setValue?.call(blockOutput, "Allgemeiner Facharzttext");
+      blockOutput!.dispatchEvent(new Event("input", { bubbles: true }));
+      setValue?.call(optionOutput, "Fachtext für Verlaufskontrolle");
+      optionOutput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Speichern")?.click();
+      await Promise.resolve();
+    });
+
+    const savedInput = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(savedInput.outputVariants.facharztbrief).toMatchObject({
+      documentationText: "Allgemeiner Facharzttext",
+      optionTexts: { __primary: { followup: { documentationText: "Fachtext für Verlaufskontrolle" } } },
+    });
+    const reopenedDefinition = parsePracticeDocumentationBlockDefinition({
+      ...definition,
+      outputVariants: savedInput.outputVariants,
+    });
+    await act(async () => {
+      root.render(<DocumentationLibraryClient initialBlocks={[{
+        id: reopenedDefinition.block.id,
+        title: reopenedDefinition.block.label,
+        definition: reopenedDefinition,
+        isActive: true,
+      }]} />);
+    });
+    await clickEdit(container, "Bearbeiten");
+    expect(findTextarea("Ausgabetext des Bausteins")?.value).toBe("Allgemeiner Facharzttext");
+    expect(findTextarea("Ausgabe für Option: Verlaufskontrolle")?.value).toBe("Fachtext für Verlaufskontrolle");
+
+    global.fetch = originalFetch;
     await act(async () => root.unmount());
   });
 

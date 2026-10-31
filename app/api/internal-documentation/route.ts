@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
       documentTitleOption: body?.documentTitleOption,
       customDocumentTitle: body?.customDocumentTitle,
       outputFormat: body?.outputFormat,
+      outputVariantIds: body?.outputVariantIds,
       patientSignatureRequired: body?.patientSignatureRequired,
       origin,
       context: {

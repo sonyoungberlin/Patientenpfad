@@ -36,6 +36,9 @@ import { PatientReferenceSummary } from "@/components/PatientReferenceSummary";
 import { validateContactAnswers } from "@/lib/questionnaire/contactValidation";
 import { hasDocumentedAnswer } from "@/lib/questionnaire/documentedContent";
 import AppTextXmlDownloadButton from "@/components/questionnaire/AppTextXmlDownloadButton";
+import InternalDocumentationOutputSelector, {
+  type InternalDocumentationOutput,
+} from "@/components/questionnaire/InternalDocumentationOutputSelector";
 import QuestionnaireAutoDownloadController from "@/components/questionnaire/QuestionnaireAutoDownloadController";
 import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
 
@@ -1146,6 +1149,7 @@ export function QuestionnaireFormClient({
     noteText: string;
     filename: string;
     semanticDocument: SemanticDocument | null;
+    outputVariants?: InternalDocumentationOutput[];
   } | null>(null);
   const [missingRequiredIds, setMissingRequiredIds] = useState<Set<string>>(
     () => new Set(),
@@ -1340,6 +1344,7 @@ export function QuestionnaireFormClient({
         noteText?: string;
         xmlFilename?: string | null;
         semanticDocument?: SemanticDocument | null;
+        outputVariants?: InternalDocumentationOutput[];
         sessionId?: string;
         inquiry_session_id?: string | null;
         invalidQuestionIds?: string[];
@@ -1361,11 +1366,12 @@ export function QuestionnaireFormClient({
         return;
       }
 
-      if (data?.noteText && data.xmlFilename) {
+      if (data?.xmlFilename && (data.noteText || data.outputVariants?.length)) {
         setXmlExport({
-          noteText: data.noteText,
+          noteText: data.noteText ?? "",
           filename: data.xmlFilename,
           semanticDocument: data.semanticDocument ?? null,
+          ...(data.outputVariants?.length ? { outputVariants: data.outputVariants } : {}),
         });
       }
       if (kioskHandoffPath) {
@@ -1397,13 +1403,21 @@ export function QuestionnaireFormClient({
         ) : null}
         <PatientReferenceSummary reference={patientReference} />
         {xmlExport && !hideManualExports ? (
-          <AppTextXmlDownloadButton
-            noteText={xmlExport.noteText}
-            filename={xmlExport.filename}
-            label="XML für Word herunterladen"
-            sessionId={token}
-            semanticDocument={xmlExport.semanticDocument}
-          />
+          xmlExport.outputVariants?.length ? (
+            <InternalDocumentationOutputSelector
+              outputs={xmlExport.outputVariants}
+              sessionId={token}
+              filename={xmlExport.filename}
+            />
+          ) : (
+            <AppTextXmlDownloadButton
+              noteText={xmlExport.noteText}
+              filename={xmlExport.filename}
+              label="XML für Word herunterladen"
+              sessionId={token}
+              semanticDocument={xmlExport.semanticDocument}
+            />
+          )
         ) : null}
         {source === "kiosk_direct" ? (
           <button

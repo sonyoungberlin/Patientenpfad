@@ -7,6 +7,7 @@ import {
   parsePracticeDocumentationBlockDefinition,
 } from "@/lib/practice/documentationBlocks";
 import { listPracticeDocumentationTemplates } from "@/lib/practice/documentationTemplates";
+import { getInternalTemplatePlacements } from "@/lib/questionnaire/internalBlockLayout";
 import DocumentationLibraryClient from "./DocumentationLibraryClient";
 
 export default async function PracticeDocumentationLibraryPage() {
@@ -27,7 +28,7 @@ export default async function PracticeDocumentationLibraryPage() {
     blocks.map((block) => [
       block.id,
       activeTemplates
-        .filter((template) => Array.isArray(template.block_layout) && template.block_layout.some((placement) => (
+        .filter((template) => getInternalTemplatePlacements(template.block_layout).some((placement) => (
           placement && typeof placement === "object" && !Array.isArray(placement) && "blockId" in placement && placement.blockId === block.id
         )))
         .map((template) => ({ id: template.id, name: template.name })),
@@ -40,7 +41,7 @@ export default async function PracticeDocumentationLibraryPage() {
   }> = activeTemplates.map((template) => ({
     id: template.id,
     name: template.name,
-    placements: (Array.isArray(template.block_layout) ? template.block_layout : [])
+    placements: getInternalTemplatePlacements(template.block_layout)
       .flatMap((placement) => {
         if (!placement || typeof placement !== "object" || Array.isArray(placement)) return [];
         const candidate = placement as { blockId?: unknown; section?: unknown; order?: unknown };

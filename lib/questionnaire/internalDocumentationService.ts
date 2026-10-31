@@ -24,7 +24,10 @@ import {
   resolveInternalDocumentTitle,
 } from "@/lib/questionnaire/internalDocumentTitle";
 import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
-import { resolvePracticeDocumentationBlocks } from "@/lib/practice/documentationBlocks";
+import {
+  PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS,
+  resolvePracticeDocumentationBlocks,
+} from "@/lib/practice/documentationBlocks";
 
 export class InternalDocumentationError extends Error {
   constructor(
@@ -78,6 +81,7 @@ export async function createInternalDocumentationSession(input: {
   documentTitleOption: unknown;
   customDocumentTitle?: unknown;
   outputFormat: unknown;
+  outputVariantIds?: unknown;
   patientSignatureRequired?: unknown;
   origin: string;
   context: InternalDocumentationContext;
@@ -99,6 +103,13 @@ export async function createInternalDocumentationSession(input: {
   }
   if (input.outputFormat !== "informell" && input.outputFormat !== "formell") {
     throw new InternalDocumentationError("Bitte eine gültige Ausgabeform auswählen.", 400);
+  }
+  const validOutputVariantIds = new Set(PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS.map(({ id }) => id));
+  const outputVariantIds = input.outputVariantIds === undefined ? [] : input.outputVariantIds;
+  if (!Array.isArray(outputVariantIds) || outputVariantIds.some((id) =>
+    typeof id !== "string" || !validOutputVariantIds.has(id as typeof PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS[number]["id"]),
+  ) || new Set(outputVariantIds).size !== outputVariantIds.length) {
+    throw new InternalDocumentationError("Ungültige Ausgabearten.", 400);
   }
   if (input.patientSignatureRequired !== undefined && typeof input.patientSignatureRequired !== "boolean") {
     throw new InternalDocumentationError("Ungültige Einstellung für die Patientenunterschrift.", 400);
@@ -205,6 +216,7 @@ export async function createInternalDocumentationSession(input: {
       internalDocumentTitle,
       internalDocumentKind: documentKind,
       internalOutputFormat: input.outputFormat,
+      internalOutputVariantIds: outputVariantIds as string[],
       internalPatientSignatureRequired: patientSignatureRequired,
       internalPatientSignatureCity: patientSignatureCity,
       internalFrozenBlocks,
@@ -229,6 +241,7 @@ export async function submitInternalDocumentationSession(input: {
   noteText: string;
   semanticDocument: SemanticDocument | null;
   xmlFilename: string | null;
+  outputVariants?: NonNullable<ReturnType<typeof buildQuestionnaireInboxDetail>["outputVariants"]>;
 } | null> {
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { id: input.sessionId },
@@ -402,8 +415,6 @@ export async function submitInternalDocumentationSession(input: {
     );
   }
 
-  if (input.context.kind === "practice") return null;
-
   const detail = buildQuestionnaireInboxDetail({
     patient_reference: session.patient_reference,
     submitted_at: submittedAt,
@@ -415,9 +426,11 @@ export async function submitInternalDocumentationSession(input: {
     session_kind: session.session_kind,
     internal_workflow_id: session.internal_workflow_id,
   });
+  if (input.context.kind === "practice" && !detail.outputVariants?.length) return null;
   return {
     noteText: detail.noteText,
     semanticDocument: detail.semanticDocument,
     xmlFilename: detail.xmlFilename,
+    ...(detail.outputVariants?.length ? { outputVariants: detail.outputVariants } : {}),
   };
 }

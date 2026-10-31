@@ -200,6 +200,7 @@ describe("Dokumentationsvorlagen-Routen", () => {
         outputFormat: "formell",
         documentTitleOption: "stellungnahme",
         blockLayout: layout,
+        outputVariantIds: [],
         patientSignatureRequired: false,
       }],
       blocks: [{ id: "practice_block_1", title: "Anamnese", blockType: "text", allowedTemplateCategories: ["documentation"] }],

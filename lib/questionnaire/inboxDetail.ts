@@ -8,6 +8,7 @@ import { computeAllDerivedValues } from "./derivedValues";
 import type { DerivedValues } from "./derivedValues";
 import { parseFrozenBlocks } from "./frozenBlocks";
 import { getInternalDocumentKind, getInternalDocumentTitle, getInternalPatientSignatureMetadata } from "./frozenBlocks";
+import { getInternalDocumentOutputVariantIds } from "./frozenBlocks";
 import type { FrozenBlock } from "./frozenBlocks";
 import { isNewBlockBasedInternalSession } from "./documentedContent";
 import { buildOptionsByQuestionId } from "./multiSelect";
@@ -16,6 +17,8 @@ import {
   resolveInternalWorkflow,
 } from "./internalWorkflowRegistry";
 import { buildQuestionnaireExportFilename } from "./questionnaireExportFilename";
+import { buildPracticeOutputProjection } from "./practiceOutputProjection";
+import { PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS } from "@/lib/practice/documentationBlocks";
 import {
   parseDigitalRequestInboxContext,
   type DigitalRequestInboxContext,
@@ -45,6 +48,12 @@ export type QuestionnaireInboxDetail = {
   visibleQuestionIds: string[];
   digitalRequestContext: DigitalRequestInboxContext | null;
   documentKind: "documentation" | "profile";
+  outputVariants?: Array<{
+    id: string;
+    label: string;
+    noteText: string;
+    semanticDocument: SemanticDocument;
+  }>;
 };
 
 function buildVisibleQuestionIds(
@@ -141,6 +150,20 @@ export function buildQuestionnaireInboxDetail(
       };
     })(),
   });
+  const outputVariantIds = session.session_kind === "internal_documentation" && frozenBlocks
+    ? getInternalDocumentOutputVariantIds(session.frozen_blocks)
+    : [];
+  const outputVariants = outputVariantIds.flatMap((id) => {
+    const variant = PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS.find((candidate) => candidate.id === id);
+    if (!variant || !frozenBlocks) return [];
+    const projection = buildPracticeOutputProjection({
+      answers,
+      frozenBlocks,
+      outputVariantId: id,
+      documentTitle: getInternalDocumentTitle(session.frozen_blocks),
+    });
+    return [{ id, label: variant.label, ...projection }];
+  });
 
   return {
     questions,
@@ -157,6 +180,7 @@ export function buildQuestionnaireInboxDetail(
     visibleQuestionIds: [...visibleQuestionIds],
     digitalRequestContext: parseDigitalRequestInboxContext(session.digital_request_snapshot),
     documentKind: getInternalDocumentKind(session.frozen_blocks),
+    ...(outputVariants.length > 0 ? { outputVariants } : {}),
     xmlFilename: session.session_kind === "internal_documentation" && (isNewBlockBased || internalWorkflow)
       ? buildQuestionnaireExportFilename(
           {

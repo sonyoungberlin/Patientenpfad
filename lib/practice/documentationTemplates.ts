@@ -2,14 +2,18 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   normalizeInternalBlockPlacements,
+  parseInternalTemplateLayout,
+  serializeInternalTemplateLayout,
   type InternalBlockPlacement,
 } from "@/lib/questionnaire/internalBlockLayout";
 import { INTERNAL_DOCUMENT_TITLE_OPTIONS } from "@/lib/questionnaire/internalDocumentTitle";
 import type { ConfigurationDeleteResult } from "@/lib/configurationDeletion";
+import { PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS } from "@/lib/practice/documentationBlocks";
 
 export const PRACTICE_DOCUMENTATION_TEMPLATE_NAME_MAX_LENGTH = 120;
 export type PracticeDocumentationOutputFormat = "informell" | "formell";
 export type PracticeDocumentationTemplateCategory = "documentation" | "profile";
+export type PracticeDocumentationOutputVariantId = typeof PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS[number]["id"];
 
 export type PracticeDocumentationTemplateInput = {
   name: string;
@@ -17,6 +21,7 @@ export type PracticeDocumentationTemplateInput = {
   outputFormat: PracticeDocumentationOutputFormat;
   documentTitleOption: string;
   blockLayout: InternalBlockPlacement[];
+  outputVariantIds: PracticeDocumentationOutputVariantId[];
   patientSignatureRequired?: boolean;
 };
 
@@ -62,6 +67,13 @@ export function validatePracticeDocumentationTemplate(input: unknown): Validatio
   if (value.patientSignatureRequired !== undefined && typeof value.patientSignatureRequired !== "boolean") {
     return { ok: false, error: "Ungültige Einstellung für die Patientenunterschrift." };
   }
+  const validOutputVariantIds = new Set(PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS.map(({ id }) => id));
+  const outputVariantIds = value.outputVariantIds === undefined ? [] : value.outputVariantIds;
+  if (!Array.isArray(outputVariantIds) || outputVariantIds.some((id) =>
+    typeof id !== "string" || !validOutputVariantIds.has(id as PracticeDocumentationOutputVariantId),
+  ) || new Set(outputVariantIds).size !== outputVariantIds.length) {
+    return { ok: false, error: "Bitte gültige, eindeutige Ausgabearten auswählen." };
+  }
   const blockIds = value.blockLayout.map((item) =>
     item && typeof item === "object" && !Array.isArray(item)
       ? (item as Record<string, unknown>).blockId : undefined);
@@ -77,6 +89,7 @@ export function validatePracticeDocumentationTemplate(input: unknown): Validatio
         outputFormat: value.outputFormat,
         documentTitleOption: value.documentTitleOption,
         blockLayout: normalizeInternalBlockPlacements(blockIds, value.blockLayout),
+        outputVariantIds: outputVariantIds as PracticeDocumentationOutputVariantId[],
         patientSignatureRequired: category === "documentation" && value.patientSignatureRequired === true,
       },
     };
@@ -114,18 +127,16 @@ export async function resolveActivePracticeDocumentationTemplates(
   });
   return templates.flatMap((template) => {
     if (template.output_format !== "informell" && template.output_format !== "formell") return [];
-    if (!template.document_title_option || !Array.isArray(template.block_layout)) return [];
-    const blockIds = template.block_layout.flatMap((item) => item && typeof item === "object" && !Array.isArray(item) &&
-      typeof (item as Record<string, unknown>).blockId === "string"
-      ? [(item as { blockId: string }).blockId] : []);
+    if (!template.document_title_option) return [];
     try {
+      const config = parsePracticeDocumentationTemplateConfiguration(template.block_layout);
       return [{
         id: template.id,
         name: template.name,
         category: template.category === "profile" ? "profile" : "documentation",
         outputFormat: template.output_format,
         documentTitleOption: template.document_title_option,
-        blockLayout: normalizeInternalBlockPlacements(blockIds, template.block_layout),
+        ...config,
         patientSignatureRequired: template.patient_signature_required === true,
       }];
     } catch {
@@ -146,7 +157,7 @@ export async function createPracticeDocumentationTemplate(
       category: input.category,
       output_format: input.outputFormat,
       document_title_option: input.documentTitleOption,
-      block_layout: input.blockLayout as unknown as Prisma.InputJsonValue,
+      block_layout: serializeInternalTemplateLayout(input.blockLayout, input.outputVariantIds) as Prisma.InputJsonValue,
       patient_signature_required: input.patientSignatureRequired === true,
     },
   });
@@ -158,6 +169,30 @@ function duplicateTemplateName(name: string, existingNames: ReadonlySet<string>)
   let suffix = 2;
   while (existingNames.has(`${base} (${suffix})`)) suffix += 1;
   return `${base} (${suffix})`;
+}
+
+function normalizeOutputVariantIds(raw: unknown): PracticeDocumentationOutputVariantId[] {
+  const validIds = new Set(PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS.map(({ id }) => id));
+  if (!Array.isArray(raw) || raw.some((id) =>
+    typeof id !== "string" || !validIds.has(id as PracticeDocumentationOutputVariantId),
+  ) || new Set(raw).size !== raw.length) {
+    throw new Error("Ungültige Ausgabearten in der Vorlagenkonfiguration.");
+  }
+  return raw as PracticeDocumentationOutputVariantId[];
+}
+
+export function parsePracticeDocumentationTemplateConfiguration(raw: unknown): Pick<
+  PracticeDocumentationTemplateInput,
+  "blockLayout" | "outputVariantIds"
+> {
+  const config = parseInternalTemplateLayout(raw);
+  const blockIds = config.placements.flatMap((item) => item && typeof item === "object" && !Array.isArray(item) &&
+    typeof (item as Record<string, unknown>).blockId === "string"
+    ? [(item as { blockId: string }).blockId] : []);
+  return {
+    blockLayout: normalizeInternalBlockPlacements(blockIds, config.placements),
+    outputVariantIds: normalizeOutputVariantIds(config.outputVariantIds),
+  };
 }
 
 export async function duplicatePracticeDocumentationTemplate(
@@ -177,12 +212,13 @@ export async function duplicatePracticeDocumentationTemplate(
     source.name,
     new Set(existingTemplates.map((template) => template.name)),
   );
+  const config = parsePracticeDocumentationTemplateConfiguration(source.block_layout);
   const input = validatePracticeDocumentationTemplate({
     name,
     category: source.category,
     outputFormat: source.output_format,
     documentTitleOption: source.document_title_option,
-    blockLayout: source.block_layout,
+    ...config,
     patientSignatureRequired: source.patient_signature_required === true,
   });
   if (!input.ok) throw new Error(input.error);
@@ -195,7 +231,7 @@ export async function duplicatePracticeDocumentationTemplate(
       category: input.value.category,
       output_format: input.value.outputFormat,
       document_title_option: input.value.documentTitleOption,
-      block_layout: input.value.blockLayout as unknown as Prisma.InputJsonValue,
+      block_layout: serializeInternalTemplateLayout(input.value.blockLayout, input.value.outputVariantIds) as Prisma.InputJsonValue,
       patient_signature_required: input.value.patientSignatureRequired === true,
     },
   });
@@ -214,7 +250,7 @@ export async function updatePracticeDocumentationTemplate(
       category: input.category,
       output_format: input.outputFormat,
       document_title_option: input.documentTitleOption,
-      block_layout: input.blockLayout as unknown as Prisma.InputJsonValue,
+      block_layout: serializeInternalTemplateLayout(input.blockLayout, input.outputVariantIds) as Prisma.InputJsonValue,
       patient_signature_required: input.patientSignatureRequired === true,
     },
   });

@@ -9,6 +9,7 @@ import {
   type InternalBlockPlacement,
 } from "@/lib/questionnaire/internalBlockLayout";
 import { INTERNAL_DOCUMENT_TITLE_OPTIONS } from "@/lib/questionnaire/internalDocumentTitle";
+import { PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS } from "@/lib/practice/documentationBlocks";
 
 type PracticeTemplateRow = {
   id: string;
@@ -17,11 +18,17 @@ type PracticeTemplateRow = {
   isActive: boolean;
   blockLayout: unknown;
   outputFormat?: string | null;
+  outputVariantIds?: string[];
   documentTitleOption?: string | null;
   patientSignatureRequired?: boolean;
 };
 
-type AvailableBlock = { id: string; title: string; allowedTemplateCategories?: Array<"documentation" | "profile"> };
+type AvailableBlock = {
+  id: string;
+  title: string;
+  allowedTemplateCategories?: Array<"documentation" | "profile">;
+  outputVariantIds?: string[];
+};
 
 export default function DocumentationTemplatesClient({
   initialTemplates,
@@ -35,6 +42,7 @@ export default function DocumentationTemplatesClient({
   const [name, setName] = useState("");
   const [category, setCategory] = useState<"documentation" | "profile">("documentation");
   const [outputFormat, setOutputFormat] = useState<"informell" | "formell">("informell");
+  const [outputVariantIds, setOutputVariantIds] = useState<string[]>([]);
   const [documentTitleOption, setDocumentTitleOption] = useState("bericht");
   const [blockLayout, setBlockLayout] = useState<InternalBlockPlacement[]>([]);
   const [patientSignatureRequired, setPatientSignatureRequired] = useState(false);
@@ -45,6 +53,16 @@ export default function DocumentationTemplatesClient({
   const categoryBlocks = availableBlocks.filter((block) =>
     (block.allowedTemplateCategories ?? ["documentation"]).includes(category),
   );
+  const outputWarnings = PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS
+    .filter(({ id }) => outputVariantIds.includes(id))
+    .map(({ id, label }) => ({
+      label,
+      blocks: blockLayout.flatMap(({ blockId }) => {
+        const block = availableBlocks.find((candidate) => candidate.id === blockId);
+        return block && !block.outputVariantIds?.includes(id) ? [block.title] : [];
+      }),
+    }))
+    .filter(({ blocks }) => blocks.length > 0);
 
   useEffect(() => {
     if (!editingId || !editorFormRef.current) return;
@@ -60,6 +78,7 @@ export default function DocumentationTemplatesClient({
     setName("");
     setCategory("documentation");
     setOutputFormat("informell");
+    setOutputVariantIds([]);
     setDocumentTitleOption("bericht");
     setBlockLayout([]);
     setPatientSignatureRequired(false);
@@ -71,6 +90,7 @@ export default function DocumentationTemplatesClient({
     setName(template.name);
     setCategory(template.category === "profile" ? "profile" : "documentation");
     setOutputFormat(template.outputFormat === "formell" ? "formell" : "informell");
+    setOutputVariantIds(template.outputVariantIds ?? []);
     setDocumentTitleOption(template.documentTitleOption ?? "bericht");
     setBlockLayout(Array.isArray(template.blockLayout)
       ? structuredClone(template.blockLayout) as InternalBlockPlacement[] : []);
@@ -95,7 +115,7 @@ export default function DocumentationTemplatesClient({
       {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, category, outputFormat, documentTitleOption, blockLayout, patientSignatureRequired }),
+        body: JSON.stringify({ name, category, outputFormat, outputVariantIds, documentTitleOption, blockLayout, patientSignatureRequired }),
       },
     );
     const result = await response.json() as { ok?: boolean; error?: string };
@@ -185,6 +205,20 @@ export default function DocumentationTemplatesClient({
         <label>Ausgabeform<select value={outputFormat} onChange={(event) => setOutputFormat(event.target.value as "informell" | "formell")} disabled={busy}>
           <option value="informell">Informell</option><option value="formell">Formell</option>
         </select></label>
+        <fieldset style={{ display: "grid", gap: "0.5rem" }}>
+          <legend>Angebotene Ausgaben</legend>
+          {PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS.map(({ id, label }) => <label key={id} style={{ display: "flex", gap: "0.5rem" }}>
+            <input
+              type="checkbox"
+              checked={outputVariantIds.includes(id)}
+              onChange={(event) => setOutputVariantIds((current) => event.target.checked
+                ? [...current, id]
+                : current.filter((value) => value !== id))}
+              disabled={busy}
+            />
+            {label}
+          </label>)}
+        </fieldset>
         {category === "documentation" ? <label style={{ display: "flex", gap: "0.5rem" }}><input type="checkbox" checked={patientSignatureRequired} onChange={(event) => setPatientSignatureRequired(event.target.checked)} disabled={busy} />Patientenunterschrift erforderlich</label> : null}
         <label>Dokumenttitel<select value={documentTitleOption} onChange={(event) => setDocumentTitleOption(event.target.value)} disabled={busy}>
           {INTERNAL_DOCUMENT_TITLE_OPTIONS.filter((option) => option.value !== "andere" && (category === "profile" || option.value !== "steckbrief")).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -199,6 +233,11 @@ export default function DocumentationTemplatesClient({
           ))}
         </fieldset>
         {blockLayout.length > 0 && <InternalDocumentationBlockOrganizer placements={blockLayout} blockLabels={blockLabels} onChange={setBlockLayout} disabled={busy} />}
+        {outputWarnings.length > 0 && <div role="status" className="text-muted">
+          <strong>Für diese Ausgaben fehlen Bausteinformulierungen:</strong>
+          <ul>{outputWarnings.map(({ label, blocks }) => <li key={label}>{label}: {blocks.join(", ")}</li>)}</ul>
+          <p>Fehlende Formulierungen werden nicht durch Ersatztexte ergänzt.</p>
+        </div>}
         {error && <p role="alert" className="text-error">{error}</p>}
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button type="submit" disabled={busy || !name.trim() || blockLayout.length === 0}>Speichern</button>

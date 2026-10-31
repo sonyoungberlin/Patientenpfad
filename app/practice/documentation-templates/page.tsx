@@ -2,9 +2,15 @@ import { notFound, redirect } from "next/navigation";
 import { PracticeRole } from "@prisma/client";
 import { getSessionAccountFromCookies } from "@/lib/auth";
 import { requirePracticeRoleFromCookies } from "@/lib/authz";
-import { listPracticeDocumentationTemplates } from "@/lib/practice/documentationTemplates";
-import { listPracticeDocumentationBlocks } from "@/lib/practice/documentationBlocks";
-import { parsePracticeDocumentationBlockDefinition } from "@/lib/practice/documentationBlocks";
+import {
+  listPracticeDocumentationTemplates,
+  parsePracticeDocumentationTemplateConfiguration,
+} from "@/lib/practice/documentationTemplates";
+import {
+  getPracticeDocumentationConfiguredOutputVariantIds,
+  listPracticeDocumentationBlocks,
+  parsePracticeDocumentationBlockDefinition,
+} from "@/lib/practice/documentationBlocks";
 import DocumentationTemplatesClient from "./DocumentationTemplatesClient";
 
 export default async function PracticeDocumentationTemplatesPage() {
@@ -29,16 +35,20 @@ export default async function PracticeDocumentationTemplatesPage() {
           name: template.name,
           category: template.category,
           isActive: template.is_active,
-          blockLayout: template.block_layout,
+          ...parsePracticeDocumentationTemplateConfiguration(template.block_layout),
           outputFormat: template.output_format,
           documentTitleOption: template.document_title_option,
           patientSignatureRequired: template.patient_signature_required,
         }))}
-        availableBlocks={blocks.map((block) => ({
-          id: block.id,
-          title: block.title,
-          allowedTemplateCategories: parsePracticeDocumentationBlockDefinition(block.definition).allowedTemplateCategories,
-        }))}
+        availableBlocks={blocks.map((block) => {
+          const definition = parsePracticeDocumentationBlockDefinition(block.definition);
+          return {
+            id: block.id,
+            title: block.title,
+            allowedTemplateCategories: definition.allowedTemplateCategories,
+            outputVariantIds: getPracticeDocumentationConfiguredOutputVariantIds(definition),
+          };
+        })}
       />
     </main>
   );

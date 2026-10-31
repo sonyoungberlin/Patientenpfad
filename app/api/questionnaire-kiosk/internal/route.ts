@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       documentTitleOption: body?.documentTitleOption,
       customDocumentTitle: body?.customDocumentTitle,
       outputFormat: body?.outputFormat,
+      outputVariantIds: body?.outputVariantIds,
       origin,
       context: access.kind === "device"
         ? {

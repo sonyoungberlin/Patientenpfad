@@ -11,6 +11,7 @@ import type {
 import type { ConditionalRule, ConditionOperator } from "@/lib/questionnaire/conditionalLogic";
 import { buildFrozenBlocks, type FrozenBlock } from "@/lib/questionnaire/frozenBlocks";
 import { getQuestionOptionValue } from "@/lib/questionnaire/questionOptions";
+import { getInternalTemplatePlacements } from "@/lib/questionnaire/internalBlockLayout";
 import {
   configurationDeleteConflict,
   type ConfigurationDeleteResult,
@@ -31,10 +32,30 @@ export type PracticeDocumentationBlockType =
   | "repeatable";
 
 export type PracticeDocumentationTemplateCategory = "documentation" | "profile";
+export const PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS = [
+  { id: "facharztbrief", label: "Facharztbrief" },
+  { id: "patientenbrief", label: "Patientenbrief" },
+  { id: "krankenblatt", label: "Krankenblatt" },
+] as const;
+
+export type PracticeDocumentationVariantOutputTextInput = {
+  documentationText?: string;
+  documentationSegments?: PracticeDocumentationSegmentInput[];
+};
+
+export type PracticeDocumentationOutputVariantInput = {
+  documentationText?: string;
+  documentationSegments?: PracticeDocumentationSegmentInput[];
+  sharedDocumentationText?: string;
+  fieldTexts?: Record<string, PracticeDocumentationVariantOutputTextInput>;
+  optionTexts?: Record<string, Record<string, PracticeDocumentationVariantOutputTextInput>>;
+};
+
 export type PracticeDocumentationBlockDefinition = {
   schemaVersion: typeof PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION;
   visibleType: PracticeDocumentationBlockType;
   allowedTemplateCategories?: PracticeDocumentationTemplateCategory[];
+  outputVariants?: Record<string, PracticeDocumentationOutputVariantInput>;
   block: QuestionnaireBlock;
   questions: QuestionDefinition[];
 };
@@ -45,6 +66,31 @@ export type PracticeDocumentationBlockSummary = {
   blockType: PracticeDocumentationBlockType;
   allowedTemplateCategories?: PracticeDocumentationTemplateCategory[];
 };
+
+function hasOutputVariantSegments(raw: unknown): boolean {
+  return Array.isArray(raw) && raw.some((segment) => isRecord(segment) && (
+    (segment.kind === "text" && typeof segment.text === "string" && Boolean(segment.text.trim())) ||
+    segment.kind === "answerRef" ||
+    (segment.kind === "conditional" && hasOutputVariantSegments(segment.segments))
+  ));
+}
+
+function hasOutputVariantText(raw: PracticeDocumentationVariantOutputTextInput): boolean {
+  return Boolean(raw.documentationText?.trim()) || hasOutputVariantSegments(raw.documentationSegments);
+}
+
+export function getPracticeDocumentationConfiguredOutputVariantIds(
+  definition: PracticeDocumentationBlockDefinition,
+): string[] {
+  return Object.entries(definition.outputVariants ?? {}).flatMap(([variantId, variant]) => {
+    const hasOutput = Boolean(variant.documentationText?.trim()) ||
+      Boolean(variant.sharedDocumentationText?.trim()) ||
+      Boolean(variant.documentationSegments && hasOutputVariantSegments(variant.documentationSegments)) ||
+      Object.values(variant.fieldTexts ?? {}).some(hasOutputVariantText) ||
+      Object.values(variant.optionTexts ?? {}).some((options) => Object.values(options).some(hasOutputVariantText));
+    return hasOutput ? [variantId] : [];
+  });
+}
 
 export function toPracticeDocumentationBlockSummary(block: {
   id: string;
@@ -108,6 +154,7 @@ export type PracticeDocumentationBlockInput = {
   documentationSegments?: PracticeDocumentationSegmentInput[];
   additionalFields?: PracticeDocumentationAdditionalFieldInput[];
   allowedTemplateCategories?: PracticeDocumentationTemplateCategory[];
+  outputVariants?: Record<string, PracticeDocumentationOutputVariantInput>;
 };
 
 export type PracticeDocumentationOptionEditorState = Pick<
@@ -206,6 +253,76 @@ function normalizeDocumentContent(value: unknown, label: string): string {
     throw new Error(`${label} ist ungültig.`);
   }
   return normalized;
+}
+
+function normalizeVariantOutputText(raw: unknown): PracticeDocumentationVariantOutputTextInput {
+  if (!isRecord(raw)) throw new Error("Ungültiger variantenbezogener Ausgabetext.");
+  const documentationText = raw.documentationText === undefined
+    ? undefined
+    : typeof raw.documentationText === "string" && raw.documentationText.trim() === ""
+      ? ""
+      : normalizeDocumentContent(raw.documentationText, "Varianten-Ausgabetext");
+  if (documentationText && documentationText.length > PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH) {
+    throw new Error("Varianten-Ausgabetext ist ungültig.");
+  }
+  const documentationSegments = normalizeSegments(raw.documentationSegments);
+  return {
+    ...(documentationText !== undefined ? { documentationText } : {}),
+    ...(documentationSegments ? { documentationSegments } : {}),
+  };
+}
+
+function normalizeOutputVariants(raw: unknown): Record<string, PracticeDocumentationOutputVariantInput> | undefined {
+  if (raw === undefined) return undefined;
+  if (!isRecord(raw) || Object.keys(raw).length > 20) {
+    throw new Error("Ungültige Dokumentausgabevarianten.");
+  }
+  const variants: Record<string, PracticeDocumentationOutputVariantInput> = {};
+  for (const [variantId, rawVariant] of Object.entries(raw)) {
+    if (!ID_PATTERN.test(variantId) || !isRecord(rawVariant)) {
+      throw new Error("Ungültige Dokumentausgabevariante.");
+    }
+    const rootOutput = normalizeVariantOutputText(rawVariant);
+    const sharedDocumentationText = rawVariant.sharedDocumentationText === undefined
+      ? undefined
+      : typeof rawVariant.sharedDocumentationText === "string" && rawVariant.sharedDocumentationText.trim() === ""
+        ? ""
+        : normalizeDocumentContent(rawVariant.sharedDocumentationText, "Gemeinsamer Varianten-Ausgabetext");
+    if (sharedDocumentationText && sharedDocumentationText.length > PRACTICE_DOCUMENTATION_BLOCK_TEXT_MAX_LENGTH) {
+      throw new Error("Gemeinsamer Varianten-Ausgabetext ist ungültig.");
+    }
+
+    let fieldTexts: PracticeDocumentationOutputVariantInput["fieldTexts"];
+    if (rawVariant.fieldTexts !== undefined) {
+      if (!isRecord(rawVariant.fieldTexts)) throw new Error("Ungültige Feld-Ausgabevariante.");
+      fieldTexts = Object.fromEntries(Object.entries(rawVariant.fieldTexts).map(([fieldId, output]) => {
+        if (fieldId !== "__primary" && !ID_PATTERN.test(fieldId)) throw new Error("Ungültige Feldreferenz in Ausgabevariante.");
+        return [fieldId, normalizeVariantOutputText(output)];
+      }));
+    }
+
+    let optionTexts: PracticeDocumentationOutputVariantInput["optionTexts"];
+    if (rawVariant.optionTexts !== undefined) {
+      if (!isRecord(rawVariant.optionTexts)) throw new Error("Ungültige Options-Ausgabevariante.");
+      optionTexts = Object.fromEntries(Object.entries(rawVariant.optionTexts).map(([fieldId, rawOptions]) => {
+        if ((fieldId !== "__primary" && !ID_PATTERN.test(fieldId)) || !isRecord(rawOptions)) {
+          throw new Error("Ungültige Optionsreferenz in Ausgabevariante.");
+        }
+        return [fieldId, Object.fromEntries(Object.entries(rawOptions).map(([optionValue, output]) => {
+          if (!optionValue || optionValue.length > 160) throw new Error("Ungültiger Optionswert in Ausgabevariante.");
+          return [optionValue, normalizeVariantOutputText(output)];
+        }))];
+      }));
+    }
+
+    variants[variantId] = {
+      ...rootOutput,
+      ...(sharedDocumentationText !== undefined ? { sharedDocumentationText } : {}),
+      ...(fieldTexts ? { fieldTexts } : {}),
+      ...(optionTexts ? { optionTexts } : {}),
+    };
+  }
+  return variants;
 }
 
 function normalizeOptions(raw: unknown): PracticeDocumentationOptionInput[] {
@@ -354,6 +471,7 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
       input.additionalFields,
       normalizedType !== "repeatable" && !DIRECT_SEGMENT_BLOCK_TYPES.includes(normalizedType),
     );
+    value.outputVariants = normalizeOutputVariants(input.outputVariants);
     const additionalFields = value.additionalFields;
     const optionValues = new Set((value.options ?? []).map((option) => option.value ?? option.label));
     const fieldIds = new Set(additionalFields.map((field) => field.id).filter((id): id is string => Boolean(id)));
@@ -414,6 +532,26 @@ export function validatePracticeDocumentationBlock(input: unknown): ValidationRe
     };
     for (const option of value.options ?? []) validateSegments(option.documentationSegments ?? [], additionalFields.length);
     if (value.documentationSegments) validateSegments(value.documentationSegments, additionalFields.length);
+    const validFieldIds = new Set(["__primary", ...fieldIds]);
+    for (const variant of Object.values(value.outputVariants ?? {})) {
+      if (variant.documentationSegments) validateSegments(variant.documentationSegments, additionalFields.length);
+      for (const [fieldId, output] of Object.entries(variant.fieldTexts ?? {})) {
+        if (!validFieldIds.has(fieldId)) throw new Error("Eine Ausgabevariante verweist auf ein unbekanntes Feld.");
+        if (output.documentationSegments) validateSegments(output.documentationSegments, additionalFields.length);
+      }
+      for (const [fieldId, optionOutputs] of Object.entries(variant.optionTexts ?? {})) {
+        if (!validFieldIds.has(fieldId)) throw new Error("Eine Ausgabevariante verweist auf unbekannte Auswahlfelder.");
+        const sourceField = additionalFields.find((field) => field.id === fieldId);
+        const sourceOptions = fieldId === "__primary" ? value.options ?? [] : sourceField?.options ?? [];
+        const sourceValues = new Set(sourceOptions.map((option) => option.value ?? option.label));
+        if (Object.keys(optionOutputs).some((optionValue) => !sourceValues.has(optionValue))) {
+          throw new Error("Eine Ausgabevariante verweist auf eine unbekannte Auswahloption.");
+        }
+        for (const output of Object.values(optionOutputs)) {
+          if (output.documentationSegments) validateSegments(output.documentationSegments, additionalFields.length);
+        }
+      }
+    }
     return { ok: true, value };
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : "Ungültiger Dokumentationsbaustein." };
@@ -479,10 +617,8 @@ function questionForInput(
       documentationSegments: [{ kind: "answerRef", questionId: id }],
     };
   }
-  const existingValues = new Set((existing?.options ?? []).flatMap((option) =>
-    typeof option === "string" ? [] : [option.value]));
   const options: QuestionOption[] = (input.options ?? []).map((option) => ({
-    value: option.value && existingValues.has(option.value) ? option.value : createId("option"),
+    value: option.value || createId("option"),
     label: option.label,
     documentationText: option.documentationText,
   }));
@@ -604,6 +740,7 @@ export function buildPracticeDocumentationBlockDefinition(
       schemaVersion: PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION,
       visibleType: input.blockType,
       allowedTemplateCategories: normalizeAllowedTemplateCategories(input.allowedTemplateCategories),
+      ...(input.outputVariants ? { outputVariants: structuredClone(input.outputVariants) } : {}),
       block: { id: blockId, label: input.title, displayOrder: 0, questionIds: [repeatableQuestion.id], documentationItemType: "bodyText" },
       questions: [repeatableQuestion],
     };
@@ -692,6 +829,7 @@ export function buildPracticeDocumentationBlockDefinition(
     schemaVersion: PRACTICE_DOCUMENTATION_BLOCK_SCHEMA_VERSION,
     visibleType: input.blockType,
     allowedTemplateCategories: normalizeAllowedTemplateCategories(input.allowedTemplateCategories),
+    ...(input.outputVariants ? { outputVariants: structuredClone(input.outputVariants) } : {}),
     block: {
       ...block,
       documentationItemType: input.blockType === "measurement" ? "measurement"
@@ -710,6 +848,9 @@ export function parsePracticeDocumentationBlockDefinition(raw: unknown): Practic
     throw new Error("Ungültige gespeicherte Bausteindefinition.");
   }
   const definition = structuredClone(raw) as PracticeDocumentationBlockDefinition;
+  const outputVariants = normalizeOutputVariants(definition.outputVariants);
+  if (outputVariants) definition.outputVariants = outputVariants;
+  else delete definition.outputVariants;
   if (!ID_PATTERN.test(definition.block.id) || !definition.block.label.trim() ||
     definition.block.questionIds.length === 0 ||
     definition.questions.some((question) => !ID_PATTERN.test(question.id)) ||
@@ -718,6 +859,55 @@ export function parsePracticeDocumentationBlockDefinition(raw: unknown): Practic
   }
   definition.allowedTemplateCategories = normalizeAllowedTemplateCategories(definition.allowedTemplateCategories);
   return definition;
+}
+
+function freezeDocumentationOutputVariants(
+  definition: PracticeDocumentationBlockDefinition,
+): FrozenBlock["documentationOutputVariants"] {
+  if (!definition.outputVariants) return undefined;
+  const primaryQuestionId = definition.block.questionIds[0];
+  const questionIdForField = (fieldId: string) => fieldId === "__primary" ? primaryQuestionId : fieldId;
+  const mapSegments = (segments: PracticeDocumentationSegmentInput[]): DocumentationSegment[] =>
+    segments.map((segment) => {
+      if (segment.kind === "text") return segment;
+      if (segment.kind === "answerRef") {
+        return { kind: "answerRef", questionId: questionIdForField(segment.fieldId) };
+      }
+      return {
+        kind: "conditional",
+        questionId: questionIdForField(segment.fieldId),
+        optionValue: segment.optionValue,
+        segments: mapSegments(segment.segments),
+      };
+    });
+  const mapOutputText = (output: PracticeDocumentationVariantOutputTextInput) => ({
+    ...(output.documentationText !== undefined ? { documentationText: output.documentationText } : {}),
+    ...(output.documentationSegments
+      ? { documentationSegments: mapSegments(output.documentationSegments) }
+      : {}),
+  });
+
+  return Object.fromEntries(Object.entries(definition.outputVariants).map(([variantId, variant]) => [
+    variantId,
+    {
+      ...mapOutputText(variant),
+      ...(variant.sharedDocumentationText !== undefined
+        ? { sharedDocumentationText: variant.sharedDocumentationText }
+        : {}),
+      ...(variant.fieldTexts ? {
+        fieldTexts: Object.fromEntries(Object.entries(variant.fieldTexts).map(([fieldId, output]) => [
+          questionIdForField(fieldId), mapOutputText(output),
+        ])),
+      } : {}),
+      ...(variant.optionTexts ? {
+        optionTexts: Object.fromEntries(Object.entries(variant.optionTexts).map(([fieldId, options]) => [
+          questionIdForField(fieldId), Object.fromEntries(Object.entries(options).map(([optionValue, output]) => [
+            optionValue, mapOutputText(output),
+          ])),
+        ])),
+      } : {}),
+    },
+  ]));
 }
 
 function normalizeAllowedTemplateCategories(raw: unknown): PracticeDocumentationTemplateCategory[] {
@@ -756,12 +946,18 @@ export function resolvePracticeDocumentationBlocks(
   const placementById = new Map(layout?.map((item) => [item.blockId, item]) ?? []);
   return buildFrozenBlocks(order, blocks, questions, order).map((block, index) => {
     const placement = placementById.get(block.id);
+    const outputVariants = parsed.find((definition) => definition.block.id === block.id)?.outputVariants;
     return {
       ...block,
       structuredHeadingVisibility: block.structuredHeadingVisibility ?? "spacingOnly",
       section: placement?.section ?? 1,
       order: placement?.order ?? index,
       outputSemantics: "documented-content-v1" as const,
+      ...(outputVariants
+        ? { documentationOutputVariants: freezeDocumentationOutputVariants(
+            parsed.find((definition) => definition.block.id === block.id)!,
+          ) }
+        : {}),
     };
   });
 }
@@ -800,8 +996,9 @@ export async function updatePracticeDocumentationBlock(
       where: { practice_id: practiceId, is_active: true },
       select: { block_layout: true },
     });
-    if (templates.some((template) => Array.isArray(template.block_layout) &&
-      template.block_layout.some((item) => isRecord(item) && item.blockId === id))) return "in_use";
+    if (templates.some((template) =>
+      getInternalTemplatePlacements(template.block_layout).some((item) => isRecord(item) && item.blockId === id),
+    )) return "in_use";
     await prisma.practiceDocumentationBlock.updateMany({
       where: { id, practice_id: practiceId }, data: { is_active: false },
     });
@@ -837,7 +1034,7 @@ export async function deletePracticeDocumentationBlock(
     select: { id: true, name: true, block_layout: true },
   });
   const dependencies = templates
-    .filter((template) => Array.isArray(template.block_layout) && template.block_layout.some(
+    .filter((template) => getInternalTemplatePlacements(template.block_layout).some(
       (placement) => isRecord(placement) && placement.blockId === id,
     ))
     .map((template) => ({ id: template.id, name: template.name }));

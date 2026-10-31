@@ -37,6 +37,7 @@ const templates: PracticeDocumentationTemplate[] = [{
   outputFormat: "formell",
   documentTitleOption: "stellungnahme",
   blockLayout: [{ blockId: "practice_block_blutdruck", section: 2, order: 0 }],
+    outputVariantIds: [],
 }];
 
 function PracticeStart() {
@@ -125,6 +126,7 @@ describe.each(starts)("interner Dokumentationslauncher: %s", (_label, renderStar
       patientReference: "81426",
       documentKind: "documentation",
       outputFormat: "formell",
+      outputVariantIds: [],
       documentTitleOption: "stellungnahme",
     });
 

@@ -8,6 +8,39 @@ export type InternalBlockPlacement = {
   order: number;
 };
 
+export type InternalTemplateLayoutData = {
+  placements: unknown[];
+  outputVariantIds: unknown[];
+};
+
+export function parseInternalTemplateLayout(raw: unknown): InternalTemplateLayoutData {
+  if (Array.isArray(raw)) return { placements: raw, outputVariantIds: [] };
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("Ungültige Vorlagenkonfiguration.");
+  }
+  const value = raw as Record<string, unknown>;
+  if (value.schemaVersion !== 1 || !Array.isArray(value.placements) || !Array.isArray(value.outputVariantIds)) {
+    throw new Error("Ungültige Vorlagenkonfiguration.");
+  }
+  return { placements: value.placements, outputVariantIds: value.outputVariantIds };
+}
+
+export function getInternalTemplatePlacements(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const value = raw as Record<string, unknown>;
+  return value.schemaVersion === 1 && Array.isArray(value.placements) ? value.placements : [];
+}
+
+export function serializeInternalTemplateLayout(
+  placements: InternalBlockPlacement[],
+  outputVariantIds: readonly string[],
+): unknown {
+  return outputVariantIds.length > 0
+    ? { schemaVersion: 1, placements, outputVariantIds: [...outputVariantIds] }
+    : placements;
+}
+
 export function compactInternalBlockPlacements(
   placements: readonly InternalBlockPlacement[],
 ): InternalBlockPlacement[] {

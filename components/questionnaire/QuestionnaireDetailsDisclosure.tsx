@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { QuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
 import { buildDerivedValueLines } from "@/lib/questionnaire/formatAnswer";
 import AnswersDisclosure from "./AnswersDisclosure";
+import InternalDocumentationOutputSelector from "./InternalDocumentationOutputSelector";
 import MedicalRecordNoteCopyButton from "./MedicalRecordNoteCopyButton";
 
 type Props = {
@@ -115,11 +116,19 @@ export default function QuestionnaireDetailsDisclosure({ sessionId }: Props) {
               )}
             </section>
           )}
-          <MedicalRecordNoteCopyButton
-            sessionId={sessionId}
-            noteText={detail.noteText}
-            label={detail.documentKind === "profile" ? "Steckbrief-Text kopieren" : undefined}
-          />
+          {detail.outputVariants?.length ? (
+            <InternalDocumentationOutputSelector
+              outputs={detail.outputVariants}
+              sessionId={sessionId}
+              filename={detail.xmlFilename ?? `${sessionId}.xml`}
+            />
+          ) : (
+            <MedicalRecordNoteCopyButton
+              sessionId={sessionId}
+              noteText={detail.noteText}
+              label={detail.documentKind === "profile" ? "Steckbrief-Text kopieren" : undefined}
+            />
+          )}
           {(derivedLines.length > 0 || detail.attentionHints.length > 0) && (
             <div
               data-q-derived-values={sessionId}

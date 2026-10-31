@@ -62,6 +62,7 @@ describe("internal documentation persistence", () => {
         documentTitleOption: "patienteninformation",
         documentTitle: "Patienteninformation",
       },
+      internalOutputVariantIds: ["patientenbrief", "krankenblatt"],
       internalPatientSignatureRequired: true,
       internalPatientSignatureCity: "Berlin",
       origin: "https://example.test",
@@ -79,6 +80,7 @@ describe("internal documentation persistence", () => {
         documentTitleOption: "patienteninformation",
         documentTitle: "Patienteninformation",
         documentKind: "documentation",
+        outputVariantIds: ["patientenbrief", "krankenblatt"],
         patientSignatureRequired: true,
         patientSignatureCity: "Berlin",
       },
@@ -131,6 +133,7 @@ describe("internal documentation persistence", () => {
         }),
       }),
     }));
+    expect(create.mock.calls[0][0].data.frozen_blocks.metadata).not.toHaveProperty("outputVariantIds");
   });
 
   it("liest alte Array-Snapshots ohne Titel mit neutralem Fallback", () => {

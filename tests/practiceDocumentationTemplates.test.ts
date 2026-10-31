@@ -16,6 +16,7 @@ import {
   duplicatePracticeDocumentationTemplate,
   PracticeDocumentationTemplateBlockError,
   resolveActivePracticeDocumentationTemplates,
+  updatePracticeDocumentationTemplate,
   validatePracticeDocumentationTemplate,
 } from "@/lib/practice/documentationTemplates";
 
@@ -23,6 +24,7 @@ const findTemplates = prisma.practiceDocumentationTemplate.findMany as jest.Mock
 const findBlocks = prisma.practiceDocumentationBlock.findMany as jest.Mock;
 const createTemplate = prisma.practiceDocumentationTemplate.create as jest.Mock;
 const findTemplate = prisma.practiceDocumentationTemplate.findFirst as jest.Mock;
+const updateTemplate = prisma.practiceDocumentationTemplate.updateMany as jest.Mock;
 const input = {
   name: " Kardiologische Stellungnahme ",
   outputFormat: "formell",
@@ -37,6 +39,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     findBlocks.mockResolvedValue([{ id: "practice_block_1" }, { id: "practice_block_2" }]);
+    updateTemplate.mockResolvedValue({ count: 1 });
   });
 
   it("trimmt Metadaten und normalisiert die vorbereitete Abschnittsreihenfolge", () => {
@@ -51,6 +54,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
           { blockId: "practice_block_1", section: 2, order: 0 },
           { blockId: "practice_block_2", section: 2, order: 1 },
         ],
+        outputVariantIds: [],
         patientSignatureRequired: false,
       },
     });
@@ -60,6 +64,8 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
     { ...input, name: "" },
     { ...input, outputFormat: "xml" },
     { ...input, documentTitleOption: "andere" },
+    { ...input, outputVariantIds: ["patientenbrief", "patientenbrief"] },
+    { ...input, outputVariantIds: ["unbekannt"] },
     { ...input, blockLayout: [] },
     { ...input, blockLayout: [
       { blockId: "practice_block_1", section: 1, order: 0 },
@@ -86,6 +92,7 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
       outputFormat: "informell",
       documentTitleOption: "arztbrief",
       blockLayout: [{ blockId: "practice_block_1", section: 3, order: 0 }],
+      outputVariantIds: [],
       patientSignatureRequired: false,
     }]);
     expect(findTemplates).toHaveBeenCalledWith({
@@ -113,6 +120,73 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
     });
   });
 
+  it("speichert und lädt mehrere Ausgabearten im bestehenden JSON-Feld", async () => {
+    const validation = validatePracticeDocumentationTemplate({
+      ...input,
+      outputVariantIds: ["facharztbrief", "patientenbrief"],
+    });
+    if (!validation.ok) throw new Error(validation.error);
+    createTemplate.mockResolvedValue({ id: "template-1" });
+    await createPracticeDocumentationTemplate("practice-1", validation.value);
+
+    const savedConfig = {
+      schemaVersion: 1,
+      placements: validation.value.blockLayout,
+      outputVariantIds: ["facharztbrief", "patientenbrief"],
+    };
+    expect(createTemplate.mock.calls[0][0].data.block_layout).toEqual(savedConfig);
+    findTemplates.mockResolvedValue([{
+      id: "template-1",
+      name: "Kardiologie",
+      is_active: true,
+      output_format: "formell",
+      document_title_option: "stellungnahme",
+      block_layout: savedConfig,
+    }]);
+    await expect(resolveActivePracticeDocumentationTemplates("practice-1")).resolves.toEqual([
+      expect.objectContaining({
+        id: "template-1",
+        blockLayout: validation.value.blockLayout,
+        outputVariantIds: ["facharztbrief", "patientenbrief"],
+      }),
+    ]);
+  });
+
+  it("erlaubt verschiedene Ausgabeangebote mit gemeinsam verwendeten Bausteinen", async () => {
+    createTemplate.mockResolvedValue({ id: "template-1" });
+    for (const outputVariantIds of [["patientenbrief"], ["facharztbrief", "krankenblatt"]]) {
+      const validation = validatePracticeDocumentationTemplate({ ...input, outputVariantIds });
+      if (!validation.ok) throw new Error(validation.error);
+      await createPracticeDocumentationTemplate("practice-1", validation.value);
+    }
+
+    expect(createTemplate).toHaveBeenCalledTimes(2);
+    expect(createTemplate.mock.calls.map(([call]) => call.data.block_layout)).toEqual([
+      { schemaVersion: 1, placements: expect.any(Array), outputVariantIds: ["patientenbrief"] },
+      { schemaVersion: 1, placements: expect.any(Array), outputVariantIds: ["facharztbrief", "krankenblatt"] },
+    ]);
+  });
+
+  it("erhält Ausgabearten beim Bearbeiten einer Vorlage", async () => {
+    const validation = validatePracticeDocumentationTemplate({
+      ...input,
+      outputVariantIds: ["krankenblatt"],
+    });
+    if (!validation.ok) throw new Error(validation.error);
+    await updatePracticeDocumentationTemplate("practice-1", "template-1", validation.value);
+
+    expect(prisma.practiceDocumentationTemplate.updateMany).toHaveBeenCalledWith({
+      where: { id: "template-1", practice_id: "practice-1" },
+      data: expect.objectContaining({
+        block_layout: {
+          schemaVersion: 1,
+          placements: validation.value.blockLayout,
+          outputVariantIds: ["krankenblatt"],
+        },
+      }),
+    });
+  });
+
   it("weist fehlende oder praxisfremde Blockreferenzen zurück", async () => {
     findBlocks.mockResolvedValue([{ id: "practice_block_1" }]);
     const validation = validatePracticeDocumentationTemplate(input);
@@ -130,7 +204,11 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
       category: "profile",
       output_format: "formell",
       document_title_option: "stellungnahme",
-      block_layout: input.blockLayout,
+      block_layout: {
+        schemaVersion: 1,
+        placements: input.blockLayout,
+        outputVariantIds: ["patientenbrief", "krankenblatt"],
+      },
       patient_signature_required: true,
     });
     findTemplates.mockResolvedValue([{ name: "Kardiologische Stellungnahme" }]);
@@ -146,10 +224,14 @@ describe("praxisbezogene Dokumentationsvorlagen", () => {
         category: "profile",
         output_format: "formell",
         document_title_option: "stellungnahme",
-        block_layout: [
-          { blockId: "practice_block_1", section: 2, order: 0 },
-          { blockId: "practice_block_2", section: 2, order: 1 },
-        ],
+        block_layout: {
+          schemaVersion: 1,
+          placements: [
+            { blockId: "practice_block_1", section: 2, order: 0 },
+            { blockId: "practice_block_2", section: 2, order: 1 },
+          ],
+          outputVariantIds: ["patientenbrief", "krankenblatt"],
+        },
         patient_signature_required: false,
       },
     });

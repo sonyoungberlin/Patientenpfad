@@ -97,6 +97,7 @@ describe("internal documentation service", () => {
         patientReference: " 81426 ",
         documentTitleOption: "arztbrief",
         outputFormat: "informell",
+        outputVariantIds: ["patientenbrief", "krankenblatt"],
         origin: "https://example.test",
         context: {
           kind: "practice",
@@ -117,6 +118,7 @@ describe("internal documentation service", () => {
           documentTitle: "Arztbrief",
         },
         internalOutputFormat: "informell",
+        internalOutputVariantIds: ["patientenbrief", "krankenblatt"],
         internalFrozenBlocks: [expect.objectContaining({
           id: "CARE_PLAN_HA",
           questions: [expect.objectContaining({ id: "CARE_PLAN_HA_question" })],
@@ -129,6 +131,19 @@ describe("internal documentation service", () => {
       expect(input).not.toHaveProperty("createdByKioskDeviceId");
       expect(input).not.toHaveProperty("patientCopyReturnEmail");
       expect(input).not.toHaveProperty("practiceConfirmations");
+  });
+
+  it("weist unbekannte Ausgabearten beim Sessionstart zurück", async () => {
+    await expect(createInternalDocumentationSession({
+      selectedBlockIds: ["CARE_PLAN_HA"],
+      patientReference: "81426",
+      documentTitleOption: "arztbrief",
+      outputFormat: "informell",
+      outputVariantIds: ["nicht-registriert"],
+      origin: "https://example.test",
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    })).rejects.toMatchObject({ status: 400 });
+    expect(createSession).not.toHaveBeenCalled();
   });
 
   it("erstellt den Kioskkontext weiterhin ohne Account-Owner", async () => {

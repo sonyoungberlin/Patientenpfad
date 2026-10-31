@@ -51,6 +51,7 @@ describe("practice internal documentation routes", () => {
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
       patientReference: " 81426 ",
       documentTitleOption: "arztbrief",
+      outputVariantIds: ["patientenbrief", "krankenblatt"],
       owner_practice_id: "practice-evil",
       source: "kiosk_direct",
     }));
@@ -61,6 +62,7 @@ describe("practice internal documentation routes", () => {
       blockLayout: [{ blockId: "CARE_PLAN_HA", section: 2, order: 0 }],
       patientReference: "81426",
       documentTitleOption: "arztbrief",
+      outputVariantIds: ["patientenbrief", "krankenblatt"],
       context: {
         kind: "practice",
         practiceId: "practice-1",
@@ -136,6 +138,32 @@ describe("practice internal documentation routes", () => {
         practiceId: "practice-1",
         accountId: "account-1",
       },
+    });
+  });
+
+  it("gibt Variantenprojektionen nach dem einmaligen Praxis-Submit zurück", async () => {
+    submitSession.mockResolvedValue({
+      outputVariants: [{
+        id: "patientenbrief",
+        label: "Patientenbrief",
+        noteText: "Patiententext",
+        semanticDocument: { sections: [
+          { slot: 1, items: [] },
+          { slot: 2, items: [] },
+          { slot: 3, items: [] },
+        ] },
+      }],
+      xmlFilename: "dokument.xml",
+    });
+    const response = await submitRoute(
+      request("/api/internal-documentation/session-1", { answers: { note: "Inhalt" } }),
+      { params: Promise.resolve({ id: "session-1" }) },
+    );
+
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      xmlFilename: "dokument.xml",
+      outputVariants: [expect.objectContaining({ id: "patientenbrief", noteText: "Patiententext" })],
     });
   });
 });
