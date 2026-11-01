@@ -18,6 +18,8 @@ const TOPIC_CATEGORIES: CategoryDef[] = [
     label: "Personal & Ärzte",
     topicIds: [
       "arzt-anstellen-nachbesetzung",
+      "weiterbildungsbefugnis-hausarztpraxis-berlin",
+      "arzt-in-weiterbildung-einstellen-foerdern",
       "arzt-austritt-praxisorganisation",
       "mfa-einstellung",
       "mfa-azubi-unter-18-einstellung",

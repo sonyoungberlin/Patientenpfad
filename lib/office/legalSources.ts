@@ -98,6 +98,33 @@ export const LEGAL_SOURCES: readonly LegalSource[] = [
     sourceUrl: "https://gesetze.berlin.de/perma?d=jlr-HeilBerKaGBE2006rahmen",
     note: "Grundlage fuer Aerztekammer Berlin (Pflichtmitgliedschaft, Berufsaufsicht).",
   },
+  {
+    id: "AEKB_WBO_2021_PAR_5",
+    title: "Weiterbildungsordnung 2021, § 5",
+    shortName: "Ärztekammer Berlin",
+    jurisdiction: "BERLIN",
+  },
+  {
+    id: "AEKB_WBA_GENERAL_MEDICINE_CRITERIA",
+    title: "Kriterien für die Weiterbildungsbefugnis Allgemeinmedizin",
+    shortName: "Ärztekammer Berlin",
+    jurisdiction: "BERLIN",
+    note: "Offizielle Informationsquelle; Kriterien für den konkreten Antrag prüfen.",
+  },
+  {
+    id: "KV_BERLIN_WBA_EMPLOYMENT_INFO",
+    title: "Beschäftigung von Weiterbildungsassistenten",
+    shortName: "KV Berlin",
+    jurisdiction: "BERLIN",
+    note: "Offizielle Informationsquelle der KV Berlin.",
+  },
+  {
+    id: "KV_BERLIN_WBA_FUNDING_INFO",
+    title: "Förderung der Weiterbildung",
+    shortName: "KV Berlin",
+    jurisdiction: "BERLIN",
+    note: "Aktuelle Förderbedingungen und Nachweise im konkreten Fall prüfen.",
+  },
 
   // ---------- Berufsordnung Aerztekammer Berlin ----------
   {
@@ -148,6 +175,13 @@ export const LEGAL_SOURCES: readonly LegalSource[] = [
     jurisdiction: "BUND",
     sourceUrl: "https://www.gesetze-im-internet.de/sgb_5/__95d.html",
     note: "5-jaehriger Nachweiszeitraum gegenueber der KV; bei Nichtnachweis Honorarkuerzung und ggf. Zulassungsentziehung.",
+  },
+  {
+    id: "SGB_V_PAR_75A",
+    title: "§ 75a",
+    shortName: "SGB V",
+    jurisdiction: "BUND",
+    note: "Förderung der Weiterbildung.",
   },
   {
     id: "SGB_V_PAR_106A",

@@ -6,6 +6,7 @@ type Props = {
   compliance: CheckpointComplianceView;
   checkpointId?: string;
   evidenceDateStatusById?: Record<string, EvidenceDateStatus>;
+  plainTextSources?: boolean;
 };
 
 const sectionStyle: React.CSSProperties = {
@@ -33,13 +34,22 @@ function formatLegalSourceLabel(entry: CheckpointComplianceView["legalSources"][
   return `${head} — ${entry.title}`;
 }
 
-function formatCounts(c: CheckpointComplianceView): string {
+function formatPlainTextSourceLabel(entry: CheckpointComplianceView["legalSources"][number]): string {
+  const shortName = entry.shortName === "Aerzte-ZV" ? "Ärzte-ZV" : entry.shortName;
+  return `${shortName} – ${entry.paragraph ?? entry.title}`;
+}
+
+function formatCounts(c: CheckpointComplianceView, plainTextSources: boolean): string {
   const parts: string[] = [];
   if (c.legalSources.length > 0) {
     parts.push(
-      c.legalSources.length === 1
-        ? "1 Rechtsgrundlage"
-        : `${c.legalSources.length} Rechtsgrundlagen`,
+      plainTextSources
+        ? c.legalSources.length === 1
+          ? "1 Quelle"
+          : `${c.legalSources.length} Quellen`
+        : c.legalSources.length === 1
+          ? "1 Rechtsgrundlage"
+          : `${c.legalSources.length} Rechtsgrundlagen`,
     );
   }
   if (c.authorities.length > 0) {
@@ -83,10 +93,11 @@ export default function OfficeComplianceFooter({
   compliance,
   checkpointId,
   evidenceDateStatusById,
+  plainTextSources = false,
 }: Props) {
   if (isComplianceEmpty(compliance)) return null;
 
-  const summaryText = `Compliance · ${formatCounts(compliance)}`;
+  const summaryText = `${plainTextSources ? "Quellen" : "Compliance"} · ${formatCounts(compliance, plainTextSources)}`;
   const testId = checkpointId
     ? `office-compliance-footer-${checkpointId}`
     : "office-compliance-footer";
@@ -116,17 +127,17 @@ export default function OfficeComplianceFooter({
         {compliance.legalSources.length > 0 ? (
           <div style={sectionStyle} data-testid="compliance-legal-sources">
             <div className="text-small text-muted" style={{ fontWeight: 600 }}>
-              Rechtsgrundlagen
+              {plainTextSources ? "Quellen" : "Rechtsgrundlagen"}
             </div>
             <ul className="text-small" style={listStyle}>
               {compliance.legalSources.map((entry) => (
                 <li key={entry.id}>
-                  {entry.sourceUrl ? (
+                  {entry.sourceUrl && !plainTextSources ? (
                     <a href={entry.sourceUrl} target="_blank" rel="noreferrer noopener">
                       {formatLegalSourceLabel(entry)}
                     </a>
                   ) : (
-                    <span>{formatLegalSourceLabel(entry)}</span>
+                    <span>{plainTextSources ? formatPlainTextSourceLabel(entry) : formatLegalSourceLabel(entry)}</span>
                   )}
                   {entry.note ? (
                     <span className="text-small text-muted" style={noteStyle}>
@@ -147,7 +158,7 @@ export default function OfficeComplianceFooter({
             <ul className="text-small" style={listStyle}>
               {compliance.authorities.map((entry) => (
                 <li key={entry.id}>
-                  {entry.sourceUrl ? (
+                  {entry.sourceUrl && !plainTextSources ? (
                     <a href={entry.sourceUrl} target="_blank" rel="noreferrer noopener">
                       {entry.name}
                     </a>

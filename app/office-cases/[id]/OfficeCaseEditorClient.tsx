@@ -17,6 +17,8 @@ import {
   OFFICE_TOPIC_MFA_HIRING,
   OFFICE_TOPIC_MINOR_MFA_APPRENTICE_HIRING,
   OFFICE_TOPIC_PHYSICIAN_EXIT_ORGANIZATION,
+  OFFICE_TOPIC_TRAINING_AUTHORITY_APPLICATION,
+  OFFICE_TOPIC_TRAINING_PHYSICIAN_HIRING,
   supportsOfficeCaseFinalReview,
 } from "@/lib/office/checkpointCatalog";
 import { getM2QuestionsForCheckpoint, type OfficeM2Question } from "@/lib/office/m2Questions";
@@ -871,6 +873,10 @@ export default function OfficeCaseEditorClient({
                               <OfficeComplianceFooter
                                 compliance={complianceByCheckpointId[checkpoint.id]}
                                 checkpointId={checkpoint.id}
+                                plainTextSources={
+                                  effectiveTopicId === OFFICE_TOPIC_TRAINING_AUTHORITY_APPLICATION ||
+                                  effectiveTopicId === OFFICE_TOPIC_TRAINING_PHYSICIAN_HIRING
+                                }
                               />
                             ) : null}
                             {(() => {

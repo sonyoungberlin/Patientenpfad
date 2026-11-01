@@ -92,6 +92,45 @@ describe("OfficeComplianceFooter", () => {
     expect(html).toContain('rel="noreferrer noopener"');
   });
 
+  it("zeigt Quellen im Klartextmodus ohne Links oder URLs", () => {
+    const compliance: CheckpointComplianceView = {
+      ...fullCompliance(),
+      legalSources: [
+        {
+          id: "AEKB_WBO_2021_PAR_5",
+          title: "Weiterbildungsordnung 2021, § 5",
+          shortName: "Ärztekammer Berlin",
+          jurisdiction: "BERLIN",
+        },
+        {
+          id: "SGB_V_PAR_75A",
+          title: "§ 75a",
+          shortName: "SGB V",
+          jurisdiction: "BUND",
+        },
+        {
+          id: "AERZTE_ZV_PAR_32",
+          title: "Vertretung des Vertragsarztes",
+          paragraph: "§ 32",
+          shortName: "Aerzte-ZV",
+          jurisdiction: "BUND",
+          sourceUrl: "https://www.gesetze-im-internet.de/_rzte-zv/__32.html",
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(
+      <OfficeComplianceFooter compliance={compliance} plainTextSources />,
+    );
+
+    expect(html).toContain("Ärztekammer Berlin – Weiterbildungsordnung 2021, § 5");
+    expect(html).toContain("SGB V – § 75a");
+    expect(html).toContain("Ärzte-ZV – § 32");
+    expect(html).toContain("Quellen");
+    expect(html).not.toContain("<a ");
+    expect(html).not.toContain("href=");
+    expect(html).not.toContain("https://");
+  });
+
   it("Notes werden klein angezeigt, nicht als Warnbanner (keine role=alert / kein Warn-CSS)", () => {
     const html = renderToStaticMarkup(
       <OfficeComplianceFooter compliance={fullCompliance()} />,
