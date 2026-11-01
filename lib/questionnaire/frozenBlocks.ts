@@ -73,11 +73,12 @@ export type FrozenBlock = {
   structuredHeadingVisibility?: QuestionnaireBlock["structuredHeadingVisibility"];
   /** Praxisformulierungen pro Ausgabeart, eingefroren beim Start der Sitzung. */
   documentationOutputVariants?: Record<string, {
+    outputMode?: "text" | "none";
     documentationText?: string;
     documentationSegments?: DocumentationSegment[];
     sharedDocumentationText?: string;
-    fieldTexts?: Record<string, { documentationText?: string; documentationSegments?: DocumentationSegment[] }>;
-    optionTexts?: Record<string, Record<string, { documentationText?: string; documentationSegments?: DocumentationSegment[] }>>;
+    fieldTexts?: Record<string, { outputMode?: "text" | "none"; documentationText?: string; documentationSegments?: DocumentationSegment[] }>;
+    optionTexts?: Record<string, Record<string, { outputMode?: "text" | "none"; documentationText?: string; documentationSegments?: DocumentationSegment[] }>>;
   }>;
 };
 

@@ -66,34 +66,55 @@ function DocumentationVariantOutputEditor({
   onChange: (value: PracticeDocumentationVariantOutputTextInput) => void;
 }) {
   const segments = value.documentationSegments ?? [];
+  const hasText = Boolean(value.documentationText?.trim()) || segments.length > 0;
+  const outputMode = value.outputMode ?? (hasText ? "text" : "unconfigured");
+  const updateTextOutput = (next: PracticeDocumentationVariantOutputTextInput) => onChange({
+    ...next,
+    outputMode: "text",
+  });
   const updateSegment = (index: number, update: Partial<PracticeDocumentationSegmentInput>) => {
-    onChange({
+    updateTextOutput({
       ...value,
       documentationSegments: segments.map((segment, segmentIndex) => segmentIndex === index
         ? { ...segment, ...update } as PracticeDocumentationSegmentInput
         : segment),
     });
   };
-  const addSegment = () => onChange({
+  const addSegment = () => updateTextOutput({
     ...value,
     documentationSegments: [...segments, { kind: "text", text: "" }],
   });
-  const removeSegment = (index: number) => onChange({
+  const removeSegment = (index: number) => updateTextOutput({
     ...value,
     documentationSegments: segments.filter((_, segmentIndex) => segmentIndex !== index),
   });
 
   return (
     <div style={{ display: "grid", gap: "0.35rem" }}>
-      <label>{label}<textarea
-        value={value.documentationText ?? ""}
-        onChange={(event) => onChange({ ...value, documentationText: event.target.value })}
-        rows={3}
+      <label>{label} Status<select
+        aria-label={`${label} Ausgabestatus`}
+        value={outputMode}
+        onChange={(event) => {
+          if (event.target.value === "unconfigured") onChange({});
+          else if (event.target.value === "none") onChange({ outputMode: "none" });
+          else updateTextOutput(value);
+        }}
         disabled={disabled}
-      /></label>
-      <details>
-        <summary style={{ cursor: "pointer" }}>Zusammengesetzten Ausgabetext bearbeiten</summary>
-        <div style={{ display: "grid", gap: "0.4rem", marginTop: "0.4rem" }}>
+      >
+        <option value="unconfigured">Noch nicht konfiguriert</option>
+        <option value="text">Text vorhanden</option>
+        <option value="none">Nicht relevant / keine Ausgabe</option>
+      </select></label>
+      {outputMode === "text" ? <>
+        <label>{label}<textarea
+          value={value.documentationText ?? ""}
+          onChange={(event) => updateTextOutput({ ...value, documentationText: event.target.value })}
+          rows={3}
+          disabled={disabled}
+        /></label>
+        <details>
+          <summary style={{ cursor: "pointer" }}>Zusammengesetzten Ausgabetext bearbeiten</summary>
+          <div style={{ display: "grid", gap: "0.4rem", marginTop: "0.4rem" }}>
           {segments.map((segment, index) => {
             const conditionalSource = segment.kind === "conditional"
               ? sources.find((source) => source.id === segment.fieldId)
@@ -181,9 +202,14 @@ function DocumentationVariantOutputEditor({
               </div>
             </div>;
           })}
-          <button type="button" onClick={addSegment} disabled={disabled}>Segment hinzufügen</button>
-        </div>
-      </details>
+            <button type="button" onClick={addSegment} disabled={disabled}>Segment hinzufügen</button>
+          </div>
+        </details>
+      </> : <p className="text-muted text-small" style={{ margin: 0 }}>
+        {outputMode === "none"
+          ? "Die Antwort bleibt gespeichert, erzeugt hier aber keinen Text."
+          : "Für diese Ausgabe fehlt noch eine redaktionelle Festlegung."}
+      </p>}
     </div>
   );
 }
@@ -789,7 +815,7 @@ export default function DocumentationLibraryClient({ initialBlocks, initialTempl
                 {variant && <div style={{ display: "grid", gap: "0.6rem", marginTop: "0.5rem" }}>
                   <DocumentationVariantOutputEditor
                     label="Ausgabetext des Bausteins"
-                    value={{ documentationText: variant.documentationText, documentationSegments: variant.documentationSegments }}
+                    value={{ outputMode: variant.outputMode, documentationText: variant.documentationText, documentationSegments: variant.documentationSegments }}
                     sources={variantSegmentSources}
                     disabled={busy}
                     onChange={(output) => updateVariant(id, output)}

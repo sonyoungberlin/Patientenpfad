@@ -102,23 +102,24 @@ it("zeigt nur angebotene Ausgaben mit eigener Vorschau, Kopieren und XML-Export"
       ok: true,
       detail: {
         ...detail,
+        isInternalDocumentation: true,
         outputVariants: [
+          {
+            id: "facharztbrief",
+            label: "Facharztbrief",
+            noteText: "Facharzttext",
+            semanticDocument: { sections: [
+              { slot: 1, items: [{ type: "bodyText", text: "Facharzttext" }] },
+              { slot: 2, items: [] },
+              { slot: 3, items: [] },
+            ] },
+          },
           {
             id: "patientenbrief",
             label: "Patientenbrief",
             noteText: "Patiententext",
             semanticDocument: { sections: [
               { slot: 1, items: [{ type: "bodyText", text: "Patiententext" }] },
-              { slot: 2, items: [] },
-              { slot: 3, items: [] },
-            ] },
-          },
-          {
-            id: "krankenblatt",
-            label: "Krankenblatt",
-            noteText: "Krankenblatttext",
-            semanticDocument: { sections: [
-              { slot: 1, items: [{ type: "bodyText", text: "Krankenblatttext" }] },
               { slot: 2, items: [] },
               { slot: 3, items: [] },
             ] },
@@ -131,18 +132,25 @@ it("zeigt nur angebotene Ausgaben mit eigener Vorschau, Kopieren und XML-Export"
   await toggle(container.querySelector("details")!, true);
 
   const selector = container.querySelector<HTMLSelectElement>('[data-q-output-variant-select="session-1"]')!;
-  expect(Array.from(selector.options).map((option) => option.value)).toEqual(["patientenbrief", "krankenblatt"]);
-  expect(container.querySelector('[data-q-output-preview="patientenbrief"]')?.textContent).toBe("Patiententext");
-  expect(container.querySelector('[data-q-copy-note="session-1-patientenbrief"]')).not.toBeNull();
-  expect(container.querySelector('[data-q-download-xml="session-1-patientenbrief"]')).not.toBeNull();
-  expect(container.querySelector('[data-q-download-xml-v2="session-1-patientenbrief"]')).not.toBeNull();
+  expect(Array.from(selector.options).map((option) => option.value)).toEqual(["facharztbrief", "patientenbrief"]);
+  expect(container.querySelector('[data-q-full-documentation-text]')?.textContent).toBe("Beschwerden: Husten");
+  expect(container.querySelector('[data-q-copy-note="session-1"]')?.textContent).toContain("Vollständige Dokumentation kopieren");
+  expect(container.querySelector('[data-q-output-preview="facharztbrief"]')?.textContent).toBe("Facharzttext");
+  expect(container.querySelector('[data-q-copy-note="session-1-facharztbrief"]')).not.toBeNull();
+  expect(container.querySelector('[data-q-download-xml="session-1-facharztbrief"]')).not.toBeNull();
+  expect(container.querySelector<HTMLAnchorElement>('[data-q-download-xml-v2="session-1-facharztbrief"]')?.href)
+    .toContain("/api/questionnaire/session-1/xml?outputVariantId=facharztbrief");
+  expect(container.querySelector<HTMLAnchorElement>('[data-q-pdf-variant="session-1-facharztbrief"]')?.href)
+    .toContain("/api/questionnaire/session-1/pdf?outputVariantId=facharztbrief");
+  expect(container.querySelector<HTMLAnchorElement>('[data-q-gdt-variant="session-1-facharztbrief"]')?.href)
+    .toContain("/api/questionnaire/session-1/gdt?outputVariantId=facharztbrief");
 
   await act(async () => {
-    selector.value = "krankenblatt";
+    selector.value = "patientenbrief";
     selector.dispatchEvent(new Event("change", { bubbles: true }));
   });
-  expect(container.querySelector('[data-q-output-preview="krankenblatt"]')?.textContent).toBe("Krankenblatttext");
-  expect(container.querySelector('[data-q-copy-note="session-1-krankenblatt"]')).not.toBeNull();
+  expect(container.querySelector('[data-q-output-preview="patientenbrief"]')?.textContent).toBe("Patiententext");
+  expect(container.querySelector('[data-q-copy-note="session-1-patientenbrief"]')).not.toBeNull();
 
   await act(async () => root.unmount());
 });

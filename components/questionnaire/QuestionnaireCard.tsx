@@ -75,6 +75,7 @@ export default function QuestionnaireCard({
   exportFinal = displayStatus === "completed",
 }: QuestionnaireCardProps) {
   const isDeleted = deletedAt != null;
+  const isInternalDocumentation = sessionKind === "internal_documentation";
   const sourceLabel = sessionKind === "internal_documentation"
     ? "Interne Dokumentation"
     : isFromDigitalRequest
@@ -186,7 +187,11 @@ export default function QuestionnaireCard({
             data-q-pdf-downloaded={pdfDownloadedAt ? "true" : "false"}
             style={{ display: "inline-block", marginTop: "0.25rem" }}
           >
-            {pdfDownloadedAt ? "PDF erneut herunterladen" : "PDF herunterladen"}
+            {isInternalDocumentation
+              ? pdfDownloadedAt
+                ? "Vollständige Dokumentation als PDF erneut herunterladen"
+                : "Vollständige Dokumentation als PDF herunterladen"
+              : pdfDownloadedAt ? "PDF erneut herunterladen" : "PDF herunterladen"}
           </a>
           {sessionKind === "internal_documentation" && (
             <>
@@ -198,7 +203,7 @@ export default function QuestionnaireCard({
                 data-q-xml={id}
                 style={{ display: "inline-block", marginTop: "0.25rem" }}
               >
-                XML herunterladen
+                Vollständige Dokumentation als XML herunterladen
               </a>
               <a
                 href={`/api/questionnaire/${id}/gdt`}
@@ -208,7 +213,7 @@ export default function QuestionnaireCard({
                 data-q-gdt={id}
                 style={{ display: "inline-block", marginTop: "0.25rem" }}
               >
-                GDT herunterladen
+                Standard-GDT-Systemvermerk herunterladen
               </a>
             </>
           )}

@@ -174,7 +174,7 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
     expect(outputCheckbox("Patientenbrief")?.checked).toBe(true);
     expect(outputCheckbox("Krankenblatt")?.checked).toBe(true);
     expect(container.textContent).toContain("Krankenblatt: Kontrolltermin");
-    expect(container.textContent).toContain("Fehlende Formulierungen werden nicht durch Ersatztexte ergänzt.");
+    expect(container.textContent).toContain("„Nicht relevant“ gilt als bewusste Festlegung");
 
     await act(async () => outputCheckbox("Facharztbrief")?.click());
     await act(async () => {
@@ -264,9 +264,29 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
       .find((label) => label.textContent?.includes("Facharztbrief"))?.querySelector<HTMLInputElement>("input");
     expect(variantCheckbox).not.toBeNull();
     await act(async () => variantCheckbox!.click());
+    await act(async () => {
+      Array.from(container.querySelectorAll("summary"))
+        .find((summary) => summary.textContent === "Ausgabevarianten (optional)")?.click();
+    });
+
+    const chooseTextMode = (label: string) => {
+      const select = container.querySelector<HTMLSelectElement>(`select[aria-label="${label} Ausgabestatus"]`);
+      expect(select).not.toBeNull();
+      expect(select!.value).toBe("unconfigured");
+      const setValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
+      setValue?.call(select, "text");
+      select!.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    await act(async () => {
+      chooseTextMode("Ausgabetext des Bausteins");
+      chooseTextMode("Ausgabe für Option: Verlaufskontrolle");
+    });
+    expect(Array.from(container.querySelectorAll<HTMLSelectElement>('select[aria-label$="Ausgabestatus"]'))
+      .map((select) => select.value)).toEqual(["text", "text"]);
 
     const findTextarea = (text: string) => Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
-      .find((label) => label.textContent?.includes(text))?.querySelector<HTMLTextAreaElement>("textarea");
+      .find((label) => label.textContent?.includes(text) && label.querySelector("textarea"))
+      ?.querySelector<HTMLTextAreaElement>("textarea");
     const blockOutput = findTextarea("Ausgabetext des Bausteins");
     const optionOutput = findTextarea("Ausgabe für Option: Verlaufskontrolle");
     expect(blockOutput).not.toBeNull();
@@ -285,8 +305,9 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
 
     const savedInput = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(savedInput.outputVariants.facharztbrief).toMatchObject({
+      outputMode: "text",
       documentationText: "Allgemeiner Facharzttext",
-      optionTexts: { __primary: { followup: { documentationText: "Fachtext für Verlaufskontrolle" } } },
+      optionTexts: { __primary: { followup: { outputMode: "text", documentationText: "Fachtext für Verlaufskontrolle" } } },
     });
     const reopenedDefinition = parsePracticeDocumentationBlockDefinition({
       ...definition,
@@ -305,6 +326,66 @@ describe("Dokumentationsbibliothek Inline-Bearbeitung", () => {
     expect(findTextarea("Ausgabe für Option: Verlaufskontrolle")?.value).toBe("Fachtext für Verlaufskontrolle");
 
     global.fetch = originalFetch;
+    await act(async () => root.unmount());
+  });
+
+  it("speichert und lädt den Status Nicht relevant getrennt von fehlender Konfiguration", async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    global.fetch = fetchMock as jest.Mock;
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Kontrolltermin",
+      blockType: "selection",
+      options: [{ value: "followup", label: "Verlaufskontrolle", documentationText: "Standard" }],
+    });
+    const container = createContainer();
+    const root = createRoot(container);
+    const renderLibrary = (currentDefinition: PracticeDocumentationBlockDefinition) => (
+      <DocumentationLibraryClient initialBlocks={[{
+        id: currentDefinition.block.id,
+        title: currentDefinition.block.label,
+        definition: currentDefinition,
+        isActive: true,
+      }]} />
+    );
+    await act(async () => root.render(renderLibrary(definition)));
+    await clickEdit(container, "Bearbeiten");
+    const variantCheckbox = Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
+      .find((label) => label.textContent?.includes("Facharztbrief"))?.querySelector<HTMLInputElement>("input");
+    await act(async () => variantCheckbox!.click());
+    await act(async () => {
+      Array.from(container.querySelectorAll("summary"))
+        .find((summary) => summary.textContent === "Ausgabevarianten (optional)")?.click();
+    });
+    const status = container.querySelector<HTMLSelectElement>(
+      'select[aria-label="Ausgabe für Option: Verlaufskontrolle Ausgabestatus"]',
+    )!;
+    const setValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
+    await act(async () => {
+      setValue?.call(status, "none");
+      status.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => {
+      Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Speichern")?.click();
+      await Promise.resolve();
+    });
+
+    const savedInput = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(savedInput.outputVariants.facharztbrief.optionTexts.__primary.followup).toEqual({ outputMode: "none" });
+    const reopened = parsePracticeDocumentationBlockDefinition({ ...definition, outputVariants: savedInput.outputVariants });
+    await act(async () => root.render(renderLibrary(reopened)));
+    await clickEdit(container, "Bearbeiten");
+    await act(async () => {
+      Array.from(container.querySelectorAll("summary"))
+        .find((summary) => summary.textContent === "Ausgabevarianten (optional)")?.click();
+    });
+    const reopenedStatus = container.querySelector<HTMLSelectElement>(
+      'select[aria-label="Ausgabe für Option: Verlaufskontrolle Ausgabestatus"]',
+    );
+    expect(reopenedStatus?.value).toBe("none");
+    expect(Array.from(container.querySelectorAll<HTMLLabelElement>("label"))
+      .find((label) => label.textContent?.includes("Ausgabe für Option: Verlaufskontrolle") && label.querySelector("textarea")))
+      .toBeUndefined();
+
     await act(async () => root.unmount());
   });
 

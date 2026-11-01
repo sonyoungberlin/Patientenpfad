@@ -5,7 +5,10 @@ import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnairePdfBytes } from "@/lib/questionnaire/pdfRenderer";
 import { resolveQuestionnairePdfOptions } from "@/lib/questionnaire/questionnaireExportService";
-import { buildInternalDocumentationPdfArtifact } from "@/lib/questionnaire/internalDocumentationArtifacts";
+import {
+  buildInternalDocumentationPdfArtifact,
+  InternalDocumentationVariantError,
+} from "@/lib/questionnaire/internalDocumentationArtifacts";
 import {
   isQuestionnaireExportFinal,
   QUESTIONNAIRE_EXPORT_FINALITY_FILTER,
@@ -16,6 +19,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const outputVariantId = req.nextUrl.searchParams.get("outputVariantId") ?? undefined;
 
   const { account, error } = await requireQuestionnaireInboxAccess(req);
   if (error) return error;
@@ -77,6 +81,9 @@ export async function GET(
       { status: 409, headers: { "Content-Type": "application/json" } },
     );
   }
+  if (outputVariantId && session.session_kind !== "internal_documentation") {
+    return Response.json({ ok: false, error: "Ausgabevarianten sind nur für interne Dokumentation verfügbar." }, { status: 400 });
+  }
 
   let pdfOptions;
   try {
@@ -95,17 +102,24 @@ export async function GET(
         headers: { "Content-Type": "application/json" },
       });
     }
-    pdf = await buildInternalDocumentationPdfArtifact({
-      ...session,
-      session_kind: "internal_documentation",
-      submitted_at: session.submitted_at,
-    }, pdfOptions);
+    try {
+      pdf = await buildInternalDocumentationPdfArtifact({
+        ...session,
+        session_kind: "internal_documentation",
+        submitted_at: session.submitted_at,
+      }, pdfOptions, outputVariantId);
+    } catch (cause) {
+      if (cause instanceof InternalDocumentationVariantError) {
+        return Response.json({ ok: false, error: cause.message }, { status: cause.status });
+      }
+      throw cause;
+    }
   } else {
     pdf = await buildQuestionnairePdfBytes(session, pdfOptions);
   }
   const { bytes, filename } = pdf;
 
-  if (session.pdf_downloaded_at == null) {
+  if (!outputVariantId && session.pdf_downloaded_at == null) {
     try {
       await prisma.patientQuestionnaireSession.updateMany({
         where: { id, AND: [QUESTIONNAIRE_EXPORT_FINALITY_FILTER] },

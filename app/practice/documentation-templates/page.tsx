@@ -8,6 +8,7 @@ import {
 } from "@/lib/practice/documentationTemplates";
 import {
   getPracticeDocumentationConfiguredOutputVariantIds,
+  getPracticeDocumentationOutputVariantIdsWithText,
   listPracticeDocumentationBlocks,
   parsePracticeDocumentationBlockDefinition,
 } from "@/lib/practice/documentationBlocks";
@@ -47,6 +48,7 @@ export default async function PracticeDocumentationTemplatesPage() {
             title: block.title,
             allowedTemplateCategories: definition.allowedTemplateCategories,
             outputVariantIds: getPracticeDocumentationConfiguredOutputVariantIds(definition),
+            outputTextVariantIds: getPracticeDocumentationOutputVariantIdsWithText(definition),
           };
         })}
       />

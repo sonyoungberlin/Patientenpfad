@@ -45,10 +45,30 @@ export default function InternalDocumentationOutputSelector({
         <AppTextXmlDownloadButton
           noteText={selected.noteText}
           filename={filename.replace(/\.xml$/i, `-${selected.id}.xml`)}
-          label={`${selected.label} als XML herunterladen`}
+          label={`${selected.label} als XML v1 herunterladen`}
           sessionId={`${sessionId}-${selected.id}`}
-          semanticDocument={selected.semanticDocument}
         />
+        <a
+          href={`/api/questionnaire/${sessionId}/xml?outputVariantId=${selected.id}`}
+          className="btn-secondary text-small"
+          data-q-download-xml-v2={`${sessionId}-${selected.id}`}
+        >
+          {selected.label} als XML v2 herunterladen
+        </a>
+        <a
+          href={`/api/questionnaire/${sessionId}/pdf?outputVariantId=${selected.id}`}
+          className="btn-secondary text-small"
+          data-q-pdf-variant={`${sessionId}-${selected.id}`}
+        >
+          {selected.label} als PDF herunterladen
+        </a>
+        <a
+          href={`/api/questionnaire/${sessionId}/gdt?outputVariantId=${selected.id}`}
+          className="btn-secondary text-small"
+          data-q-gdt-variant={`${sessionId}-${selected.id}`}
+        >
+          {selected.label} als GDT herunterladen
+        </a>
       </>}
     </section>
   );

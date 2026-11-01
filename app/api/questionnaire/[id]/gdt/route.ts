@@ -3,7 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
 import { buildQuestionnaireGdtBytes } from "@/lib/questionnaire/gdtRenderer";
-import { buildInternalDocumentationGdtArtifact } from "@/lib/questionnaire/internalDocumentationArtifacts";
+import {
+  buildInternalDocumentationGdtArtifact,
+  InternalDocumentationVariantError,
+} from "@/lib/questionnaire/internalDocumentationArtifacts";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { resolveQuestionnaireGdtExport } from "@/lib/questionnaire/questionnaireExportService";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
@@ -19,6 +22,7 @@ export async function GET(
   const { account, error } = await requireQuestionnaireInboxAccess(req);
   if (error) return error;
   const { id } = await params;
+  const outputVariantId = req.nextUrl.searchParams.get("outputVariantId") ?? undefined;
 
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { id },
@@ -69,6 +73,9 @@ export async function GET(
   let bytes: Uint8Array;
   let patientReference: string;
   const isInternalDocumentation = session.session_kind === "internal_documentation";
+  if (outputVariantId && !isInternalDocumentation) {
+    return Response.json({ ok: false, error: "Ausgabevarianten sind nur für interne Dokumentation verfügbar." }, { status: 400 });
+  }
   try {
     if (isInternalDocumentation) {
       if (!session.submitted_at) {
@@ -79,7 +86,7 @@ export async function GET(
         submitted_at: session.submitted_at,
         submitted_by: session.submitted_by,
         session_kind: "internal_documentation",
-      });
+      }, outputVariantId);
       if (!artifact) {
         return Response.json({ ok: false, error: "GDT für diese Session nicht verfügbar." }, { status: 409 });
       }
@@ -96,6 +103,9 @@ export async function GET(
       patientReference = gdt.patientReference;
     }
   } catch (buildError) {
+    if (buildError instanceof InternalDocumentationVariantError) {
+      return Response.json({ ok: false, error: buildError.message }, { status: buildError.status });
+    }
     console.error("[GET questionnaire/[id]/gdt] build_failed", {
       sessionId: id,
       message: buildError instanceof Error ? buildError.message : "UnknownError",

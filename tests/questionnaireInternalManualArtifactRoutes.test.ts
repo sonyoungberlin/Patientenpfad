@@ -4,6 +4,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     patientQuestionnaireSession: {
       findUnique: jest.fn(),
+      updateMany: jest.fn(),
     },
   },
 }));
@@ -21,10 +22,28 @@ jest.mock("@/lib/questionnaire/internalDocumentationArtifacts", () => ({
     filename: "20260922_81426_Interne_Dokumentation.gdt",
     mimeType: "application/octet-stream",
   })),
+  buildInternalDocumentationPdfArtifact: jest.fn(async () => ({
+    bytes: new Uint8Array([37, 80, 68, 70]),
+    filename: "20260922_81426_Interne_Dokumentation.pdf",
+    mimeType: "application/pdf",
+  })),
+}));
+jest.mock("@/lib/questionnaire/questionnaireExportService", () => ({
+  resolveQuestionnairePdfOptions: jest.fn(() => ({
+    title: "Interne Dokumentation",
+    referenceLabel: "Patientenreferenz",
+    blockCatalog: {},
+  })),
 }));
 
 import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
+import {
+  buildInternalDocumentationGdtArtifact,
+  buildInternalDocumentationPdfArtifact,
+  buildInternalDocumentationXmlArtifact,
+} from "@/lib/questionnaire/internalDocumentationArtifacts";
+import { GET as getPdf } from "@/app/api/questionnaire/[id]/pdf/route";
 import { GET as getXml } from "@/app/api/questionnaire/[id]/xml/route";
 import { GET as getGdt } from "@/app/api/questionnaire/[id]/gdt/route";
 
@@ -91,4 +110,38 @@ it("liefert GDT für eine interne Dokumentation auch nach Auto-ACK als manuellen
     "20260922_81426_Interne_Dokumentation.gdt",
   );
   await expect(response.arrayBuffer()).resolves.toEqual(Uint8Array.from([71, 68, 84]).buffer);
+});
+
+it("reicht die gewählte Variante an XML- und GDT-Artefakte weiter", async () => {
+  const xmlResponse = await getXml(request("/api/questionnaire/internal-1/xml?outputVariantId=patientenbrief"), {
+    params: Promise.resolve({ id: "internal-1" }),
+  });
+  const gdtResponse = await getGdt(request("/api/questionnaire/internal-1/gdt?outputVariantId=facharztbrief"), {
+    params: Promise.resolve({ id: "internal-1" }),
+  });
+
+  expect(xmlResponse.status).toBe(200);
+  expect(gdtResponse.status).toBe(200);
+  expect(buildInternalDocumentationXmlArtifact).toHaveBeenLastCalledWith(
+    expect.objectContaining({ id: "internal-1" }),
+    "patientenbrief",
+  );
+  expect(buildInternalDocumentationGdtArtifact).toHaveBeenLastCalledWith(
+    expect.objectContaining({ id: "internal-1" }),
+    "facharztbrief",
+  );
+});
+
+it("reicht Varianten-PDFs weiter, ohne den Volltext-Downloadmarker zu setzen", async () => {
+  const response = await getPdf(request("/api/questionnaire/internal-1/pdf?outputVariantId=facharztbrief"), {
+    params: Promise.resolve({ id: "internal-1" }),
+  });
+
+  expect(response.status).toBe(200);
+  expect(buildInternalDocumentationPdfArtifact).toHaveBeenLastCalledWith(
+    expect.objectContaining({ id: "internal-1" }),
+    expect.objectContaining({ title: "Interne Dokumentation" }),
+    "facharztbrief",
+  );
+  expect(prisma.patientQuestionnaireSession.updateMany).not.toHaveBeenCalled();
 });

@@ -982,6 +982,108 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     expect(getPracticeDocumentationConfiguredOutputVariantIds(definition)).toEqual(["facharztbrief"]);
   });
 
+  it("unterscheidet vorhandenen Text, bewusst keine Ausgabe und fehlende Konfiguration", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Therapieempfehlung",
+      blockType: "selection",
+      options: [{ value: "requested", label: "Erbeten", documentationText: "Standardtext" }],
+      outputVariants: {
+        facharztbrief: {
+          optionTexts: { __primary: { requested: { outputMode: "text", documentationText: "Bitte um Empfehlung." } } },
+        },
+        patientenbrief: {
+          optionTexts: { __primary: { requested: { outputMode: "none" } } },
+        },
+        krankenblatt: {},
+      },
+    });
+
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const reopened = parsePracticeDocumentationBlockDefinition(definition);
+    expect(reopened.outputVariants?.facharztbrief?.optionTexts?.__primary?.requested).toMatchObject({
+      outputMode: "text",
+      documentationText: "Bitte um Empfehlung.",
+    });
+    expect(reopened.outputVariants?.patientenbrief?.optionTexts?.__primary?.requested).toEqual({ outputMode: "none" });
+    expect(reopened.outputVariants?.krankenblatt?.optionTexts?.__primary?.requested).toBeUndefined();
+    expect(getPracticeDocumentationConfiguredOutputVariantIds(reopened)).toEqual(["facharztbrief", "patientenbrief"]);
+  });
+
+  it("wertet einzelne Nichtausgabe nicht als vollständige Optionsabdeckung", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Therapieempfehlung",
+      blockType: "selection",
+      options: [
+        { value: "requested", label: "Erbeten", documentationText: "Standardtext" },
+        { value: "not_requested", label: "Nicht erbeten", documentationText: "Standardtext" },
+      ],
+      outputVariants: {
+        patientenbrief: {
+          optionTexts: { __primary: { requested: { outputMode: "none" } } },
+        },
+      },
+    });
+
+    expect(getPracticeDocumentationConfiguredOutputVariantIds(definition)).toEqual([]);
+  });
+
+  it("wertet Root-none nicht als vollständige Abdeckung unkonfigurierter Auswahloptionen", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Therapieempfehlung",
+      blockType: "selection",
+      options: [
+        { value: "requested", label: "Erbeten", documentationText: "Standardtext" },
+        { value: "not_requested", label: "Nicht erbeten", documentationText: "Standardtext" },
+      ],
+      outputVariants: {
+        patientenbrief: {
+          outputMode: "none",
+          optionTexts: { __primary: { requested: { outputMode: "none" } } },
+        },
+      },
+    });
+
+    expect(getPracticeDocumentationConfiguredOutputVariantIds(definition)).toEqual([]);
+  });
+
+  it("wertet ein einzelnes konfiguriertes Zusatzfeld nicht als vollständige Feldabdeckung", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Behandlung",
+      blockType: "text",
+      additionalFields: [
+        { id: "current", label: "Aktuell", type: "text" },
+        { id: "planned", label: "Geplant", type: "text" },
+      ],
+      outputVariants: {
+        patientenbrief: {
+          fieldTexts: { current: { outputMode: "none" } },
+        },
+      },
+    });
+
+    expect(getPracticeDocumentationConfiguredOutputVariantIds(definition)).toEqual([]);
+  });
+
+  it("lehnt widersprüchliche oder inhaltsleere explizite Ausgabezustände ab", () => {
+    const base = {
+      title: "Therapieempfehlung",
+      blockType: "selection",
+      options: [{ value: "requested", label: "Erbeten", documentationText: "Standardtext" }],
+    };
+    for (const output of [
+      { outputMode: "none", documentationText: "Nicht relevant" },
+      { outputMode: "text", documentationText: "" },
+    ]) {
+      const validation = validatePracticeDocumentationBlock({
+        ...base,
+        outputVariants: { patientenbrief: { optionTexts: { __primary: { requested: output } } } },
+      });
+      expect(validation.ok).toBe(false);
+    }
+  });
+
   it("friert Ausgabeformulierungen samt stabilen Fragenreferenzen im Sitzungsblock ein", () => {
     const definition = buildPracticeDocumentationBlockDefinition({
       title: "Kontrolltermin",
@@ -993,6 +1095,7 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
           optionTexts: {
             __primary: {
               control: {
+                outputMode: "text",
                 documentationSegments: [
                   { kind: "text", text: "Bitte kommen Sie am " },
                   { kind: "answerRef", fieldId: "visit_date" },
@@ -1010,6 +1113,8 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
         { kind: "text", text: "Bitte kommen Sie am " },
         { kind: "answerRef", questionId: "visit_date" },
       ]);
+    expect(frozen.documentationOutputVariants?.patientenbrief?.optionTexts?.[frozen.questions[0]!.id]?.control?.outputMode)
+      .toBe("text");
     definition.outputVariants!.patientenbrief!.optionTexts!.__primary!.control!.documentationSegments![0] = {
       kind: "text",
       text: "Später geänderter Text",
@@ -1062,6 +1167,8 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     const emptyVariant = buildPracticeOutputProjection({ answers, frozenBlocks, outputVariantId: "krankenblatt" });
 
     expect(specialist.noteText).toContain("Kontrolle am 10.04.");
+    expect(specialist.compactText).toContain("Kontrolle am 10.04.");
+    expect(specialist.compactText).not.toContain("Kontrolltermin");
     expect(specialist.noteText).not.toContain("Termin separat");
     expect(specialist.noteText).not.toContain("Standard Ja");
     expect(patient.noteText).toContain("Bitte kommen Sie zum vereinbarten Termin.");
@@ -1069,6 +1176,78 @@ describe("Dokumentationsbausteine der Praxisbibliothek", () => {
     expect(emptyOption.noteText).not.toContain("Standard Nein");
     expect(emptyOption.semanticDocument.sections.flatMap((section) => section.items)).toHaveLength(0);
     expect(emptyVariant.semanticDocument.sections.flatMap((section) => section.items)).toHaveLength(0);
+  });
+
+  it("unterscheidet in der Projektion bewusst keine Ausgabe von fehlender Konfiguration", () => {
+    const definition = buildPracticeDocumentationBlockDefinition({
+      title: "Therapieempfehlung",
+      blockType: "selection",
+      options: [{ value: "requested", label: "Erbeten", documentationText: "Standardtext" }],
+      outputVariants: {
+        patientenbrief: {
+          optionTexts: { __primary: { requested: { outputMode: "none" } } },
+        },
+        krankenblatt: {},
+      },
+    });
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const questionId = frozenBlocks[0]!.questions[0]!.id;
+
+    const intentionallyOmitted = buildPracticeOutputProjection({
+      answers: { [questionId]: "requested" },
+      frozenBlocks,
+      outputVariantId: "patientenbrief",
+    });
+    const unconfigured = buildPracticeOutputProjection({
+      answers: { [questionId]: "requested" },
+      frozenBlocks,
+      outputVariantId: "krankenblatt",
+    });
+
+    expect(intentionallyOmitted.outputStatus).toBe("none");
+    expect(intentionallyOmitted.compactText).toBe("");
+    expect(unconfigured.outputStatus).toBe("unconfigured");
+  });
+
+  it("ordnet variantenspezifische Texte auch nach generierten Options-IDs korrekt zu", () => {
+    const validation = validatePracticeDocumentationBlock({
+      title: "Zweck der Überweisung",
+      blockType: "selection",
+      options: [{ label: "Fachärztliche Abklärung", documentationText: "Standardtext" }],
+      outputVariants: {
+        krankenblatt: {
+          optionTexts: {
+            __primary: {
+              "Fachärztliche Abklärung": {
+                documentationSegments: [
+                  { kind: "text", text: "Abklärung veranlasst: " },
+                  { kind: "answerRef", fieldId: "__primary" },
+                  { kind: "text", text: "." },
+                ],
+              },
+            },
+          },
+        },
+      },
+    });
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+
+    const definition = buildPracticeDocumentationBlockDefinition(validation.value);
+    const frozenBlocks = resolvePracticeDocumentationBlocks([{ definition }]);
+    const question = frozenBlocks[0]!.questions[0]!;
+    const selectedOption = question.options?.[0];
+    expect(typeof selectedOption).toBe("object");
+    if (!selectedOption || typeof selectedOption === "string") return;
+
+    const projection = buildPracticeOutputProjection({
+      answers: { [question.id]: selectedOption.value },
+      frozenBlocks,
+      outputVariantId: "krankenblatt",
+    });
+
+    expect(projection.noteText).toContain("Abklärung veranlasst:");
+    expect(projection.noteText).not.toBe("");
   });
 
   it("behält Varianten-Options-IDs beim Ergänzen eines bestehenden Bausteins", () => {

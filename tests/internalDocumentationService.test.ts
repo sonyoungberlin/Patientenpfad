@@ -434,6 +434,63 @@ describe("internal documentation service", () => {
     expect(db.updateMany.mock.calls[0][0].data.answers.CARE_PLAN_HA_NOTES).toHaveLength(120);
   });
 
+  it("liefert nach einmaligem Speichern nur die Kurzfassung aus dem Frozen-Snapshot", async () => {
+    const block: FrozenBlock = {
+      id: "practice_block_summary",
+      label: "Verlauf",
+      displayOrder: 1,
+      initiallyVisible: true,
+      conditionalRules: [],
+      outputSemantics: "documented-content-v1",
+      section: 1,
+      order: 0,
+      questions: [{ id: "SUMMARY_ANSWER", text: "Befund", type: "textarea", required: false }],
+      documentationOutputVariants: {
+        krankenblatt: { outputMode: "text", documentationText: "Kurzfassung aus Snapshot" },
+        facharztbrief: { outputMode: "text", documentationText: "Facharztbrief aus Snapshot" },
+        patientenbrief: { outputMode: "text", documentationText: "Patientenbrief aus Snapshot" },
+      },
+    };
+    db.findUnique.mockResolvedValue({
+      status: "pending",
+      session_kind: "internal_documentation",
+      source: "practice_direct",
+      internal_workflow_id: null,
+      owner_practice_id: "practice-1",
+      created_by_kiosk_device_id: null,
+      deleted_at: null,
+      patient_reference: "81426",
+      selected_block_ids: [block.id],
+      deduplicated_questions: block.questions,
+      frozen_blocks: {
+        schemaVersion: 2,
+        metadata: {
+          documentTitleOption: "bericht",
+          documentTitle: "Bericht",
+          outputVariantIds: ["krankenblatt", "facharztbrief", "patientenbrief"],
+        },
+        blocks: [block],
+      },
+    });
+
+    const result = await submitInternalDocumentationSession({
+      sessionId: "session-1",
+      answers: { SUMMARY_ANSWER: "Befund dokumentiert" },
+      context: { kind: "practice", practiceId: "practice-1", accountId: "account-1" },
+    });
+
+    expect(db.updateMany).toHaveBeenCalledTimes(1);
+    expect(db.updateMany.mock.calls[0][0].data).toMatchObject({
+      status: "completed",
+      answers: { SUMMARY_ANSWER: "Befund dokumentiert" },
+    });
+    expect(result?.medicalRecordSummary).toEqual({
+      status: "text",
+      text: "Kurzfassung aus Snapshot",
+    });
+    expect(result).not.toHaveProperty("outputVariants");
+  });
+
   it("akzeptiert den internen Steckbrief-Submit mit leeren optionalen Auswahlfeldern und verborgenem Zusatzfeld", async () => {
     db.findUnique.mockResolvedValue({
       status: "pending",

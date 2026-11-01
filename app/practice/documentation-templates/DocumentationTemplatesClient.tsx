@@ -28,6 +28,7 @@ type AvailableBlock = {
   title: string;
   allowedTemplateCategories?: Array<"documentation" | "profile">;
   outputVariantIds?: string[];
+  outputTextVariantIds?: string[];
 };
 
 export default function DocumentationTemplatesClient({
@@ -63,6 +64,12 @@ export default function DocumentationTemplatesClient({
       }),
     }))
     .filter(({ blocks }) => blocks.length > 0);
+  const emptyOutputWarnings = PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS
+    .filter(({ id }) => outputVariantIds.includes(id) && blockLayout.length > 0)
+    .filter(({ label }) => !outputWarnings.some((warning) => warning.label === label))
+    .filter(({ id }) => !blockLayout.some(({ blockId }) => (
+      availableBlocks.find((block) => block.id === blockId)?.outputTextVariantIds?.includes(id)
+    )));
 
   useEffect(() => {
     if (!editingId || !editorFormRef.current) return;
@@ -234,9 +241,14 @@ export default function DocumentationTemplatesClient({
         </fieldset>
         {blockLayout.length > 0 && <InternalDocumentationBlockOrganizer placements={blockLayout} blockLabels={blockLabels} onChange={setBlockLayout} disabled={busy} />}
         {outputWarnings.length > 0 && <div role="status" className="text-muted">
-          <strong>Für diese Ausgaben fehlen Bausteinformulierungen:</strong>
+          <strong>Für diese Ausgaben fehlen Festlegungen an Bausteinen:</strong>
           <ul>{outputWarnings.map(({ label, blocks }) => <li key={label}>{label}: {blocks.join(", ")}</li>)}</ul>
-          <p>Fehlende Formulierungen werden nicht durch Ersatztexte ergänzt.</p>
+          <p>„Nicht relevant“ gilt als bewusste Festlegung; fehlende Konfiguration wird nicht durch Ersatztexte ergänzt.</p>
+        </div>}
+        {emptyOutputWarnings.length > 0 && <div role="status" className="text-muted">
+          <strong>Für diese Ausgaben ist in den ausgewählten Bausteinen kein Text vorhanden:</strong>
+          <ul>{emptyOutputWarnings.map(({ label }) => <li key={label}>{label}</li>)}</ul>
+          <p>Prüfen Sie, ob diese Ausgabe in der Vorlage sinnvoll ist.</p>
         </div>}
         {error && <p role="alert" className="text-error">{error}</p>}
         <div style={{ display: "flex", gap: "0.5rem" }}>

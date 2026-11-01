@@ -7,6 +7,33 @@ import {
   type PdfRenderOptions,
 } from "./pdfRenderer";
 import { resolveQuestionnairePdfOptions } from "./questionnaireExportService";
+import { getInternalDocumentOutputVariantIds } from "./frozenBlocks";
+
+export type InternalDocumentationLetterVariantId = "facharztbrief" | "patientenbrief";
+
+export class InternalDocumentationVariantError extends Error {
+  constructor(message: string, readonly status: 400 | 409) {
+    super(message);
+    this.name = "InternalDocumentationVariantError";
+  }
+}
+
+function resolveLetterVariant(
+  session: InternalDocumentationArtifactSession,
+  outputVariantId: string,
+) {
+  if (outputVariantId !== "facharztbrief" && outputVariantId !== "patientenbrief") {
+    throw new InternalDocumentationVariantError("Unbekannte Dokumentausgabe.", 400);
+  }
+  if (!getInternalDocumentOutputVariantIds(session.frozen_blocks).includes(outputVariantId)) {
+    throw new InternalDocumentationVariantError("Diese Ausgabe ist in der Sitzung nicht aktiviert.", 409);
+  }
+  const output = buildQuestionnaireInboxDetail(session).outputVariants?.find(({ id }) => id === outputVariantId);
+  if (!output || !output.noteText.trim()) {
+    throw new InternalDocumentationVariantError("Für diese Ausgabe ist kein Text vorhanden.", 409);
+  }
+  return output;
+}
 
 export type InternalDocumentationArtifactSession = {
   patient_reference: string | null;
@@ -31,11 +58,15 @@ export type InternalDocumentationArtifact = {
 export async function buildInternalDocumentationPdfArtifact(
   session: InternalDocumentationArtifactSession,
   options: PdfRenderOptions = resolveQuestionnairePdfOptions(session),
+  outputVariantId?: string,
 ): Promise<InternalDocumentationArtifact> {
   const metadata = resolveInternalDocumentationExportMetadata(session);
+  const output = outputVariantId ? resolveLetterVariant(session, outputVariantId) : undefined;
+  const variantSuffix = outputVariantId ? `-${outputVariantId}` : "";
   const pdf = await buildQuestionnairePdfBytes(session, {
     ...options,
-    filename: `${metadata.baseFilename}.pdf`,
+    filename: `${metadata.baseFilename}${variantSuffix}.pdf`,
+    ...(output ? { semanticDocument: output.semanticDocument } : {}),
   });
 
   return {
@@ -47,8 +78,18 @@ export async function buildInternalDocumentationPdfArtifact(
 
 export function buildInternalDocumentationXmlArtifact(
   session: InternalDocumentationArtifactSession,
+  outputVariantId?: string,
 ): InternalDocumentationArtifact {
   const metadata = resolveInternalDocumentationExportMetadata(session);
+  const output = outputVariantId ? resolveLetterVariant(session, outputVariantId) : undefined;
+  const variantSuffix = outputVariantId ? `-${outputVariantId}` : "";
+  if (output) {
+    return {
+      bytes: new TextEncoder().encode(buildStructuredAppXml(output.semanticDocument)),
+      filename: `${metadata.baseFilename}${variantSuffix}.xml`,
+      mimeType: "application/xml; charset=utf-8",
+    };
+  }
   const detail = buildQuestionnaireInboxDetail(session);
   if (!detail.semanticDocument) {
     throw new Error("Strukturiertes Dokument für internen XML-Export fehlt.");
@@ -64,16 +105,19 @@ export function buildInternalDocumentationXmlArtifact(
 
 export function buildInternalDocumentationGdtArtifact(
   session: InternalDocumentationArtifactSession,
+  outputVariantId?: string,
 ): InternalDocumentationArtifact | null {
   const metadata = resolveInternalDocumentationExportMetadata(session);
   if (!metadata.patientReference) return null;
+  const output = outputVariantId ? resolveLetterVariant(session, outputVariantId) : undefined;
+  const variantSuffix = outputVariantId ? `-${outputVariantId}` : "";
 
   return {
     bytes: buildQuestionnaireGdtBytes({
       patientReference: metadata.patientReference,
-      documentationText: metadata.gdtText,
+      documentationText: output?.noteText ?? metadata.gdtText,
     }),
-    filename: `${metadata.baseFilename}.gdt`,
+    filename: `${metadata.baseFilename}${variantSuffix}.gdt`,
     mimeType: "application/octet-stream",
   };
 }

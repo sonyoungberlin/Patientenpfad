@@ -17,13 +17,13 @@ import {
 } from "@/lib/questionnaire/documentedContent";
 import { validateFrozenAnswers } from "@/lib/questionnaire/validateFrozenAnswers";
 import { buildQuestionnaireInboxDetail } from "@/lib/questionnaire/inboxDetail";
-import { normalizeInternalBlockPlacements } from "@/lib/questionnaire/internalBlockLayout";
 import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
 import {
   InternalDocumentTitleValidationError,
   resolveInternalDocumentTitle,
 } from "@/lib/questionnaire/internalDocumentTitle";
 import { normalizeXComfortPatientReference } from "@/lib/questionnaire/patientReference";
+import { normalizeInternalBlockPlacements } from "@/lib/questionnaire/internalBlockLayout";
 import {
   PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS,
   resolvePracticeDocumentationBlocks,
@@ -159,7 +159,7 @@ export async function createInternalDocumentationSession(input: {
       selectedBlockIds,
       input.blockLayout,
     );
-  } catch {
+  } catch (cause) {
     throw new InternalDocumentationError(
       "Dokumentationsbausteine konnten nicht verarbeitet werden.",
       400,
@@ -207,7 +207,7 @@ export async function createInternalDocumentationSession(input: {
   let result;
   try {
     result = await createQuestionnaireSession({
-      selectedBlockIds: [...selectedBlockIds],
+      selectedBlockIds,
       patientReference,
       patientLanguage: "de",
       sessionKind: "internal_documentation",
@@ -241,7 +241,7 @@ export async function submitInternalDocumentationSession(input: {
   noteText: string;
   semanticDocument: SemanticDocument | null;
   xmlFilename: string | null;
-  outputVariants?: NonNullable<ReturnType<typeof buildQuestionnaireInboxDetail>["outputVariants"]>;
+  medicalRecordSummary?: NonNullable<ReturnType<typeof buildQuestionnaireInboxDetail>["medicalRecordSummary"]>;
 } | null> {
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { id: input.sessionId },
@@ -426,11 +426,11 @@ export async function submitInternalDocumentationSession(input: {
     session_kind: session.session_kind,
     internal_workflow_id: session.internal_workflow_id,
   });
-  if (input.context.kind === "practice" && !detail.outputVariants?.length) return null;
+  if (input.context.kind === "practice" && !detail.medicalRecordSummary) return null;
   return {
     noteText: detail.noteText,
     semanticDocument: detail.semanticDocument,
     xmlFilename: detail.xmlFilename,
-    ...(detail.outputVariants?.length ? { outputVariants: detail.outputVariants } : {}),
+    ...(detail.medicalRecordSummary ? { medicalRecordSummary: detail.medicalRecordSummary } : {}),
   };
 }

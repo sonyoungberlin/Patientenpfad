@@ -116,7 +116,26 @@ export default function QuestionnaireDetailsDisclosure({ sessionId }: Props) {
               )}
             </section>
           )}
-          {detail.outputVariants?.length ? (
+          {detail.isInternalDocumentation ? <>
+            <section data-q-full-documentation={sessionId} style={{ display: "grid", gap: "0.4rem", marginBottom: "0.75rem" }}>
+              <strong>Vollständige Dokumentation</strong>
+              <pre data-q-full-documentation-text style={{ whiteSpace: "pre-wrap", font: "inherit", margin: 0 }}>
+                {detail.noteText || "Keine Dokumentation vorhanden."}
+              </pre>
+              <MedicalRecordNoteCopyButton
+                sessionId={sessionId}
+                noteText={detail.noteText}
+                label="Vollständige Dokumentation kopieren"
+              />
+            </section>
+            {detail.outputVariants?.length ? (
+              <InternalDocumentationOutputSelector
+                outputs={detail.outputVariants}
+                sessionId={sessionId}
+                filename={detail.xmlFilename ?? `${sessionId}.xml`}
+              />
+            ) : null}
+          </> : detail.outputVariants?.length ? (
             <InternalDocumentationOutputSelector
               outputs={detail.outputVariants}
               sessionId={sessionId}

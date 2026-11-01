@@ -426,7 +426,7 @@ describe("interne Kiosk-Dokumentation", () => {
     });
   });
 
-  it("liefert nach blockbasierter Impfberatung kanonischen Text und XML-Dateinamen", async () => {
+  it("liefert nach blockbasierter Impfberatung nur den Kurztextstatus", async () => {
     const frozenBlocks = buildInternalDocumentationFrozenBlocks(["VACCINATION_REVIEW"]);
     const answers = {
       VACCINATION_REVIEW_ITEMS: JSON.stringify([{
@@ -455,9 +455,9 @@ describe("interne Kiosk-Dokumentation", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.noteText).not.toContain("Interne Dokumentation");
-    expect(body.noteText).toContain("Impfungen");
-    expect(body.xmlFilename).toMatch(/^\d{8}_PAT1_Interne_Dokumentation\.xml$/);
+    expect(body.medicalRecordSummary).toEqual({ status: "unconfigured", text: "" });
+    expect(body.noteText).toBeUndefined();
+    expect(body.outputVariants).toBeUndefined();
   });
 
   it("lehnt eine manipulierte v2-Impf-ID nach Sanitizing über die Frozen-Allowlist ab", async () => {

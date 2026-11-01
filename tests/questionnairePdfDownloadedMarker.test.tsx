@@ -205,6 +205,16 @@ describe("QuestionnaireCard — PDF-Status-Anzeige", () => {
     expect(html).toContain('data-q-pdf-downloaded="false"');
   });
 
+  it("kennzeichnet interne Karten-PDFs als vollständige Dokumentation", () => {
+    const html = renderToStaticMarkup(QuestionnaireCard({
+      ...unassignedProps,
+      sessionKind: "internal_documentation",
+    }));
+    expect(html).toContain("Vollständige Dokumentation als PDF herunterladen");
+    expect(html).toContain("Vollständige Dokumentation als XML herunterladen");
+    expect(html).toContain("Standard-GDT-Systemvermerk herunterladen");
+  });
+
   it('zeigt "PDF erneut herunterladen" + Häkchen-Hinweis, wenn pdfDownloadedAt gesetzt', () => {
     const html = renderToStaticMarkup(
       QuestionnaireCard({

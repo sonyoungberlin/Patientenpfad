@@ -39,13 +39,12 @@ export const PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS = [
 ] as const;
 
 export type PracticeDocumentationVariantOutputTextInput = {
+  outputMode?: "text" | "none";
   documentationText?: string;
   documentationSegments?: PracticeDocumentationSegmentInput[];
 };
 
-export type PracticeDocumentationOutputVariantInput = {
-  documentationText?: string;
-  documentationSegments?: PracticeDocumentationSegmentInput[];
+export type PracticeDocumentationOutputVariantInput = PracticeDocumentationVariantOutputTextInput & {
   sharedDocumentationText?: string;
   fieldTexts?: Record<string, PracticeDocumentationVariantOutputTextInput>;
   optionTexts?: Record<string, Record<string, PracticeDocumentationVariantOutputTextInput>>;
@@ -79,16 +78,62 @@ function hasOutputVariantText(raw: PracticeDocumentationVariantOutputTextInput):
   return Boolean(raw.documentationText?.trim()) || hasOutputVariantSegments(raw.documentationSegments);
 }
 
-export function getPracticeDocumentationConfiguredOutputVariantIds(
+function outputVariantEntries(variant: PracticeDocumentationOutputVariantInput): PracticeDocumentationVariantOutputTextInput[] {
+  return [
+    variant,
+    ...Object.values(variant.fieldTexts ?? {}),
+    ...Object.values(variant.optionTexts ?? {}).flatMap((options) => Object.values(options)),
+  ];
+}
+
+export function getPracticeDocumentationOutputVariantIdsWithText(
   definition: PracticeDocumentationBlockDefinition,
 ): string[] {
   return Object.entries(definition.outputVariants ?? {}).flatMap(([variantId, variant]) => {
     const hasOutput = Boolean(variant.documentationText?.trim()) ||
       Boolean(variant.sharedDocumentationText?.trim()) ||
-      Boolean(variant.documentationSegments && hasOutputVariantSegments(variant.documentationSegments)) ||
-      Object.values(variant.fieldTexts ?? {}).some(hasOutputVariantText) ||
-      Object.values(variant.optionTexts ?? {}).some((options) => Object.values(options).some(hasOutputVariantText));
+      outputVariantEntries(variant).some(hasOutputVariantText);
     return hasOutput ? [variantId] : [];
+  });
+}
+
+export function getPracticeDocumentationConfiguredOutputVariantIds(
+  definition: PracticeDocumentationBlockDefinition,
+): string[] {
+  return Object.entries(definition.outputVariants ?? {}).flatMap(([variantId, variant]) => {
+    const rootHasText = hasOutputVariantText(variant);
+    const questionsWithOptions = definition.questions.filter((question) => (question.options?.length ?? 0) > 0);
+    const optionCoverage = questionsWithOptions.length > 0 && questionsWithOptions.every((question) => {
+      const additionalIndex = definition.questions.findIndex((candidate) => candidate.id === question.id) - 1;
+      const fieldKey = question.id === definition.questions[0]?.id
+        ? "__primary"
+        : Object.hasOwn(variant.optionTexts ?? {}, question.id)
+          ? question.id
+          : `__new_${additionalIndex}`;
+      const configuredOptions = variant.optionTexts?.[fieldKey];
+      return question.options!.every((option) => {
+        const output = configuredOptions?.[getQuestionOptionValue(option)] ??
+          (typeof option === "string" ? configuredOptions?.[option] : configuredOptions?.[option.label]);
+        return Boolean(output && (
+          output.outputMode === "none" || output.outputMode === "text" || hasOutputVariantText(output)
+        ));
+      });
+    });
+    const questionsWithoutOptions = definition.questions.slice(1).filter((question) => (question.options?.length ?? 0) === 0);
+    const fieldCoverage = questionsWithoutOptions.length > 0 && questionsWithoutOptions.every((question) => {
+      const fieldIndex = definition.questions.findIndex((candidate) => candidate.id === question.id) - 1;
+      const fieldId = Object.hasOwn(variant.fieldTexts ?? {}, question.id) ? question.id : `__new_${fieldIndex}`;
+      const output = variant.fieldTexts?.[fieldId];
+      return Boolean(output && (
+        output.outputMode === "none" || output.outputMode === "text" || hasOutputVariantText(output)
+      ));
+    });
+    const hasDynamicContent = questionsWithOptions.length > 0 || questionsWithoutOptions.length > 0;
+    const childCoverage = (!questionsWithOptions.length || optionCoverage) &&
+      (!questionsWithoutOptions.length || fieldCoverage);
+    const rootNoneOnly = variant.outputMode === "none" && !hasDynamicContent;
+    const configured = rootHasText || rootNoneOnly || (hasDynamicContent && childCoverage);
+    return configured ? [variantId] : [];
   });
 }
 
@@ -257,6 +302,9 @@ function normalizeDocumentContent(value: unknown, label: string): string {
 
 function normalizeVariantOutputText(raw: unknown): PracticeDocumentationVariantOutputTextInput {
   if (!isRecord(raw)) throw new Error("Ungültiger variantenbezogener Ausgabetext.");
+  if (raw.outputMode !== undefined && raw.outputMode !== "text" && raw.outputMode !== "none") {
+    throw new Error("Ungültiger Status für Varianten-Ausgabetext.");
+  }
   const documentationText = raw.documentationText === undefined
     ? undefined
     : typeof raw.documentationText === "string" && raw.documentationText.trim() === ""
@@ -266,7 +314,15 @@ function normalizeVariantOutputText(raw: unknown): PracticeDocumentationVariantO
     throw new Error("Varianten-Ausgabetext ist ungültig.");
   }
   const documentationSegments = normalizeSegments(raw.documentationSegments);
+  const hasContent = Boolean(documentationText?.trim()) || Boolean(documentationSegments?.length);
+  if (raw.outputMode === "none" && hasContent) {
+    throw new Error("Eine bewusst ausgelassene Ausgabe darf keinen Ausgabetext enthalten.");
+  }
+  if (raw.outputMode === "text" && !hasContent) {
+    throw new Error("Ein vorhandener Ausgabetext darf nicht leer sein.");
+  }
   return {
+    ...(raw.outputMode ? { outputMode: raw.outputMode } : {}),
     ...(documentationText !== undefined ? { documentationText } : {}),
     ...(documentationSegments ? { documentationSegments } : {}),
   };
@@ -865,8 +921,21 @@ function freezeDocumentationOutputVariants(
   definition: PracticeDocumentationBlockDefinition,
 ): FrozenBlock["documentationOutputVariants"] {
   if (!definition.outputVariants) return undefined;
-  const primaryQuestionId = definition.block.questionIds[0];
-  const questionIdForField = (fieldId: string) => fieldId === "__primary" ? primaryQuestionId : fieldId;
+  const questionForField = (fieldId: string) => {
+    if (fieldId === "__primary") return definition.questions[0];
+    const newFieldMatch = /^__new_(\d+)$/.exec(fieldId);
+    if (newFieldMatch) return definition.questions[Number(newFieldMatch[1]) + 1];
+    return definition.questions.find((question) => question.id === fieldId);
+  };
+  const questionIdForField = (fieldId: string) => questionForField(fieldId)?.id ?? fieldId;
+  const optionValueForField = (fieldId: string, value: string) => {
+    const options = questionForField(fieldId)?.options ?? [];
+    const option = options.find((candidate) => (
+      getQuestionOptionValue(candidate) === value ||
+      (typeof candidate !== "string" && candidate.label === value)
+    ));
+    return option ? getQuestionOptionValue(option) : value;
+  };
   const mapSegments = (segments: PracticeDocumentationSegmentInput[]): DocumentationSegment[] =>
     segments.map((segment) => {
       if (segment.kind === "text") return segment;
@@ -876,11 +945,12 @@ function freezeDocumentationOutputVariants(
       return {
         kind: "conditional",
         questionId: questionIdForField(segment.fieldId),
-        optionValue: segment.optionValue,
+        optionValue: optionValueForField(segment.fieldId, segment.optionValue),
         segments: mapSegments(segment.segments),
       };
     });
   const mapOutputText = (output: PracticeDocumentationVariantOutputTextInput) => ({
+    ...(output.outputMode ? { outputMode: output.outputMode } : {}),
     ...(output.documentationText !== undefined ? { documentationText: output.documentationText } : {}),
     ...(output.documentationSegments
       ? { documentationSegments: mapSegments(output.documentationSegments) }
@@ -902,7 +972,7 @@ function freezeDocumentationOutputVariants(
       ...(variant.optionTexts ? {
         optionTexts: Object.fromEntries(Object.entries(variant.optionTexts).map(([fieldId, options]) => [
           questionIdForField(fieldId), Object.fromEntries(Object.entries(options).map(([optionValue, output]) => [
-            optionValue, mapOutputText(output),
+            optionValueForField(fieldId, optionValue), mapOutputText(output),
           ])),
         ])),
       } : {}),

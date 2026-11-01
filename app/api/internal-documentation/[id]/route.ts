@@ -30,7 +30,7 @@ export async function POST(
     });
     return NextResponse.json({
       ok: true,
-      ...(result?.outputVariants?.length ? { outputVariants: result.outputVariants, xmlFilename: result.xmlFilename } : {}),
+      ...(result?.medicalRecordSummary ? { medicalRecordSummary: result.medicalRecordSummary } : {}),
     });
   } catch (cause) {
     if (cause instanceof InternalDocumentationError) {

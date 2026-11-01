@@ -228,6 +228,107 @@ describe("QuestionnaireFormClient Direktabschluss", () => {
     document.body.removeChild(container);
   });
 
+  it("zeigt nach interner Dokumentation nur die Krankenblatt-Kurzfassung mit Kopieraktion", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        medicalRecordSummary: { status: "text", text: "Kontrolle am 10.04." },
+      }),
+    });
+    const { container, root } = await renderForm(
+      "practice_direct",
+      undefined,
+      "81426",
+      undefined,
+      undefined,
+      QUESTIONS,
+      undefined,
+      undefined,
+      "/api/internal-documentation/session-1",
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector("[data-q-medical-record-text]")?.textContent).toBe("Kontrolle am 10.04.");
+    expect(container.querySelector('[data-q-copy-note="token-1-krankenblatt"]')).not.toBeNull();
+    expect(container.querySelector("[data-q-output-variants]")).toBeNull();
+    expect(container.querySelector("[data-q-download-xml]")).toBeNull();
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("zeigt bei fehlender Krankenblatt-Ausgabe einen Hinweis statt einer leeren Kopieraktion", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        medicalRecordSummary: { status: "unconfigured", text: "" },
+      }),
+    });
+    const { container, root } = await renderForm(
+      "practice_direct",
+      undefined,
+      "81426",
+      undefined,
+      undefined,
+      QUESTIONS,
+      undefined,
+      undefined,
+      "/api/internal-documentation/session-1",
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("keine Krankenblatt-Kurzfassung konfiguriert");
+    expect(container.querySelector("[data-q-copy-note]")).toBeNull();
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it("kennzeichnet eine bewusst nicht relevante Krankenblatt-Ausgabe eindeutig", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        medicalRecordSummary: { status: "none", text: "" },
+      }),
+    });
+    const { container, root } = await renderForm(
+      "practice_direct",
+      undefined,
+      "81426",
+      undefined,
+      undefined,
+      QUESTIONS,
+      undefined,
+      undefined,
+      "/api/internal-documentation/session-1",
+    );
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-q-submit]")!.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("bewusst nicht relevant");
+    expect(container.querySelector("[data-q-copy-note]")).toBeNull();
+
+    await act(async () => root.unmount());
+    document.body.removeChild(container);
+  });
+
   it("zeigt im internen Kiosk-Abschluss keine manuellen Exporte", async () => {
     fetchMock.mockResolvedValue({
       ok: true,

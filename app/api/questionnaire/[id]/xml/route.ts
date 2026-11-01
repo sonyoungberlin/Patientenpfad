@@ -3,7 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { requireQuestionnaireInboxAccess } from "@/lib/authz";
 import { ownsSession } from "@/lib/questionnaire/practiceScope";
 import { isPatientSession } from "@/lib/questionnaire/contextFilter";
-import { buildInternalDocumentationXmlArtifact } from "@/lib/questionnaire/internalDocumentationArtifacts";
+import {
+  buildInternalDocumentationXmlArtifact,
+  InternalDocumentationVariantError,
+} from "@/lib/questionnaire/internalDocumentationArtifacts";
 import { isQuestionnaireExportFinal } from "@/lib/questionnaire/exportFinality";
 import { isQuestionnaireVisibleToPractice } from "@/lib/websiteForms/practiceVisibility";
 
@@ -14,6 +17,7 @@ export async function GET(
   const { account, error } = await requireQuestionnaireInboxAccess(req);
   if (error) return error;
   const { id } = await params;
+  const outputVariantId = req.nextUrl.searchParams.get("outputVariantId") ?? undefined;
 
   const session = await prisma.patientQuestionnaireSession.findUnique({
     where: { id },
@@ -52,12 +56,20 @@ export async function GET(
     return Response.json({ ok: false, error: "Session nicht gefunden." }, { status: 404 });
   }
 
-  const xml = buildInternalDocumentationXmlArtifact({
-    ...session,
-    submitted_at: session.submitted_at,
-    submitted_by: session.submitted_by,
-    session_kind: "internal_documentation",
-  });
+  let xml;
+  try {
+    xml = buildInternalDocumentationXmlArtifact({
+      ...session,
+      submitted_at: session.submitted_at,
+      submitted_by: session.submitted_by,
+      session_kind: "internal_documentation",
+    }, outputVariantId);
+  } catch (cause) {
+    if (cause instanceof InternalDocumentationVariantError) {
+      return Response.json({ ok: false, error: cause.message }, { status: cause.status });
+    }
+    throw cause;
+  }
 
   return new Response(Buffer.from(xml.bytes), {
     headers: {

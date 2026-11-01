@@ -39,6 +39,7 @@ import AppTextXmlDownloadButton from "@/components/questionnaire/AppTextXmlDownl
 import InternalDocumentationOutputSelector, {
   type InternalDocumentationOutput,
 } from "@/components/questionnaire/InternalDocumentationOutputSelector";
+import MedicalRecordNoteCopyButton from "@/components/questionnaire/MedicalRecordNoteCopyButton";
 import QuestionnaireAutoDownloadController from "@/components/questionnaire/QuestionnaireAutoDownloadController";
 import type { SemanticDocument } from "@/lib/questionnaire/appTextXml";
 
@@ -1145,6 +1146,10 @@ export function QuestionnaireFormClient({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [medicalRecordSummary, setMedicalRecordSummary] = useState<{
+    status: "text" | "none" | "empty" | "unconfigured";
+    text: string;
+  } | null>(null);
   const [xmlExport, setXmlExport] = useState<{
     noteText: string;
     filename: string;
@@ -1345,6 +1350,7 @@ export function QuestionnaireFormClient({
         xmlFilename?: string | null;
         semanticDocument?: SemanticDocument | null;
         outputVariants?: InternalDocumentationOutput[];
+        medicalRecordSummary?: { status: "text" | "none" | "empty" | "unconfigured"; text: string };
         sessionId?: string;
         inquiry_session_id?: string | null;
         invalidQuestionIds?: string[];
@@ -1366,7 +1372,9 @@ export function QuestionnaireFormClient({
         return;
       }
 
-      if (data?.xmlFilename && (data.noteText || data.outputVariants?.length)) {
+      if (data?.medicalRecordSummary) {
+        setMedicalRecordSummary(data.medicalRecordSummary);
+      } else if (data?.xmlFilename && (data.noteText || data.outputVariants?.length)) {
         setXmlExport({
           noteText: data.noteText ?? "",
           filename: data.xmlFilename,
@@ -1396,8 +1404,26 @@ export function QuestionnaireFormClient({
         {autoDownloadSessionId ? (
           <QuestionnaireAutoDownloadController sessionId={autoDownloadSessionId} />
         ) : null}
-        {xmlExport && !hideManualExports ? null : <h2>{t.completedTitle}</h2>}
+        {medicalRecordSummary || !xmlExport || hideManualExports ? <h2>{t.completedTitle}</h2> : null}
         <p>{t.completedThanks}</p>
+        {medicalRecordSummary && <section data-q-medical-record-summary style={{ display: "grid", gap: "0.4rem", marginTop: "0.75rem" }}>
+          <h3 style={{ margin: 0 }}>Krankenblatt-Kurzfassung</h3>
+          {medicalRecordSummary.status === "text" && medicalRecordSummary.text.trim() ? <>
+            <pre data-q-medical-record-text style={{ whiteSpace: "pre-wrap", font: "inherit", margin: 0 }}>
+              {medicalRecordSummary.text}
+            </pre>
+            <MedicalRecordNoteCopyButton
+              sessionId={`${token}-krankenblatt`}
+              noteText={medicalRecordSummary.text}
+            />
+          </> : <p data-q-medical-record-empty style={{ margin: 0 }}>
+            {medicalRecordSummary.status === "unconfigured"
+              ? "Für diese Vorlage ist keine Krankenblatt-Kurzfassung konfiguriert."
+              : medicalRecordSummary.status === "none"
+                ? "Die Krankenblatt-Kurzfassung ist für diese Antwort bewusst nicht relevant."
+              : "Für diese Antworten ist keine Krankenblatt-Kurzfassung verfügbar; die Angaben wurden gespeichert."}
+          </p>}
+        </section>}
         {selfCheckInQrReference ? (
           <SelfCheckInQrCode reference={selfCheckInQrReference} />
         ) : null}

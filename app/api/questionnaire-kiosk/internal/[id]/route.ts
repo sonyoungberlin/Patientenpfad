@@ -30,7 +30,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             accountId: access.accountId,
           },
     });
-    return NextResponse.json({ ok: true, ...exportData });
+    return NextResponse.json(exportData?.medicalRecordSummary
+      ? { ok: true, medicalRecordSummary: exportData.medicalRecordSummary }
+      : { ok: true, ...exportData });
   } catch (cause) {
     if (cause instanceof InternalDocumentationError) {
       const invalidQuestionIds = (cause as InternalDocumentationError & {

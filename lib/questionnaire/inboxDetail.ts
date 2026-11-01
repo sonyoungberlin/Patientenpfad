@@ -48,6 +48,11 @@ export type QuestionnaireInboxDetail = {
   visibleQuestionIds: string[];
   digitalRequestContext: DigitalRequestInboxContext | null;
   documentKind: "documentation" | "profile";
+  isInternalDocumentation: boolean;
+  medicalRecordSummary?: {
+    status: "text" | "none" | "empty" | "unconfigured";
+    text: string;
+  };
   outputVariants?: Array<{
     id: string;
     label: string;
@@ -153,7 +158,7 @@ export function buildQuestionnaireInboxDetail(
   const outputVariantIds = session.session_kind === "internal_documentation" && frozenBlocks
     ? getInternalDocumentOutputVariantIds(session.frozen_blocks)
     : [];
-  const outputVariants = outputVariantIds.flatMap((id) => {
+  const projections = new Map(outputVariantIds.flatMap((id) => {
     const variant = PRACTICE_DOCUMENTATION_OUTPUT_VARIANTS.find((candidate) => candidate.id === id);
     if (!variant || !frozenBlocks) return [];
     const projection = buildPracticeOutputProjection({
@@ -162,8 +167,21 @@ export function buildQuestionnaireInboxDetail(
       outputVariantId: id,
       documentTitle: getInternalDocumentTitle(session.frozen_blocks),
     });
-    return [{ id, label: variant.label, ...projection }];
-  });
+    return [[id, { variant, projection }] as const];
+  }));
+  const medicalRecordProjection = projections.get("krankenblatt")?.projection;
+  const medicalRecordSummary = session.session_kind === "internal_documentation" && isNewBlockBased
+    ? medicalRecordProjection?.compactText.trim()
+      ? { status: "text" as const, text: medicalRecordProjection.compactText.trim() }
+      : { status: medicalRecordProjection?.outputStatus ?? "unconfigured" as const, text: "" }
+    : undefined;
+  const outputVariants = outputVariantIds
+    .filter((id) => id === "facharztbrief" || id === "patientenbrief")
+    .flatMap((id) => {
+      const output = projections.get(id);
+      if (!output?.projection.noteText.trim()) return [];
+      return [{ id, label: output.variant.label, ...output.projection }];
+    });
 
   return {
     questions,
@@ -180,6 +198,8 @@ export function buildQuestionnaireInboxDetail(
     visibleQuestionIds: [...visibleQuestionIds],
     digitalRequestContext: parseDigitalRequestInboxContext(session.digital_request_snapshot),
     documentKind: getInternalDocumentKind(session.frozen_blocks),
+    isInternalDocumentation: session.session_kind === "internal_documentation",
+    ...(medicalRecordSummary ? { medicalRecordSummary } : {}),
     ...(outputVariants.length > 0 ? { outputVariants } : {}),
     xmlFilename: session.session_kind === "internal_documentation" && (isNewBlockBased || internalWorkflow)
       ? buildQuestionnaireExportFilename(

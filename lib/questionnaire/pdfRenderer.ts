@@ -35,6 +35,7 @@ import {
 import { resolveInlineDocumentation } from "./inlineDocumentation";
 import { formatStructuredVaccinationEntries } from "./vaccinationReview";
 import { formatDigitalRequestSnapshot } from "./digitalRequestSnapshot";
+import type { SemanticDocument } from "./appTextXml";
 
 export { sanitizeFilenamePart } from "./questionnaireExportFilename";
 
@@ -68,6 +69,8 @@ export type PdfRenderOptions = {
   omitUnanswered?: boolean;
   /** Unterdrückt ein Fragenlabel, wenn es exakt der Blocküberschrift entspricht. */
   omitMatchingBlockQuestionLabels?: boolean;
+  /** Direkte semantische Ausgabe einer internen Dokumentvariante. */
+  semanticDocument?: SemanticDocument;
   /** Interne Workflows können vollständig leere Blocks gezielt auslassen. */
   omitEmptyBlocksInPdf?: boolean;
   patientCopy?: { returnEmail: string };
@@ -397,6 +400,47 @@ export async function buildQuestionnairePdfBytes(
   }
 
   y -= sectionGap;
+
+  if (opts.semanticDocument) {
+    drawText(opts.semanticDocument.documentTitle ?? title, { size: 16, bold: true });
+    y -= 4;
+    for (const section of opts.semanticDocument.sections) {
+      if (section.items.length === 0) continue;
+      y -= sectionGap;
+      for (const item of section.items) {
+        if (item.type === "heading") {
+          if (item.headingVisibility === "spacingOnly") continue;
+          drawTextBlock(item.text, {
+            size: item.headingLevel === 1 ? 11 : 10,
+            bold: true,
+            lineHeight,
+          });
+          y -= 2;
+        } else {
+          drawWrappedValue(item.text);
+        }
+      }
+    }
+    if (patientSignature.required) {
+      ensureSpace(lineHeight * 6);
+      y -= sectionGap;
+      const submittedDate = session.submitted_at
+        ? session.submitted_at.toLocaleDateString("de-DE", { dateStyle: "short", timeZone: "Europe/Berlin" })
+        : "–";
+      drawText(`Ort, Datum: ${patientSignature.city ? `${patientSignature.city}, ` : ""}${submittedDate}`, { size: 10 });
+      y -= 4;
+      drawText("Unterschrift Patient/in:", { size: 10, bold: true });
+      y -= 5;
+      drawText("________________________________", { size: 10 });
+    }
+    const bytes = await pdfDoc.save();
+    const filename = opts.filename ?? buildQuestionnaireExportFilename(session, {
+      blockCatalog,
+      filenameLabel: opts.filenameLabel,
+      extension: "pdf",
+    });
+    return { bytes, filename };
+  }
 
   for (const section of blockSections) {
     const snapshotBlock = renderBlocks.find((block) => block.id === section.id);

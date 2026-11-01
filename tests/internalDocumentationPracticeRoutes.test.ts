@@ -143,17 +143,7 @@ describe("practice internal documentation routes", () => {
 
   it("gibt Variantenprojektionen nach dem einmaligen Praxis-Submit zurück", async () => {
     submitSession.mockResolvedValue({
-      outputVariants: [{
-        id: "patientenbrief",
-        label: "Patientenbrief",
-        noteText: "Patiententext",
-        semanticDocument: { sections: [
-          { slot: 1, items: [] },
-          { slot: 2, items: [] },
-          { slot: 3, items: [] },
-        ] },
-      }],
-      xmlFilename: "dokument.xml",
+      medicalRecordSummary: { status: "text", text: "Kurztext" },
     });
     const response = await submitRoute(
       request("/api/internal-documentation/session-1", { answers: { note: "Inhalt" } }),
@@ -162,8 +152,7 @@ describe("practice internal documentation routes", () => {
 
     expect(await response.json()).toMatchObject({
       ok: true,
-      xmlFilename: "dokument.xml",
-      outputVariants: [expect.objectContaining({ id: "patientenbrief", noteText: "Patiententext" })],
+      medicalRecordSummary: { status: "text", text: "Kurztext" },
     });
   });
 });
