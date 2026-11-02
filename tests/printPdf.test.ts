@@ -43,4 +43,19 @@ describe("buildPrintPdf", () => {
     expect(pdf.getPageCount()).toBe(1);
     expect(extractText(bytes)).toContain("Seite 1 von 1");
   });
+
+  it("normalisiert nicht unterstützte Unicode-Zeichen vor der WinAnsi-PDF-Ausgabe", async () => {
+    const bytes = await buildPrintPdf("Übersicht → 😀", [{
+      kind: "paragraph",
+      text: "Pfeil →; Umlaute ä, ö, ü, Ä, Ö, Ü; ß; Emoji 😀; Schriftzeichen 漢.",
+    }], new Date("2026-10-23T12:00:00.000Z"));
+    const pdf = await PDFDocument.load(bytes);
+    const text = extractText(bytes);
+
+    expect(pdf.getPageCount()).toBe(1);
+    expect(text).toContain("Übersicht -> ?");
+    expect(text).toContain("Pfeil ->;");
+    expect(text).toContain("Umlaute ä, ö, ü, Ä, Ö, Ü; ß");
+    expect(text).toContain("Emoji ?; Schriftzeichen ?.");
+  });
 });

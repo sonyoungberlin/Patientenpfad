@@ -14,9 +14,26 @@ const MARGIN_RIGHT = 48;
 const MARGIN_BOTTOM = 48;
 const LINE_HEIGHT = 13;
 
+function normalizePdfText(text: string, font: PDFFont): string {
+  const normalized = normalizeTextForPvs(text).replaceAll("→", "->");
+  try {
+    font.encodeText(normalized);
+    return normalized;
+  } catch {
+    return [...normalized].map((character) => {
+      try {
+        font.encodeText(character);
+        return character;
+      } catch {
+        return "?";
+      }
+    }).join("");
+  }
+}
+
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const lines: string[] = [];
-  for (const paragraph of normalizeTextForPvs(text).replaceAll("\r\n", "\n").split("\n")) {
+  for (const paragraph of normalizePdfText(text, font).replaceAll("\r\n", "\n").split("\n")) {
     if (!paragraph) {
       lines.push("");
       continue;
@@ -56,7 +73,8 @@ export async function buildPrintPdf(
   let y = 0;
 
   const drawPageHeader = () => {
-    page.drawText(normalizeTextForPvs(title), {
+    const normalizedTitle = normalizePdfText(title, bold);
+    page.drawText(normalizedTitle, {
       x: MARGIN_LEFT,
       y: PAGE_HEIGHT - 42,
       size: 11,
@@ -64,8 +82,9 @@ export async function buildPrintPdf(
       color: rgb(0, 0, 0),
     });
     const dateLabel = `Druckdatum: ${new Intl.DateTimeFormat("de-DE").format(printedAt)}`;
-    const dateWidth = regular.widthOfTextAtSize(normalizeTextForPvs(dateLabel), 9);
-    page.drawText(normalizeTextForPvs(dateLabel), {
+    const normalizedDateLabel = normalizePdfText(dateLabel, regular);
+    const dateWidth = regular.widthOfTextAtSize(normalizedDateLabel, 9);
+    page.drawText(normalizedDateLabel, {
       x: PAGE_WIDTH - MARGIN_RIGHT - dateWidth,
       y: PAGE_HEIGHT - 42,
       size: 9,
@@ -134,8 +153,9 @@ export async function buildPrintPdf(
 
   pages.forEach((pageToNumber, index) => {
     const label = `Seite ${index + 1} von ${pages.length}`;
-    const width = regular.widthOfTextAtSize(label, 8);
-    pageToNumber.drawText(label, {
+    const normalizedLabel = normalizePdfText(label, regular);
+    const width = regular.widthOfTextAtSize(normalizedLabel, 8);
+    pageToNumber.drawText(normalizedLabel, {
       x: PAGE_WIDTH - MARGIN_RIGHT - width,
       y: 24,
       size: 8,
