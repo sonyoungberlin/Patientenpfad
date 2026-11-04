@@ -1,7 +1,7 @@
 import { PDFDocument } from "pdf-lib";
 import { buildPrintPdf } from "@/lib/pdf/printPdf";
 import { buildWorkflowCasesPrintBlocks } from "@/lib/workflow/workflowCasesPrintPdf";
-import { WORKFLOW_TOPIC_AU } from "@/lib/workflow/processCatalog";
+import { WORKFLOW_TOPIC_AU, WORKFLOW_TOPIC_HYPERTONIE } from "@/lib/workflow/processCatalog";
 
 const clinicalEntry = {
   kind: "clinical" as const,
@@ -65,5 +65,28 @@ describe("Arbeitsprozess-PDF-Inhalte", () => {
     expect(pages.length).toBeGreaterThan(1);
     expect(pages[0]?.getSize().width).toBeCloseTo(595.28, 0);
     expect(pages[0]?.getSize().height).toBeCloseTo(841.89, 0);
+  });
+
+  it("druckt aktuelle Versorgungshinweise auch für ältere M3-Snapshots", () => {
+    const entry = {
+      ...clinicalEntry,
+      snapshot: {
+        ...clinicalEntry.snapshot,
+        topicId: WORKFLOW_TOPIC_HYPERTONIE,
+        m3Checkpoints: [
+          {
+            id: "HT-C02",
+            title: "Alter allgemeiner Titel",
+            status: "UNKLAR" as const,
+          },
+        ],
+      },
+    };
+    const text = buildWorkflowCasesPrintBlocks([entry], "summary")
+      .map((block) => block.kind === "separator" ? "" : block.text)
+      .join("\n");
+
+    expect(text).toContain("Ziel meist <140/90 Praxis, <135/85 zu Hause");
+    expect(text).not.toContain("Alter allgemeiner Titel");
   });
 });

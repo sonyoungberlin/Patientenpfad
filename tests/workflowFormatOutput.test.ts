@@ -4,7 +4,15 @@
 
 import { formatProcessOutput } from "@/lib/workflow/formatOutput";
 import type { WorkflowProcessSnapshot } from "@/lib/workflow/types";
-import { WORKFLOW_TOPIC_AU } from "@/lib/workflow/processCatalog";
+import {
+  WORKFLOW_TOPIC_AU,
+  WORKFLOW_TOPIC_HYPERTONIE,
+  WORKFLOW_TOPIC_DIABETES_TYP_2,
+  WORKFLOW_TOPIC_ADIPOSITAS,
+  WORKFLOW_TOPIC_EISENMANGEL,
+  WORKFLOW_TOPIC_SCHILDDRUESE,
+} from "@/lib/workflow/processCatalog";
+import { buildInitialM3Checkpoints } from "@/lib/workflow/m3Checkpoints";
 
 function makeSnapshot(
   overrides: Partial<WorkflowProcessSnapshot> = {},
@@ -22,6 +30,31 @@ function makeSnapshot(
 }
 
 describe("formatProcessOutput", () => {
+  it.each([
+    [WORKFLOW_TOPIC_HYPERTONIE, "Ziel meist <140/90 Praxis, <135/85 zu Hause"],
+    [WORKFLOW_TOPIC_DIABETES_TYP_2, "Augenarzt: alle 2 Jahre bei geringem Risiko, jährlich bei Risikofaktoren"],
+    [WORKFLOW_TOPIC_ADIPOSITAS, "Basis: Ernährung, Bewegung, Verhalten"],
+    [WORKFLOW_TOPIC_EISENMANGEL, "Basislabor: Blutbild, Ferritin, TfS, CRP und Kreatinin/eGFR"],
+    [WORKFLOW_TOPIC_SCHILDDRUESE, "TSH 8 Wochen nach Dosisänderung"],
+  ] as const)("enthält konkrete M3-Merkzettelhinweise für %s", (topicId, expectedHint) => {
+    const snapshot: WorkflowProcessSnapshot = {
+      topicId,
+      role: "ARZT",
+      processPoints: [],
+      m3Checkpoints: buildInitialM3Checkpoints(topicId).map((checkpoint) => ({
+        ...checkpoint,
+        title: "Alter allgemeiner Titel",
+        status: "ERKENNBAR",
+      })),
+    };
+
+    const output = formatProcessOutput(snapshot);
+    expect(output).toContain(expectedHint);
+    expect(output).not.toContain("Alter allgemeiner Titel");
+    expect(output).not.toContain("Ist zu berücksichtigen");
+    expect(output).not.toMatch(/\?\s*$/m);
+  });
+
   it("enthält Topic-Titel und Rolle in der ersten Zeile", () => {
     const output = formatProcessOutput(makeSnapshot());
     expect(output).toContain("AU-Musterprozess");

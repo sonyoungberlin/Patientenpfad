@@ -9,6 +9,7 @@ import { buildInternalProtocolPrintBlocks } from "@/lib/workflow/internalProtoco
 import { getPatientWithoutAppointmentSections } from "@/lib/workflow/internalProtocol/patientWithoutAppointment";
 import { getM2QuestionsForCheckpoint } from "@/lib/workflow/m2Questions";
 import { getWorkflowTopic, isWorkflowTopicId } from "@/lib/workflow/processCatalog";
+import { getM3CheckpointTitle } from "@/lib/workflow/m3Checkpoints";
 import type { WorkflowProcessSnapshot, WorkflowM2AnswerValue, ProcessPointStatus } from "@/lib/workflow/types";
 
 export type WorkflowCasesPrintMode = "summary" | "detail";
@@ -122,7 +123,10 @@ function addClinicalSummary(blocks: PrintPdfBlock[], snapshot: WorkflowProcessSn
     return;
   }
   for (const point of openPoints) {
-    blocks.push({ kind: "paragraph", text: `${point.title}: ${PROCESS_STATUS_LABEL[point.status]}` });
+    const title = isWorkflowTopicId(snapshot.topicId)
+      ? getM3CheckpointTitle(snapshot.topicId, point.id, point.title)
+      : point.title;
+    blocks.push({ kind: "paragraph", text: `${title}: ${PROCESS_STATUS_LABEL[point.status]}` });
   }
 }
 
@@ -206,7 +210,10 @@ export function buildWorkflowCasesPrintBlocks(
           addClinicalAnswers(blocks, snapshot, point.id, point.m2_answers);
         }
         for (const checkpoint of snapshot.m3Checkpoints ?? []) {
-          blocks.push({ kind: "subheading", text: `${checkpoint.title}: ${PROCESS_STATUS_LABEL[checkpoint.status]}` });
+          const checkpointTitle = isWorkflowTopicId(snapshot.topicId)
+            ? getM3CheckpointTitle(snapshot.topicId, checkpoint.id, checkpoint.title)
+            : checkpoint.title;
+          blocks.push({ kind: "subheading", text: `${checkpointTitle}: ${PROCESS_STATUS_LABEL[checkpoint.status]}` });
           addClinicalAnswers(blocks, snapshot, checkpoint.id, checkpoint.m2_answers);
         }
         if (snapshot.sessionNote) blocks.push({ kind: "paragraph", text: `Notiz zur Sitzung: ${snapshot.sessionNote}` });

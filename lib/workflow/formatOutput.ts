@@ -1,6 +1,7 @@
 import type { WorkflowProcessSnapshot, ProcessPointStatus, WorkflowM2AnswerValue } from "./types";
 import { getWorkflowTopic, isWorkflowTopicId } from "./processCatalog";
 import { getM2QuestionsForCheckpoint } from "./m2Questions";
+import { getM3CheckpointTitle } from "./m3Checkpoints";
 
 const STATUS_LABEL: Record<ProcessPointStatus, string> = {
   ERKENNBAR: "erkennbar",
@@ -37,7 +38,10 @@ export function formatProcessOutput(snapshot: WorkflowProcessSnapshot): string {
       lines.push("Darauf achten:");
       lines.push("");
       for (const checkpoint of merken) {
-        lines.push(checkpoint.title);
+        const title = isWorkflowTopicId(topicId)
+          ? getM3CheckpointTitle(topicId, checkpoint.id, checkpoint.title)
+          : checkpoint.title;
+        lines.push(title);
         if (isWorkflowTopicId(topicId)) {
           const questions = getM2QuestionsForCheckpoint(topicId, checkpoint.id, snapshotRole);
           const answers = checkpoint.m2_answers ?? {};
@@ -54,7 +58,10 @@ export function formatProcessOutput(snapshot: WorkflowProcessSnapshot): string {
       lines.push("Noch offen:");
       lines.push("");
       for (const checkpoint of nochOffen) {
-        lines.push(checkpoint.title);
+        const title = isWorkflowTopicId(topicId)
+          ? getM3CheckpointTitle(topicId, checkpoint.id, checkpoint.title)
+          : checkpoint.title;
+        lines.push(title);
         if (isWorkflowTopicId(topicId)) {
           const questions = getM2QuestionsForCheckpoint(topicId, checkpoint.id, snapshotRole);
           const answers = checkpoint.m2_answers ?? {};

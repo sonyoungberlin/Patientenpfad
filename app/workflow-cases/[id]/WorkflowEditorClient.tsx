@@ -10,7 +10,7 @@ import type {
 } from "@/lib/workflow/types";
 import { formatProcessOutput } from "@/lib/workflow/formatOutput";
 import { isWorkflowTopicId, getWorkflowTopic } from "@/lib/workflow/processCatalog";
-import { buildInitialM3Checkpoints } from "@/lib/workflow/m3Checkpoints";
+import { buildInitialM3Checkpoints, getM3CheckpointTitle } from "@/lib/workflow/m3Checkpoints";
 import { getM2QuestionsForCheckpoint, type WorkflowM2Question } from "@/lib/workflow/m2Questions";
 
 type Props = {
@@ -71,6 +71,12 @@ export default function WorkflowEditorClient({ sessionId, title, snapshot: initi
   // M3-Checkpoints tragen sowohl m2_answers (M2-Ebene) als auch status (M3-Ebene).
   const [m3Checkpoints, setM3Checkpoints] = useState<WorkflowM3CheckpointSnapshot[]>(() => {
     const stored = initialSnapshot.m3Checkpoints;
+    if (stored && stored.length > 0 && isWorkflowTopicId(topicId)) {
+      return stored.map((checkpoint) => ({
+        ...checkpoint,
+        title: getM3CheckpointTitle(topicId, checkpoint.id, checkpoint.title),
+      }));
+    }
     if (stored && stored.length > 0) return stored;
     return isWorkflowTopicId(topicId) ? buildInitialM3Checkpoints(topicId) : [];
   });

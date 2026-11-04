@@ -131,10 +131,11 @@ describe("medizinische Orientierungs-Checkpoints", () => {
       for (const role of ["MFA", "ARZT"] as const) {
         const questions = getM2QuestionsForCheckpoint(topicId, checkpoint.id, role);
         if (role === "ARZT") {
-          expect(questions).toHaveLength(3);
+          expect(questions).toHaveLength(1);
         }
         expect(new Set(questions.map((question) => question.id)).size).toBe(questions.length);
         expect(questions.every((question) => question.text.trim().length > 0)).toBe(true);
+        expect(questions.every((question) => !question.text.includes("?"))).toBe(true);
         expect(getSourcePointIds(topicId, checkpoint.id, role).length).toBeGreaterThan(0);
       }
     }
