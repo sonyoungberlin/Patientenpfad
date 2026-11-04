@@ -19,7 +19,14 @@ jest.mock("@/lib/auth", () => ({
 import { POST } from "@/app/api/workflow-cases/create/route";
 import { prisma } from "@/lib/prisma";
 import { getSessionAccount } from "@/lib/auth";
-import { WORKFLOW_TOPIC_AU } from "@/lib/workflow/processCatalog";
+import {
+  WORKFLOW_TOPIC_AU,
+  WORKFLOW_TOPIC_HYPERTONIE,
+  WORKFLOW_TOPIC_DIABETES_TYP_2,
+  WORKFLOW_TOPIC_ADIPOSITAS,
+  WORKFLOW_TOPIC_EISENMANGEL,
+  WORKFLOW_TOPIC_SCHILDDRUESE,
+} from "@/lib/workflow/processCatalog";
 
 type PrismaMock = { workflowSession: { create: jest.Mock } };
 const pm = prisma as unknown as PrismaMock;
@@ -161,6 +168,21 @@ describe("POST /api/workflow-cases/create — Erstellen", () => {
       makeRequest({ topicId: WORKFLOW_TOPIC_AU, role: "ARZT" }),
     );
     expect(res.status).toBe(201);
+  });
+
+  it.each([
+    WORKFLOW_TOPIC_HYPERTONIE,
+    WORKFLOW_TOPIC_DIABETES_TYP_2,
+    WORKFLOW_TOPIC_ADIPOSITAS,
+    WORKFLOW_TOPIC_EISENMANGEL,
+    WORKFLOW_TOPIC_SCHILDDRUESE,
+  ])("201 mit initialisiertem Snapshot für %s", async (topicId) => {
+    const res = await POST(makeRequest({ topicId, role: "ARZT" }));
+    expect(res.status).toBe(201);
+    const snapshot = pm.workflowSession.create.mock.calls[0][0].data.process_snapshot;
+    expect(snapshot.topicId).toBe(topicId);
+    expect(snapshot.processPoints.length).toBeGreaterThan(0);
+    expect(snapshot.m3Checkpoints.length).toBeGreaterThan(0);
   });
 
   it("Snapshot enthält topicId, role und processPoints", async () => {

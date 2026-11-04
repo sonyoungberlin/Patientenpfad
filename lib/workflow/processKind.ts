@@ -13,7 +13,7 @@ export type WorkflowProcessKind = "STANDARD_PROCESS" | "PRACTICE_PROCESS";
 /**
  * Explizite Zuordnung aller bekannten Prozess-IDs zur Prozessart.
  *
- * STANDARD_PROCESS: klinische Musterprozesse (AU, Rezept, Überweisung, Heilmittel, Hilfsmittel, Krankentransport)
+ * STANDARD_PROCESS: klinische Musterprozesse und medizinische Orientierungen
  * PRACTICE_PROCESS: praxisinterne Ablaufprozesse (aktuell: Patienten ohne Termin)
  */
 const PROCESS_KIND_BY_TOPIC_ID: Readonly<Record<string, WorkflowProcessKind>> = {
@@ -24,6 +24,11 @@ const PROCESS_KIND_BY_TOPIC_ID: Readonly<Record<string, WorkflowProcessKind>> = 
   "heilmittel-musterprozess": "STANDARD_PROCESS",
   "hilfsmittel-musterprozess": "STANDARD_PROCESS",
   "krankentransport-musterprozess": "STANDARD_PROCESS",
+  "hypertonie-orientierung": "STANDARD_PROCESS",
+  "diabetes-mellitus-typ-2-orientierung": "STANDARD_PROCESS",
+  "adipositas-orientierung": "STANDARD_PROCESS",
+  "eisenmangel-orientierung": "STANDARD_PROCESS",
+  "schilddruesenerkrankungen-orientierung": "STANDARD_PROCESS",
   // Praxisinterne Ablaufprozesse (PRACTICE_PROCESS)
   "patienten-ohne-termin": "PRACTICE_PROCESS",
 };

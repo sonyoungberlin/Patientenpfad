@@ -21,6 +21,11 @@ describe("getProcessKindForTopicId – STANDARD_PROCESS", () => {
     "heilmittel-musterprozess",
     "hilfsmittel-musterprozess",
     "krankentransport-musterprozess",
+    "hypertonie-orientierung",
+    "diabetes-mellitus-typ-2-orientierung",
+    "adipositas-orientierung",
+    "eisenmangel-orientierung",
+    "schilddruesenerkrankungen-orientierung",
   ];
 
   for (const id of STANDARD_TOPICS) {
@@ -85,7 +90,7 @@ describe("isWorkflowProcessKind", () => {
 // Vollständigkeit: Jede Prozess-ID wird exakt einer Prozessart zugeordnet
 // ---------------------------------------------------------------------------
 
-it("Alle 7 bekannten Prozess-IDs haben eine definierte Prozessart", () => {
+it("Alle 12 bekannten Prozess-IDs haben eine definierte Prozessart", () => {
   const known = [
     "au-musterprozess",
     "rezept-musterprozess",
@@ -93,6 +98,11 @@ it("Alle 7 bekannten Prozess-IDs haben eine definierte Prozessart", () => {
     "heilmittel-musterprozess",
     "hilfsmittel-musterprozess",
     "krankentransport-musterprozess",
+    "hypertonie-orientierung",
+    "diabetes-mellitus-typ-2-orientierung",
+    "adipositas-orientierung",
+    "eisenmangel-orientierung",
+    "schilddruesenerkrankungen-orientierung",
     "patienten-ohne-termin",
   ];
   for (const id of known) {

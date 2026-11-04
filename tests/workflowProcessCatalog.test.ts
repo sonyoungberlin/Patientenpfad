@@ -14,12 +14,42 @@ import {
   WORKFLOW_TOPIC_HEILMITTEL,
   WORKFLOW_TOPIC_HILFSMITTEL,
   WORKFLOW_TOPIC_KRANKENTRANSPORT,
+  WORKFLOW_TOPIC_HYPERTONIE,
+  WORKFLOW_TOPIC_DIABETES_TYP_2,
+  WORKFLOW_TOPIC_ADIPOSITAS,
+  WORKFLOW_TOPIC_EISENMANGEL,
+  WORKFLOW_TOPIC_SCHILDDRUESE,
 } from "@/lib/workflow/processCatalog";
+import { getM2QuestionsForCheckpoint } from "@/lib/workflow/m2Questions";
+import {
+  buildInitialM3Checkpoints,
+  getM3CheckpointDefinitions,
+  getSourcePointIds,
+} from "@/lib/workflow/m3Checkpoints";
+
+const MEDICAL_ORIENTATION_TOPICS = [
+  WORKFLOW_TOPIC_HYPERTONIE,
+  WORKFLOW_TOPIC_DIABETES_TYP_2,
+  WORKFLOW_TOPIC_ADIPOSITAS,
+  WORKFLOW_TOPIC_EISENMANGEL,
+  WORKFLOW_TOPIC_SCHILDDRUESE,
+] as const;
+
+const EXPECTED_ORIENTATION_CHECKPOINT_COUNTS: Record<
+  (typeof MEDICAL_ORIENTATION_TOPICS)[number],
+  number
+> = {
+  [WORKFLOW_TOPIC_HYPERTONIE]: 6,
+  [WORKFLOW_TOPIC_DIABETES_TYP_2]: 8,
+  [WORKFLOW_TOPIC_ADIPOSITAS]: 7,
+  [WORKFLOW_TOPIC_EISENMANGEL]: 7,
+  [WORKFLOW_TOPIC_SCHILDDRUESE]: 8,
+};
 
 describe("listWorkflowTopics", () => {
-  it("enthält alle 6 Topics", () => {
+  it("enthält alle 11 Topics", () => {
     const topics = listWorkflowTopics();
-    expect(topics.length).toBe(6);
+    expect(topics.length).toBe(11);
   });
 
   it("enthält das AU-Musterprozess-Topic", () => {
@@ -36,6 +66,9 @@ describe("listWorkflowTopics", () => {
     expect(ids).toContain(WORKFLOW_TOPIC_HEILMITTEL);
     expect(ids).toContain(WORKFLOW_TOPIC_HILFSMITTEL);
     expect(ids).toContain(WORKFLOW_TOPIC_KRANKENTRANSPORT);
+    for (const id of MEDICAL_ORIENTATION_TOPICS) {
+      expect(ids).toContain(id);
+    }
     for (const topic of listWorkflowTopics()) {
       expect(topic.sources.length).toBeGreaterThan(0);
     }
@@ -55,6 +88,7 @@ describe("getWorkflowTopic", () => {
     WORKFLOW_TOPIC_HEILMITTEL,
     WORKFLOW_TOPIC_HILFSMITTEL,
     WORKFLOW_TOPIC_KRANKENTRANSPORT,
+    ...MEDICAL_ORIENTATION_TOPICS,
   ] as const)("gibt Topic %s zurück ohne Fehler", (id) => {
     const topic = getWorkflowTopic(id);
     expect(topic.id).toBe(id);
@@ -71,6 +105,7 @@ describe("isWorkflowTopicId", () => {
     WORKFLOW_TOPIC_HEILMITTEL,
     WORKFLOW_TOPIC_HILFSMITTEL,
     WORKFLOW_TOPIC_KRANKENTRANSPORT,
+    ...MEDICAL_ORIENTATION_TOPICS,
   ])("erkennt %s als gültige Topic-ID", (id) => {
     expect(isWorkflowTopicId(id)).toBe(true);
   });
@@ -79,6 +114,32 @@ describe("isWorkflowTopicId", () => {
     expect(isWorkflowTopicId("unknown")).toBe(false);
     expect(isWorkflowTopicId("")).toBe(false);
     expect(isWorkflowTopicId(null)).toBe(false);
+  });
+});
+
+describe("medizinische Orientierungs-Checkpoints", () => {
+  it.each(MEDICAL_ORIENTATION_TOPICS)("%s hat vollständige M2-/M3-Abdeckung", (topicId) => {
+    const definitions = getM3CheckpointDefinitions(topicId);
+    const initialCheckpoints = buildInitialM3Checkpoints(topicId);
+    expect(definitions).toHaveLength(EXPECTED_ORIENTATION_CHECKPOINT_COUNTS[topicId]);
+    expect(initialCheckpoints).toHaveLength(definitions.length);
+
+    for (const checkpoint of definitions) {
+      expect(checkpoint.title.length).toBeGreaterThan(0);
+      expect(new Set(checkpoint.pointIdsByRole.MFA).size).toBe(checkpoint.pointIdsByRole.MFA?.length);
+      expect(new Set(checkpoint.pointIdsByRole.ARZT).size).toBe(checkpoint.pointIdsByRole.ARZT?.length);
+      for (const role of ["MFA", "ARZT"] as const) {
+        const questions = getM2QuestionsForCheckpoint(topicId, checkpoint.id, role);
+        if (role === "ARZT") {
+          expect(questions).toHaveLength(3);
+        }
+        expect(new Set(questions.map((question) => question.id)).size).toBe(questions.length);
+        expect(questions.every((question) => question.text.trim().length > 0)).toBe(true);
+        expect(getSourcePointIds(topicId, checkpoint.id, role).length).toBeGreaterThan(0);
+      }
+    }
+
+    expect(initialCheckpoints.every((checkpoint) => checkpoint.status === "UNKLAR")).toBe(true);
   });
 });
 
