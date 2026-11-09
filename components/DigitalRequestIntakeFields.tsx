@@ -6,6 +6,7 @@ import { DIGITAL_REQUEST_TOPICS } from "@/lib/digitalRequests/topics";
 export function DigitalRequestIntakeFields() {
   const [patientRelationship, setPatientRelationship] = useState("");
   const [requestIntent, setRequestIntent] = useState("");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
   return (
     <>
@@ -110,7 +111,15 @@ export function DigitalRequestIntakeFields() {
                   type="checkbox"
                   name="requested_topic"
                   value={value}
-                  required={index === 0}
+                  checked={selectedTopics.includes(value)}
+                  required={index === 0 && selectedTopics.length === 0}
+                  onChange={(event) => {
+                    setSelectedTopics((currentTopics) =>
+                      event.target.checked
+                        ? [...currentTopics, value]
+                        : currentTopics.filter((topic) => topic !== value),
+                    );
+                  }}
                   style={{ marginTop: "0.2rem", flexShrink: 0, width: "1rem", height: "1rem" }}
                 />
                 <span>{label}</span>

@@ -240,6 +240,17 @@ describe("POST /api/anfrage/[slug]", () => {
     expect(data.concern_text).toBeNull();
   });
 
+  it("akzeptiert und speichert ausschließlich REFERRAL", async () => {
+    pm.practice.findUnique.mockResolvedValue(activePractice());
+    const res = await POST(
+      makeJsonReq("meine-praxis", validBody({ requested_topics: ["REFERRAL"] })),
+      CTX("meine-praxis"),
+    );
+
+    expect(res.status).toBe(303);
+    expect(pm.digitalRequest.create.mock.calls[0][0].data.requested_topics).toEqual(["REFERRAL"]);
+  });
+
   it("speichert den Terminweg mit concern_text und ohne Kategorien", async () => {
     pm.practice.findUnique.mockResolvedValue(activePractice());
     await POST(
